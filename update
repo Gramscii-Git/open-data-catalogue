@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Keeps the Open Data catalogue on Hugging Face current, from a deployment
+# of Semantic Deterministic Graph that holds it.
+#
+#   ./update            ask the providers for what moved, then publish
+#   ./update publish    export and upload what the deployment holds now
+#
+# SDG_DIR names the checkout of Semantic Deterministic Graph (default: the
+# directory beside this one). DRY_RUN=1 writes the archive under build/
+# and uploads nothing. The deployment's own .env, database and embedder
+# are what the harvest and the documents use.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+SDG_DIR="${SDG_DIR:-$HERE/../semantic-deterministic-graph}"
+DATASET="Gramscii-IT/open-data-catalogue"
+ARCHIVE="open-data-catalogue.tar.gz"
+BUILD="$HERE/build"
+STAGE="${1:-all}"
+
+case "$STAGE" in
+  all | publish) ;;
+  *) echo "usage: $0 [publish]" >&2; exit 2 ;;
+esac
+
+cd "$SDG_DIR/server"
+[ -x .venv/bin/python ] || { echo "no .venv in $SDG_DIR/server: run 'uv sync' there first" >&2; exit 1; }
+[ -f .env ] || { echo "no .env in $SDG_DIR/server" >&2; exit 1; }
+command -v hf >/dev/null || { echo "the hf client is not on PATH: pip install huggingface_hub" >&2; exit 1; }
+
+opendata() { .venv/bin/python -m sdg.plugins.opendata "$@"; }
+
+if [ "$STAGE" = "all" ]; then
+  # Listings first, then only the structures that moved or never arrived;
+  # a dataset slower than the patience is left with an error and asked
+  # again next time, so a handful of slow ones never hold the run.
+  opendata sync
+  opendata structure --patience 90
+  # Documents in every language the deployment serves, from the vocabulary
+  # the structure pass just read.
+  opendata enrich
+fi
+
+mkdir -p "$BUILD"
+opendata export --to "$BUILD/$ARCHIVE" | tee "$BUILD/export.json"
+read -r SHA BYTES < <(.venv/bin/python - "$BUILD/export.json" <<'PY'
+import json, sys
+report = json.load(open(sys.argv[1]))
+print(report["sha256"], report["bytes"])
+PY
+)
+tar -xzOf "$BUILD/$ARCHIVE" manifest.json > "$BUILD/manifest.json"
+(cd "$BUILD" && shasum -a 256 "$ARCHIVE" > SHA256SUMS)
+grep -q "^$SHA " "$BUILD/SHA256SUMS" || { echo "the archive does not hash to what export reported" >&2; exit 1; }
+echo "archive: $BUILD/$ARCHIVE ($BYTES bytes, sha256 $SHA)"
+
+if [ "${DRY_RUN:-0}" = "1" ]; then
+  echo "DRY_RUN=1: nothing uploaded"
+  exit 0
+fi
+
+hf upload "$DATASET" "$BUILD" . --repo-type dataset \
+  --include "$ARCHIVE" --include manifest.json --include SHA256SUMS \
+  --commit-message "Open Data catalogue of $(date -u +%Y-%m-%d)"
+
+# What the Hub serves is what was uploaded, or the pin below is a lie.
+URL="https://huggingface.co/datasets/$DATASET/resolve/main/$ARCHIVE"
+SERVED="$(curl -sIL "$URL" | tr -d '\r' | awk -F'"' 'tolower($1) ~ /^x-linked-etag: / {print $2}' | tail -1)"
+[ "$SERVED" = "$SHA" ] || { echo "the Hub serves $SERVED, not $SHA" >&2; exit 1; }
+
+cat <<PIN
+
+Pin to set in plugins/opendata/config.yaml of Semantic Deterministic Graph:
+
+snapshot:
+  url: $URL
+  sha256: $SHA
+  bytes: $BYTES
+
+Then update the counts, the date and the known gaps in the dataset's README.
+PIN
