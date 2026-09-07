@@ -10,11 +10,10 @@ one searchable document per dataset and language. What the catalogue
 holds, its format and its licences are described in the dataset's own
 README.
 
-The catalogue is harvested by the Open Data plugin of
-[Semantic Deterministic Graph](https://github.com/Gramscii-Git/semantic-deterministic-graph),
-which reads the six providers at the pace they allow, keeps the result in
-its database and refreshes it once a day. This repository holds the one
-script that turns such a deployment into the publisher.
+The catalogue is harvested by a deployment that reads the six providers
+at the pace they allow, keeps the result in its database and refreshes
+it once a day. This repository holds the one script that turns that
+deployment into the publisher.
 
 ## Three repositories, used together
 
@@ -50,17 +49,16 @@ of data colours its shape with no lookup table in between.
    its manifest and its SHA-256.
 5. Uploads the archive, `manifest.json` and `SHA256SUMS` to the dataset,
    checks that the Hub serves the digest it just computed, and prints the
-   pin to set in `plugins/opendata/config.yaml` of Semantic Deterministic
-   Graph.
+   new address, digest and size for the deployment to pin.
 
 The dataset's README is not rewritten by the script: its counts, its date
 and its known gaps are prose, updated by hand after each release.
 
 ## Requirements
 
-- A checkout of Semantic Deterministic Graph, installed as its README
-  says, with a database that holds the catalogue: `SDG_DIR` names it,
-  and the default is the directory beside this one.
+- The harvester's checkout, with its `server/.venv`, its `server/.env`
+  and a database that holds the catalogue: `HARVESTER_DIR` names it, and
+  the default is the directory beside this one.
 - The deployment's own embedder, because the documents are indexed as
   they are rebuilt.
 - The `hf` client, logged in to an account that may write to the
@@ -79,9 +77,9 @@ cp it.gramscii.open-data-catalogue.plist ~/Library/LaunchAgents/
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/it.gramscii.open-data-catalogue.plist
 ```
 
-The log lands where the plist says. A release is complete once the pin
-printed at the end is in Semantic Deterministic Graph and the dataset's
-README says what changed.
+The log lands where the plist says. A release is complete once the
+address, digest and size printed at the end are pinned on the
+deployment and the dataset's README says what changed.
 
 ## Licence
 

@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Keeps the Open Data catalogue on Hugging Face current, from a deployment
-# of Semantic Deterministic Graph that holds it.
+# Keeps the Open Data catalogue on Hugging Face current, from the
+# deployment that holds it.
 #
 #   ./update            ask the providers for what moved, then publish
 #   ./update publish    export and upload what the deployment holds now
 #
-# SDG_DIR names the checkout of Semantic Deterministic Graph (default: the
-# directory beside this one). DRY_RUN=1 writes the archive under build/
-# and uploads nothing. The deployment's own .env, database and embedder
-# are what the harvest and the documents use.
+# HARVESTER_DIR names the harvester's checkout (default: the directory
+# beside this one). DRY_RUN=1 writes the archive under build/ and uploads
+# nothing. The deployment's own .env, database and embedder are what the
+# harvest and the documents use.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-SDG_DIR="${SDG_DIR:-$HERE/../semantic-deterministic-graph}"
+HARVESTER_DIR="${HARVESTER_DIR:-$HERE/../semantic-deterministic-graph}"
 DATASET="Gramscii-IT/open-data-catalogue"
 ARCHIVE="open-data-catalogue.tar.gz"
 BUILD="$HERE/build"
@@ -23,9 +23,9 @@ case "$STAGE" in
   *) echo "usage: $0 [publish]" >&2; exit 2 ;;
 esac
 
-cd "$SDG_DIR/server"
-[ -x .venv/bin/python ] || { echo "no .venv in $SDG_DIR/server: run 'uv sync' there first" >&2; exit 1; }
-[ -f .env ] || { echo "no .env in $SDG_DIR/server" >&2; exit 1; }
+cd "$HARVESTER_DIR/server"
+[ -x .venv/bin/python ] || { echo "no .venv in $HARVESTER_DIR/server: run 'uv sync' there first" >&2; exit 1; }
+[ -f .env ] || { echo "no .env in $HARVESTER_DIR/server" >&2; exit 1; }
 command -v hf >/dev/null || { echo "the hf client is not on PATH: pip install huggingface_hub" >&2; exit 1; }
 
 opendata() { .venv/bin/python -m sdg.plugins.opendata "$@"; }
@@ -70,12 +70,11 @@ SERVED="$(curl -sIL "$URL" | tr -d '\r' | awk -F'"' 'tolower($1) ~ /^x-linked-et
 
 cat <<PIN
 
-Pin to set in plugins/opendata/config.yaml of Semantic Deterministic Graph:
+Published. Address, digest and size of this release, for the deployment to pin:
 
-snapshot:
-  url: $URL
+  url:    $URL
   sha256: $SHA
-  bytes: $BYTES
+  bytes:  $BYTES
 
 Then update the counts, the date and the known gaps in the dataset's README.
 PIN

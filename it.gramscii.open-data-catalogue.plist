@@ -16,7 +16,7 @@
   <dict>
     <key>PATH</key>
     <string>/Users/robertomarras/.local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
-    <key>SDG_DIR</key>
+    <key>HARVESTER_DIR</key>
     <string>/Users/robertomarras/progetti/semantic-deterministic-graph</string>
   </dict>
   <key>StartCalendarInterval</key>
