@@ -16,10 +16,21 @@ which reads the six providers at the pace they allow, keeps the result in
 its database and refreshes it once a day. This repository holds the one
 script that turns such a deployment into the publisher.
 
-The territory codes in the catalogue are the identifiers the shapes of
-[Gramscii-Git/boundaries](https://github.com/Gramscii-Git/boundaries)
-carry, so a dataset keyed by ISTAT, NUTS or ISO code is drawn on a map
-without a lookup step.
+## Three repositories, used together
+
+| Where | What it holds | What it is for |
+| --- | --- | --- |
+| [**Gramscii-IT/open-data-catalogue**](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue) on Hugging Face | the catalogue: what each dataset is, its dimensions and codes, the words for the codes, its notes and its searchable documents | knowing what the six providers publish and asking them the right question |
+| **This repository** | the script that produces that archive | keeping the catalogue current, on a deployment that holds it |
+| [**Gramscii-Git/boundaries**](https://github.com/Gramscii-Git/boundaries) | the administrative boundaries of Italy, Europe and the world as SVG paths, each shape with the ISTAT, NUTS and ISO identifiers it is known by | drawing the numbers of a dataset on a map |
+
+A dataset in the catalogue is cut by a territorial dimension whose codes
+are the identifiers the shapes of *boundaries* carry as `aliases`: ISTAT's
+`ITE4` is Lazio in `italy-regions.geo.json`, Eurostat's `IT` is Italy in
+`europe.geo.json`, OECD's and ILO's `AFG` is Afghanistan in
+`world.geo.json`, and the ISTAT municipality codes of the two Italian
+public-finance providers land on `italy-municipalities.geo.json`. A row
+of data colours its shape with no lookup table in between.
 
 ## What `update` does
 
