@@ -116,7 +116,7 @@ def _dataset(conn, row, policy):
     for identity in partitions:
         _sha(identity)
     conn.execute(
-        "INSERT INTO datasets VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO datasets VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         (
             _key(row),
             row["provider"],
@@ -125,6 +125,7 @@ def _dataset(conn, row, policy):
             row["period_kind"],
             _instant(row["verified_at"]),
             _instant(row["valid_until"]),
+            json.dumps(row["scope"], sort_keys=True),
         ),
     )
     conn.executemany(
@@ -282,7 +283,7 @@ def inspect_availability(path: Path, policy: dict) -> dict:
                 )
             conn.execute(f"PRAGMA max_page_count = {pages}")
             conn.executescript(
-                "CREATE TABLE datasets (id TEXT PRIMARY KEY, provider TEXT, axes TEXT, partitions INTEGER, period_kind TEXT, verified_at TEXT, valid_until TEXT);"
+                "CREATE TABLE datasets (id TEXT PRIMARY KEY, provider TEXT, axes TEXT, partitions INTEGER, period_kind TEXT, verified_at TEXT, valid_until TEXT, scope TEXT);"
                 "CREATE TABLE expected (dataset TEXT, id TEXT, PRIMARY KEY(dataset, id));"
                 "CREATE TABLE partitions (dataset TEXT, id TEXT, first_read TEXT, last_read TEXT, PRIMARY KEY(dataset, id));"
                 "CREATE TABLE combinations (dataset TEXT, partition TEXT, id TEXT, axes TEXT, bounded INTEGER, PRIMARY KEY(dataset, id));"
@@ -387,6 +388,13 @@ def _inspect(path, policy, conn):
         )
     return {
         "manifest": manifest,
+        "datasets": [
+            {
+                "provider": json.loads(key)[0], "dataset_id": json.loads(key)[1], "scope": json.loads(scope),
+                "partitions": [row[0] for row in conn.execute("SELECT id FROM expected WHERE dataset = ? ORDER BY id", (key,))],
+            }
+            for key, scope in conn.execute("SELECT id, scope FROM datasets ORDER BY id")
+        ],
         "tables": {name: counts[name] for name in MEMBERS},
         "unpacked_bytes": unpacked,
     }

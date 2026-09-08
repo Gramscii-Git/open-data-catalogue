@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "limits": {
+    "max_partitions": 20,
+    "max_pages_per_partition": 100,
+    "max_response_bytes": 8388608,
+    "max_total_response_bytes": 67108864,
+    "max_unpacked_bytes": 67108864,
+    "max_line_bytes": 1048576,
+    "max_records": 100000,
+    "max_database_bytes": 67108864,
+    "chunk_bytes": 65536,
+    "min_free_disk_bytes": 536870912,
+    "request_timeout_seconds": 45,
+    "operation_timeout_seconds": 240
+  },
+  "datasets": [
+    {
+      "provider": "dvns",
+      "dataset_id": "eurostat_cofog",
+      "arguments": {"country": "IT"},
+      "varying": {"year": [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]},
+      "when": "always",
+      "period_representation": "annual",
+      "argument_axes": {"country": "territory", "year": "period"},
+      "measure_labels": {
+        "eurostat_cofog_amount": "General government expenditure",
+        "shareOfGdpHundredths": "Share of GDP"
+      },
+      "unit_labels": {"euro": "Euro", "percent": "Percent"},
+      "valid_for_seconds": 86400
+    }
+  ]
+}

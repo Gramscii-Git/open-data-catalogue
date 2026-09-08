@@ -7,12 +7,24 @@ release policy, archive validation, publication and publication receipts.
 [Boundaries](https://github.com/Gramscii-Git/boundaries) is the separate geographic
 asset repository; matching territorial codes and vintages must be checked.
 
+The [published availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/de6a4bd676273ef2937119906e78cc94676b95ba/availability)
+contains 72,341 joint combinations for five DVNS datasets across 23 completed
+partitions. COFOG covers 34 geographies for 2014–2024; four OpenCivitas annual
+datasets cover Calabria, Lazio and Lombardia. Source evidence has an explicit
+24-hour selection lifetime; the archived evidence remains reproducible afterwards.
+The seven-table discovery archive remains a separate, older release with recorded
+quality defects. The [Hub card](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue)
+describes both artifacts and their measured limits.
+
 ## Configuration
 
 Python 3.11 or newer is required. The publisher itself uses only the standard
 library. Copy `publisher.example.toml` to `publisher.local.toml`, then configure:
 
-- The harvester checkout, its Python interpreter and its existing `server/.env`.
+- The harvester checkout, its virtual-environment Python interpreter and the
+  explicit `deployment.environment_file` path. The environment file may belong
+  to a deployment separate from the source checkout. Interpreter paths retain
+  their virtual-environment identity even when the executable is a symlink.
 - The Hugging Face CLI command, logged in with write access to the target dataset.
   It must support `hf upload --json` returning a commit URL.
 - The Hub endpoint, repository, branch, build directory and README template.
@@ -92,8 +104,79 @@ Raw observations, unknown archive members and unsuccessful receipts are not
 accepted. Dataset verification times retain the oldest source receipt; all
 receipts must predate the snapshot, and evidence must still be valid at snapshot
 time. Consumers must also enforce its expiry when selecting options.
-Provider crawling, immutable index publication and SDG consumption
-are not yet connected; this command alone does not produce a usable index.
+### Constructing a declared availability scope
+
+```sh
+./update --config publisher.local.toml build-availability \
+  --scope scopes/dvns-cofog.json --policy scopes/dvns-cofog.policy.toml
+```
+
+This runs SDG's native index adapter and validates its finished artifact. The
+included scope covers DVNS `eurostat_cofog`, Italy, every year from 2014 through
+2024. It does not declare coverage of other datasets or countries. The request
+grid plans source reads; joint combinations come exclusively from returned
+observations, including missing and suppressed cells. Zero remains observed.
+No measurement values are stored in the published artifact format.
+
+The harvester validates the live source integration and filter contract, shares
+the deployment's provider quota and stages bounded source responses. Its DVNS
+adapter accepts annual observations with complete unpaged or offset retrieval;
+cursor, bounded-only and other period contracts are explicit refusals. Repeated
+combinations, changed pagination totals, malformed observation paths, scope
+mismatches, incomplete pages and exhausted resource budgets prevent completion.
+Requests are not retried automatically.
+
+Every build owns a unique directory. `source/progress.jsonl` records its declared
+scope and partition states; a failed build retains `source/failure.json` and
+produces no completed archive. A successful preparation contains
+`availability.tar.gz`, `manifest.json`, `quality.json`, `scope.json` and
+`SHA256SUMS`. The publisher independently verifies the exact datasets and every
+request partition against the requested scope, in addition to archive contents.
+
+Evidence expiry is measured from the oldest source receipt. The scope explicitly
+declares per-response consistency: this is not an upstream dataset snapshot or a
+source-version guarantee, and there is no automatic resume.
+`build-availability` makes no upload and does not change a deployment's reader pin.
+
+`scopes/dvns-expanded.json` declares the five-dataset scope described above;
+use it with `scopes/dvns-expanded.policy.toml` for the wider build.
+
+### Availability publication and Hub documentation
+
+```sh
+./update --config publisher.local.toml publish-availability \
+  --directory build/availability-REPLACE_WITH_BUILD_ID --destination availability \
+  --policy scopes/dvns-expanded.policy.toml --readme-template README.availability.md
+```
+
+Publication repeats independent archive and exact-scope validation, rejects
+expired source evidence and uploads only the six declared public files under the
+chosen repository directory. It preserves the separate discovery archive and its
+root manifest. Every uploaded file is read back at the returned immutable commit
+and verified against the local size and checksum.
+
+The main Hub card is generated independently from the exact published artifacts:
+
+```sh
+./update --config publisher.local.toml publish-documentation \
+  --catalogue-archive path/to/published-catalogue.tar.gz \
+  --catalogue-revision FULL_CATALOGUE_COMMIT \
+  --availability-archive path/to/availability.tar.gz \
+  --availability-revision FULL_AVAILABILITY_COMMIT \
+  --policy scopes/dvns-expanded.policy.toml --readme-template README.hub.md
+```
+
+Both archive downloads are verified at their supplied revisions before the new
+card is uploaded. This command publishes only `README.md` and
+`catalogue-quality.json`. It records whether the existing catalogue passes the
+current strict policy; a failed catalogue policy remains visible and does not
+authorize replacing that archive. Availability counts, periods, territory counts
+and evidence expiries come from the validated index.
+
+SDG's indexed-selection contract requires its own explicit pin, budgets, metadata
+read allowlist and native argument bindings. Installing new reader code and
+changing deployment pins are separate from publishing on the Hub; source or index
+changes require renewed verification and confirmation.
 
 ### Discovery snapshot publication
 

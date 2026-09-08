@@ -1,6 +1,7 @@
 """Load explicit deployment settings and release policy."""
 
 import math
+import os
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -34,12 +35,12 @@ def load(path: Path) -> dict:
     deployment = data["deployment"]
     fields(
         deployment,
-        {"harvester", "python", "hf", "build", "readme_template", "patience_seconds"},
+        {"harvester", "environment_file", "python", "hf", "build", "readme_template", "patience_seconds"},
         "deployment",
     )
-    for key in ("harvester", "python", "build", "readme_template"):
+    for key in ("harvester", "environment_file", "python", "build", "readme_template"):
         raw = Path(text(deployment[key], f"deployment.{key}"))
-        deployment[key] = (path.parent / raw).resolve()
+        deployment[key] = Path(os.path.abspath(path.parent / raw)) if key == "python" else (path.parent / raw).resolve()
     deployment["hf"] = strings(deployment["hf"], "deployment.hf")
     patience = deployment["patience_seconds"]
     if (
@@ -123,9 +124,8 @@ def load(path: Path) -> dict:
     for key in ("label", "path"):
         text(schedule[key], f"schedule.{key}")
     for key in ("python", "log"):
-        schedule[key] = (
-            path.parent / Path(text(schedule[key], f"schedule.{key}"))
-        ).resolve()
+        configured = path.parent / Path(text(schedule[key], f"schedule.{key}"))
+        schedule[key] = Path(os.path.abspath(configured)) if key == "python" else configured.resolve()
     for key, upper in (("weekday", 6), ("hour", 23), ("minute", 59)):
         if type(schedule[key]) is not int or not 0 <= schedule[key] <= upper:
             raise ValueError(f"schedule.{key} is outside its valid range")
