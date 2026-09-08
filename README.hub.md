@@ -11,6 +11,7 @@ tags:
   - sdmx
   - statistics
   - availability
+$viewer_metadata
 ---
 
 # Open Data catalogue
@@ -26,6 +27,18 @@ This repository publishes two independently versioned metadata artifacts:
 Neither archive contains observation values. The availability index adds evidence
 about existing source datasets; its combinations are not additional datasets.
 Neither archive includes search vectors or credentials.
+
+## Browse the tables
+
+The viewer exposes three explicitly configured subsets, each with a `data` split:
+`catalogue` (all discovery entries), `availability_datasets` (indexed dataset
+scope and evidence expiry), and `availability_combinations` (all indexed tuples).
+These are metadata tables, not training examples or observation values.
+
+Viewer tables are derived from the exact archives linked below. Nested metadata
+is retained as JSON text so differing provider fields do not change the table
+schema. Catalogue entries also retain their complete original row in `record_json`.
+See [viewer integrity and source hashes](viewer-manifest.json).
 
 ## Verified availability
 

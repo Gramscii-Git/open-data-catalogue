@@ -6,12 +6,14 @@ import tarfile
 from collections import Counter, defaultdict
 from string import Template
 
+from . import viewer
 from .archive import QualityError, inspect_archive
 from .availability import inspect_availability, policy_from
 from .publish import file_url, upload_files, verify_download
 
 
-def prepare(directory, config, catalogue_path, catalogue_revision, availability_path, availability_revision, policy_path, template_path):
+def prepare(directory, config, catalogue_path, catalogue_revision, availability_path, availability_revision, policy_path, template_path, viewer_path):
+    tables = viewer.load(viewer_path)
     try:
         catalogue = inspect_archive(catalogue_path, config["quality"])
         accepted = True
@@ -27,6 +29,9 @@ def prepare(directory, config, catalogue_path, catalogue_revision, availability_
         "accepted": accepted, "policy": config["quality"], "report": catalogue,
     }, indent=2), encoding="utf-8")
     values = {
+        "viewer_metadata": viewer.prepare(directory, tables,
+                                          {"catalogue": catalogue_path, "availability": availability_path},
+                                          {"catalogue": catalogue, "availability": availability}),
         "catalogue_taken_at": catalogue["manifest"]["taken_at"],
         "catalogue_datasets": str(catalogue["tables"]["opendata_catalog"]),
         "catalogue_url": catalogue_url, "catalogue_sha256": catalogue["sha256"],
@@ -69,4 +74,6 @@ def coverage_rows(path):
 def publish(directory, config):
     path = directory / "README.md"
     report = {"sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "bytes": path.stat().st_size}
-    return upload_files(directory, config, ("README.md", "catalogue-quality.json"), "README.md", report)
+    manifest = json.loads((directory / "viewer-manifest.json").read_bytes())
+    files = ("README.md", "catalogue-quality.json", "viewer-manifest.json", *(row["path"] for row in manifest["files"]))
+    return upload_files(directory, config, files, "README.md", report)

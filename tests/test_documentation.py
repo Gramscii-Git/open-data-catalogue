@@ -12,6 +12,8 @@ from test_release import rows, write_archive
 
 from catalogue.config import load
 from catalogue.documentation import prepare
+from catalogue.viewer import load as load_viewer
+from catalogue.viewer import project
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -63,7 +65,7 @@ class DocumentationTests(unittest.TestCase):
         directory = self.root / "publication"
         directory.mkdir()
         prepare(directory, self.config, self.catalogue, "a" * 40, self.availability, "b" * 40,
-                self.policy, ROOT / "README.hub.md")
+                self.policy, ROOT / "README.hub.md", ROOT / "viewer.json")
         return directory
 
     def test_failed_catalogue_policy_remains_visible_beside_independent_availability(self):
@@ -75,10 +77,50 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn("**does not pass**", text)
         self.assertIn("across 1 datasets", text)
         self.assertEqual(len(self.requests), 2)
-        self.assertEqual({path.name for path in directory.iterdir()}, {"README.md", "catalogue-quality.json"})
+        self.assertEqual({path.name for path in directory.iterdir()}, {"README.md", "catalogue-quality.json", "viewer-manifest.json", "viewer"})
 
     def test_different_remote_bytes_prevent_a_new_card(self):
         self.payloads["availability.tar.gz"] = b"different"
         with self.assertRaisesRegex(RuntimeError, "SHA-256"):
             self.prepare()
         self.assertFalse((self.root / "publication/README.md").exists())
+
+    def test_viewer_selects_only_typed_tables_and_preserves_source_rows(self):
+        directory = self.prepare()
+        text = (directory / "README.md").read_text()
+        configs = json.loads(next(line.removeprefix("configs: ") for line in text.splitlines() if line.startswith("configs: ")))
+        manifest = json.loads((directory / "viewer-manifest.json").read_bytes())
+        self.assertEqual(len(configs), 3)
+        self.assertEqual(sum(config["default"] for config in configs), 1)
+        self.assertEqual({config["data_files"][0]["path"] for config in configs}, {row["path"] for row in manifest["files"]})
+        for config in configs:
+            self.assertEqual(config["data_files"][0]["split"], "data")
+            row = json.loads((directory / config["data_files"][0]["path"]).read_text())
+            self.assertEqual(set(row), {feature["name"] for feature in config["features"]})
+        catalogue = json.loads((directory / "viewer/catalogue.jsonl").read_text())
+        self.assertEqual(json.loads(catalogue["record_json"]), rows()["opendata_catalog"][0])
+        combination = json.loads((directory / "viewer/availability_combinations.jsonl").read_text())
+        original = tables()["combinations.jsonl"][0]
+        self.assertEqual(json.loads(combination["dimensions_json"]), original["dimensions"])
+        self.assertEqual(combination["territory_code"], original["territory"]["code"])
+
+    def test_viewer_preserves_nulls_and_rejects_missing_or_mistyped_fields(self):
+        columns = load_viewer(ROOT / "viewer.json")[0]["columns"]
+        row = rows()["opendata_catalog"][0]
+        row["served"], row["licence"] = None, None
+        self.assertIsNone(project(row, columns)["served"])
+        self.assertIsNone(project(row, columns)["licence"])
+        row["served"] = "unknown"
+        with self.assertRaisesRegex(ValueError, "wrong type"):
+            project(row, columns)
+        del row["served"]
+        with self.assertRaisesRegex(ValueError, "missing"):
+            project(row, columns)
+
+    def test_viewer_rejects_path_traversal_before_writing(self):
+        config = json.loads((ROOT / "viewer.json").read_text())
+        config["tables"][0]["path"] = "../escape.jsonl"
+        path = self.root / "viewer.json"
+        path.write_text(json.dumps(config))
+        with self.assertRaisesRegex(ValueError, "canonical relative"):
+            load_viewer(path)

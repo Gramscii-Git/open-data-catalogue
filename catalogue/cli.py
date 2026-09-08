@@ -169,6 +169,7 @@ def main(argv=None) -> int:
     documentation.add_argument("--availability-revision", required=True)
     documentation.add_argument("--policy", type=Path, required=True)
     documentation.add_argument("--readme-template", type=Path, required=True)
+    documentation.add_argument("--viewer-config", type=Path, required=True)
     for name in ("prepare", "refresh", "publish", "release"):
         commands.add_parser(name)
     scheduled = commands.add_parser(
@@ -186,7 +187,8 @@ def main(argv=None) -> int:
                 directory = Path(tempfile.mkdtemp(prefix="documentation-", dir=config["deployment"]["build"]))
                 print(f"documentation directory: {directory}", file=sys.stderr, flush=True)
                 prepare_documentation(directory, config, args.catalogue_archive, args.catalogue_revision,
-                                      args.availability_archive, args.availability_revision, args.policy, args.readme_template)
+                                      args.availability_archive, args.availability_revision, args.policy, args.readme_template,
+                                      args.viewer_config)
                 print(json.dumps(publish_documentation(directory, config), indent=2))
             return 0
         if args.command == "publish-availability":

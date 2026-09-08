@@ -163,7 +163,8 @@ The main Hub card is generated independently from the exact published artifacts:
   --catalogue-revision FULL_CATALOGUE_COMMIT \
   --availability-archive path/to/availability.tar.gz \
   --availability-revision FULL_AVAILABILITY_COMMIT \
-  --policy scopes/dvns-expanded.policy.toml --readme-template README.hub.md
+  --policy scopes/dvns-expanded.policy.toml --readme-template README.hub.md \
+  --viewer-config viewer.json
 ```
 
 Both archive downloads are verified at their supplied revisions before the new
@@ -230,3 +231,10 @@ qualification step and must not be inferred from local tests.
 Publisher code is MIT-licensed. Source metadata retains the original providers'
 terms. Gramscii's compilation terms and source-rights boundaries are stated in
 the dataset README template.
+
+The documentation publication also generates the Hub viewer tables from the
+verified archives. `viewer.json` declares each subset, split, source path and
+column type. Only those JSONL files are selected by the dataset card; manifests
+and quality reports are not loaded as data. Nested fields retain their JSON
+content without provider-dependent column inference. `viewer-manifest.json`
+records exact row counts, source archive hashes and output checksums.
