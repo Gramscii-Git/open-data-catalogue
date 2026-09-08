@@ -1,0 +1,57 @@
+schema = 1
+
+[deployment]
+harvester = "../semantic-deterministic-graph"
+python = "../semantic-deterministic-graph/server/.venv/bin/python"
+hf = ["hf"]
+build = "build"
+readme_template = "README.dataset.md"
+patience_seconds = 90
+
+[hub]
+endpoint = "https://huggingface.co"
+repository = "Gramscii-IT/open-data-catalogue"
+branch = "main"
+archive = "open-data-catalogue.tar.gz"
+commit_message = "Publish verified Open Data catalogue"
+timeout_seconds = 60
+
+[quality]
+minimum_datasets = 15990
+maximum_structure_errors = 0
+maximum_missing_structures = 0
+maximum_missing_licences = 0
+maximum_missing_documents = 0
+maximum_unscoped_terms = 0
+structure_fields = ["active", "served"]
+document_fields = ["active", "searchable"]
+term_scopes = ["codelist", "conceptscheme"]
+
+[quality.providers.istat]
+languages = ["it", "en"]
+vocabulary = true
+[quality.providers.eurostat]
+languages = ["it", "en"]
+vocabulary = true
+[quality.providers.oecd]
+languages = ["it", "en"]
+vocabulary = true
+[quality.providers.ilo]
+languages = ["it", "en"]
+vocabulary = true
+[quality.providers.dvns]
+languages = ["it", "en"]
+vocabulary = false
+[quality.providers.cruscotto]
+languages = ["it"]
+vocabulary = false
+
+[schedule]
+label = "it.gramscii.open-data-catalogue"
+python = "../semantic-deterministic-graph/server/.venv/bin/python"
+path = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+log = "build/schedule.log"
+weekday = 1
+hour = 3
+minute = 0
+action = "prepare"

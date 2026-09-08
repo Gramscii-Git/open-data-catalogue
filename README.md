@@ -1,88 +1,149 @@
-# Open Data catalogue
+# Open Data catalogue publisher
 
-The script that keeps the
-[Open Data catalogue](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue)
-on Hugging Face current: a catalogue of 15,990 open datasets of official
-statistics and Italian public finance, from ISTAT, Eurostat, OECD, ILO,
-DoveVannoINostriSoldi and Cruscotto Italia, with every dataset's
-structure, the words its codes stand for, its documentation notes and
-one searchable document per dataset and language. What the catalogue
-holds, its format and its licences are described in the dataset's own
-README.
+Produces verified releases of the [catalogue on Hugging Face](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue).
+The [SDG harvester](https://github.com/Gramscii-Git/semantic-deterministic-graph)
+owns provider access, database tables and document indexing. This repository owns
+release policy, archive validation, publication and publication receipts.
+[Boundaries](https://github.com/Gramscii-Git/boundaries) is the separate geographic
+asset repository; matching territorial codes and vintages must be checked.
 
-The catalogue is harvested by a deployment that reads the six providers
-at the pace they allow, keeps the result in its database and refreshes
-it once a day. This repository holds the one script that turns that
-deployment into the publisher.
+## Configuration
 
-## Three repositories, used together
+Python 3.11 or newer is required. The publisher itself uses only the standard
+library. Copy `publisher.example.toml` to `publisher.local.toml`, then configure:
 
-| Where | What it holds | What it is for |
+- The harvester checkout, its Python interpreter and its existing `server/.env`.
+- The Hugging Face CLI command, logged in with write access to the target dataset.
+  It must support `hf upload --json` returning a commit URL.
+- The Hub endpoint, repository, branch, build directory and README template.
+- Required providers, document languages, vocabulary requirements and release limits.
+- The scheduler interpreter, executable search path, log path and calendar.
+
+All fields are required and validated. Paths are resolved relative to the
+configuration file. There are no implicit deployment paths or release thresholds.
+The harvester must implement publication contract 1; an incompatible checkout is
+refused before any catalogue mutation. Its embedder must be available for indexing.
+
+## Commands
+
+Every command requires an explicit configuration and action:
+
+```sh
+./update --config publisher.local.toml check --archive path/to/archive.tar.gz
+./update --config publisher.local.toml prepare
+./update --config publisher.local.toml refresh
+./update --config publisher.local.toml publish
+./update --config publisher.local.toml release
+```
+
+| Command | Provider/database work | Upload |
 | --- | --- | --- |
-| [**Gramscii-IT/open-data-catalogue**](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue) on Hugging Face | the catalogue: what each dataset is, its dimensions and codes, the words for the codes, its notes and its searchable documents | knowing what the six providers publish and asking them the right question |
-| **This repository** | the script that produces that archive | keeping the catalogue current, on a deployment that holds it |
-| [**Gramscii-Git/boundaries**](https://github.com/Gramscii-Git/boundaries) | the administrative boundaries of Italy, Europe and the world as SVG paths, each shape with the ISTAT, NUTS and ISO identifiers it is known by | drawing the numbers of a dataset on a map |
+| check | Reads only the named archive | No |
+| prepare | Exports the database in a read-only, repeatable-read transaction | No |
+| refresh | Syncs, invalidates changed structures, reads structures and vocabularies, rebuilds/indexes documents, verifies providers, then prepares | No |
+| publish | Prepares and validates the current database | Yes |
+| release | Refreshes, prepares and validates | Yes |
 
-A dataset in the catalogue is cut by a territorial dimension whose codes
-are the identifiers the shapes of *boundaries* carry as `aliases`: ISTAT's
-`ITE4` is Lazio in `italy-regions.geo.json`, Eurostat's `IT` is Italy in
-`europe.geo.json`, OECD's and ILO's `AFG` is Afghanistan in
-`world.geo.json`, and the ISTAT municipality codes of the two Italian
-public-finance providers land on `italy-municipalities.geo.json`. A row
-of data colours its shape with no lookup table in between.
+A partial structure harvest is an explicit failure, recorded by SDG, and prevents
+subsequent publication. Provider timeouts are configured, not inferred. A failed
+run is not retried automatically by this publisher.
 
-## What `update` does
+Preparation writes to a unique directory under the configured build directory.
+A local lock refuses overlapping publisher runs; SDG also owns its database job
+guard. A lock left after a process crash requires inspection before removal.
 
-```sh
-./update            # ask the providers for what moved, then publish
-./update publish    # export and upload what the deployment holds now
-```
+## Release checks
 
-1. `sync`: re-reads the six providers' listings and marks what is new,
-   retired or changed.
-2. `structure --patience 90`: reads the structures that moved or never
-   arrived; a dataset slower than 90 seconds is left with an error and
-   asked again next time, so a handful of slow ones never hold the run.
-3. `enrich`: rebuilds the documents whose text moved, in every language
-   the deployment serves.
-4. `export`: writes the seven tables as one archive under `build/`, with
-   its manifest and its SHA-256.
-5. Uploads the archive, `manifest.json` and `SHA256SUMS` to the dataset,
-   checks that the Hub serves the digest it just computed, and prints the
-   new address, digest and size for the deployment to pin.
+Validation reads every JSONL row and checks the exact table set, row identities,
+duplicates, manifest counts, catalogue references, provider coverage, vocabulary
+references and configured completeness limits. No row is silently removed or
+given an invented licence to make a release pass.
 
-The dataset's README is not rewritten by the script: its counts, its date
-and its known gaps are prose, updated by hand after each release.
+The example policy is deliberately strict: it rejects structure errors, missing
+required structures/documents, missing licences, legacy vocabulary scopes and
+missing structure-to-vocabulary mappings. Its minimum dataset count is an explicit
+release baseline. Intentional coverage reductions require policy review.
 
-## Requirements
+A rejected preparation retains its archive and `quality.json` for inspection.
+The published catalogue may predate this policy and fail it; that is not permission
+to weaken the policy or present incomplete metadata as complete.
 
-- The harvester's checkout, with its `server/.venv`, its `server/.env`
-  and a database that holds the catalogue: `HARVESTER_DIR` names it, and
-  the default is the directory beside this one.
-- The deployment's own embedder, because the documents are indexed as
-  they are rebuilt.
-- The `hf` client, logged in to an account that may write to the
-  `Gramscii-IT` organisation.
+## Publication
 
-`DRY_RUN=1 ./update publish` writes the archive and uploads nothing.
+### Joint availability artifacts
 
-## Running it every week
+The shared availability index is separate from the seven-table discovery
+snapshot. Its release contract records datasets and explicit indexing scopes,
+completed source partitions and joint period/territory/dimension combinations.
+It contains observation-presence states and source receipts, not measurement
+values. Extraction timestamps must not be presented as observation periods.
 
-`it.gramscii.open-data-catalogue.plist` runs `./update` every Monday at
-03:00 on the machine that holds the catalogue, with launchd. Set the two
-paths inside it, then:
+The independent validation command is available:
 
 ```sh
-cp it.gramscii.open-data-catalogue.plist ~/Library/LaunchAgents/
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/it.gramscii.open-data-catalogue.plist
+./update --config publisher.local.toml check-availability \
+  --archive build/availability.tar.gz --policy availability-policy.example.toml
 ```
 
-The log lands where the plist says. A release is complete once the
-address, digest and size printed at the end are pinned on the
-deployment and the dataset's README says what changed.
+Validation streams bounded records into a size-limited temporary SQLite
+database. It rejects incomplete partition coverage, broken references,
+duplicate combinations, mismatched dimensions and unbounded calendar periods.
+Raw observations, unknown archive members and unsuccessful receipts are not
+accepted. Dataset verification times retain the oldest source receipt; all
+receipts must predate the snapshot, and evidence must still be valid at snapshot
+time. Consumers must also enforce its expiry when selecting options.
+Provider crawling, immutable index publication and SDG consumption
+are not yet connected; this command alone does not produce a usable index.
+
+### Discovery snapshot publication
+
+Only a validated release directory is uploaded. One Hub commit carries the archive,
+manifest, checksums, quality report and README rendered from `README.dataset.md`.
+Counts and snapshot dates come from the archive, not hand-maintained prose.
+
+The publisher uses the **commit returned by the upload**, never a later lookup of
+`main`. It downloads every published file at that immutable revision and checks
+its size and SHA-256. A mismatch fails explicitly; no second upload is attempted.
+
+`publication.json` records the immutable URL, digest, size and verification result.
+If remote verification fails after upload, the receipt retains the actual commit
+with `verified: false`. Publication is not reported as verified in that state.
+The receipt is local because its commit identity exists only after the upload.
+
+Pin the verified immutable URL, SHA-256 and size in consuming deployments. Updating
+a mutable branch must not break deployments pinned to an earlier release.
+
+## Scheduling on macOS
+
+Generate the launchd definition from the same validated configuration:
+
+```sh
+./update --config publisher.local.toml schedule --output build/catalogue.plist
+plutil -lint build/catalogue.plist
+```
+
+This writes a plist; it does **not** install or start a job. The example schedules
+`prepare`, without uploads. Selecting `release` explicitly enables publication
+when that job is subsequently installed. Configure paths and credentials accessible
+to the service, validate a release first, then install the generated definition
+using launchd. Generation refuses to overwrite an existing output file.
+
+The scheduler is not part of Linux or Windows installation. The CI matrix runs
+the publisher's filesystem/HTTP contracts on macOS, Linux and Windows; a local
+macOS test run alone does not verify the other operating systems.
+
+## Verification
+
+```sh
+python3 -m unittest discover -s tests -v
+```
+
+Tests use isolated temporary archives, directories and local HTTP servers. They
+perform no Hub writes. Actual authenticated publication is a separate release
+qualification step and must not be inferred from local tests.
 
 ## Licence
 
-The script and the files in this repository are released under the MIT
-licence. The catalogue itself carries the licence of every dataset's own
-provider, recorded row by row, as the dataset's README explains.
+Publisher code is MIT-licensed. Source metadata retains the original providers'
+terms. Gramscii's compilation terms and source-rights boundaries are stated in
+the dataset README template.
