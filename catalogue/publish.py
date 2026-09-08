@@ -36,7 +36,7 @@ def revision_from_result(result: str, hub: dict) -> str:
 def file_url(hub: dict, revision: str, filename: str) -> str:
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise ValueError("download revision must be a full commit hash")
-    return f"{hub['endpoint']}/datasets/{quote(hub['repository'], safe='/')}/resolve/{revision}/{quote(filename, safe='')}"
+    return f"{hub['endpoint']}/datasets/{quote(hub['repository'], safe='/')}/resolve/{revision}/{quote(filename, safe='/')}"
 
 
 def verify_download(url: str, sha256: str, size: int, timeout: float) -> None:
@@ -59,6 +59,11 @@ def verify_download(url: str, sha256: str, size: int, timeout: float) -> None:
 def upload(directory: Path, config: dict, report: dict) -> dict:
     hub = config["hub"]
     files = (hub["archive"], "manifest.json", "SHA256SUMS", "quality.json", "README.md")
+    return upload_files(directory, config, files, hub["archive"], report)
+
+
+def upload_files(directory: Path, config: dict, files, archive: str, report: dict) -> dict:
+    hub = config["hub"]
     arguments = [
         *config["deployment"]["hf"],
         "upload",
@@ -89,7 +94,7 @@ def upload(directory: Path, config: dict, report: dict) -> dict:
         "sha256": report["sha256"],
         "bytes": report["bytes"],
     }
-    publication["url"] = file_url(hub, revision, hub["archive"])
+    publication["url"] = file_url(hub, revision, archive)
     (directory / "publication.json").write_text(
         json.dumps({**publication, "verified": False}, indent=2), encoding="utf-8"
     )

@@ -2,6 +2,7 @@ schema = 1
 
 [deployment]
 harvester = "../semantic-deterministic-graph"
+environment_file = "../semantic-deterministic-graph/server/.env"
 python = "../semantic-deterministic-graph/server/.venv/bin/python"
 hf = ["hf"]
 build = "build"

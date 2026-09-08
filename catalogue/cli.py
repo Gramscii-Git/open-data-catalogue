@@ -22,10 +22,11 @@ from .publish import upload
 def harvester(config, *arguments, capture=False):
     deployment = config["deployment"]
     server = deployment["harvester"] / "server"
-    if not (server / ".env").is_file():
-        raise ValueError(f"harvester configuration is missing: {server / '.env'}")
+    environment = deployment["environment_file"]
+    if not environment.is_file():
+        raise ValueError(f"harvester configuration is missing: {environment}")
     result = subprocess.run(
-        [str(deployment["python"]), "-m", "sdg.plugins.opendata", *arguments],
+        [str(deployment["python"]), "-B", "-m", "sdg.plugins.opendata", "--env-file", str(environment), *arguments],
         cwd=server,
         env={**os.environ, "PYTHONPATH": str(server)},
         stdout=subprocess.PIPE if capture else None,
@@ -149,6 +150,25 @@ def main(argv=None) -> int:
     )
     availability.add_argument("--archive", type=Path, required=True)
     availability.add_argument("--policy", type=Path, required=True)
+    build_availability = commands.add_parser(
+        "build-availability", help="construct and verify a declared shared availability scope; no upload"
+    )
+    build_availability.add_argument("--scope", type=Path, required=True)
+    build_availability.add_argument("--policy", type=Path, required=True)
+    publish_availability = commands.add_parser(
+        "publish-availability", help="revalidate and publish a completed index in its own repository directory"
+    )
+    publish_availability.add_argument("--directory", type=Path, required=True)
+    publish_availability.add_argument("--destination", required=True)
+    publish_availability.add_argument("--policy", type=Path, required=True)
+    publish_availability.add_argument("--readme-template", type=Path, required=True)
+    documentation = commands.add_parser("publish-documentation", help="verify published bytes and update the Hub card without replacing archives")
+    documentation.add_argument("--catalogue-archive", type=Path, required=True)
+    documentation.add_argument("--catalogue-revision", required=True)
+    documentation.add_argument("--availability-archive", type=Path, required=True)
+    documentation.add_argument("--availability-revision", required=True)
+    documentation.add_argument("--policy", type=Path, required=True)
+    documentation.add_argument("--readme-template", type=Path, required=True)
     for name in ("prepare", "refresh", "publish", "release"):
         commands.add_parser(name)
     scheduled = commands.add_parser(
@@ -159,6 +179,25 @@ def main(argv=None) -> int:
     try:
         config_path = args.config.resolve()
         config = load(config_path)
+        if args.command == "publish-documentation":
+            from .documentation import prepare as prepare_documentation
+            from .documentation import publish as publish_documentation
+            with publication_lock(config["deployment"]["build"]):
+                directory = Path(tempfile.mkdtemp(prefix="documentation-", dir=config["deployment"]["build"]))
+                print(f"documentation directory: {directory}", file=sys.stderr, flush=True)
+                prepare_documentation(directory, config, args.catalogue_archive, args.catalogue_revision,
+                                      args.availability_archive, args.availability_revision, args.policy, args.readme_template)
+                print(json.dumps(publish_documentation(directory, config), indent=2))
+            return 0
+        if args.command == "publish-availability":
+            from .availability_publish import publish
+            with publication_lock(config["deployment"]["build"]):
+                directory = Path(tempfile.mkdtemp(prefix="publication-", dir=config["deployment"]["build"]))
+                print(f"publication directory: {directory}", file=sys.stderr, flush=True)
+                print(json.dumps(publish(
+                    args.directory, directory, args.destination, config, args.policy, args.readme_template,
+                ), indent=2))
+            return 0
         if args.command == "check-availability":
             print(
                 json.dumps(
@@ -175,6 +214,14 @@ def main(argv=None) -> int:
             print(
                 json.dumps(inspect_archive(args.archive, config["quality"]), indent=2)
             )
+            return 0
+        if args.command == "build-availability":
+            from .availability_build import prepare as prepare_availability
+
+            with publication_lock(config["deployment"]["build"]):
+                directory = Path(tempfile.mkdtemp(prefix="availability-", dir=config["deployment"]["build"]))
+                report = prepare_availability(directory, config, args.scope, args.policy, harvester)
+            print(json.dumps({"directory": str(directory), "report": report}, indent=2))
             return 0
         with publication_lock(config["deployment"]["build"]):
             contract = harvester(config, "--release-contract", capture=True).strip()
