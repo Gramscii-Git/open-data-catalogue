@@ -1,0 +1,7 @@
+schema = 1
+providers = ["dvns", "cruscotto"]
+staging_directory = "build/availability-validation"
+max_unpacked_bytes = 1073741824
+max_line_bytes = 1048576
+max_rows = 5000000
+max_database_bytes = 1073741824
