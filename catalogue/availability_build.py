@@ -61,7 +61,7 @@ def prepare(directory, config, scope_path, policy_path, harvester, *, capture=No
         source_arguments = []
     else:
         specification, inventories = captured_scope(scope_path, capture["inventory_evidence"], capture["inventory_sha256"])
-        source_arguments = ["--capture", str(capture["directory"]), "--capture-manifest", str(capture["manifest"]),
+        source_arguments = ["--capture", str(capture["directory"].resolve()), "--capture-manifest", str(capture["manifest"].resolve()),
                             "--capture-sha256", capture["sha256"]]
     resolved_path = directory / "scope.json"
     resolved_path.write_text(json.dumps(specification, indent=2), encoding="utf-8")
