@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "limits": {
     "max_partitions": 30,
     "max_pages_per_partition": 100,
@@ -185,5 +185,6 @@
       },
       "valid_for_seconds": 86400
     }
-  ]
+  ],
+  "inventories": {}
 }

@@ -1,18 +1,18 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "limits": {
-    "max_partitions": 128,
+    "max_partitions": 250000,
     "max_pages_per_partition": 100,
     "max_response_bytes": 8388608,
-    "max_total_response_bytes": 134217728,
-    "max_unpacked_bytes": 536870912,
-    "max_line_bytes": 1048576,
-    "max_records": 300000,
-    "max_database_bytes": 536870912,
+    "max_total_response_bytes": 536870912,
+    "max_unpacked_bytes": 2147483648,
+    "max_line_bytes": 16777216,
+    "max_records": 2000000,
+    "max_database_bytes": 1073741824,
     "chunk_bytes": 65536,
     "min_free_disk_bytes": 536870912,
     "request_timeout_seconds": 45,
-    "operation_timeout_seconds": 900
+    "operation_timeout_seconds": 28800
   },
   "datasets": [
     {
@@ -57,9 +57,21 @@
       },
       "varying": {
         "region": [
+          "ABRUZZO",
+          "BASILICATA",
           "CALABRIA",
+          "CAMPANIA",
+          "EMILIA-ROMAGNA",
           "LAZIO",
-          "LOMBARDIA"
+          "LIGURIA",
+          "LOMBARDIA",
+          "MARCHE",
+          "MOLISE",
+          "PIEMONTE",
+          "PUGLIA",
+          "TOSCANA",
+          "UMBRIA",
+          "VENETO"
         ]
       },
       "when": "always",
@@ -91,9 +103,21 @@
       },
       "varying": {
         "region": [
+          "ABRUZZO",
+          "BASILICATA",
           "CALABRIA",
+          "CAMPANIA",
+          "EMILIA-ROMAGNA",
           "LAZIO",
-          "LOMBARDIA"
+          "LIGURIA",
+          "LOMBARDIA",
+          "MARCHE",
+          "MOLISE",
+          "PIEMONTE",
+          "PUGLIA",
+          "TOSCANA",
+          "UMBRIA",
+          "VENETO"
         ]
       },
       "when": "always",
@@ -125,9 +149,21 @@
       },
       "varying": {
         "region": [
+          "ABRUZZO",
+          "BASILICATA",
           "CALABRIA",
+          "CAMPANIA",
+          "EMILIA-ROMAGNA",
           "LAZIO",
-          "LOMBARDIA"
+          "LIGURIA",
+          "LOMBARDIA",
+          "MARCHE",
+          "MOLISE",
+          "PIEMONTE",
+          "PUGLIA",
+          "TOSCANA",
+          "UMBRIA",
+          "VENETO"
         ]
       },
       "when": "always",
@@ -159,9 +195,21 @@
       },
       "varying": {
         "region": [
+          "ABRUZZO",
+          "BASILICATA",
           "CALABRIA",
+          "CAMPANIA",
+          "EMILIA-ROMAGNA",
           "LAZIO",
-          "LOMBARDIA"
+          "LIGURIA",
+          "LOMBARDIA",
+          "MARCHE",
+          "MOLISE",
+          "PIEMONTE",
+          "PUGLIA",
+          "TOSCANA",
+          "UMBRIA",
+          "VENETO"
         ]
       },
       "when": "always",
@@ -190,10 +238,9 @@
       "dataset_id": "demografia",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "source-label",
@@ -221,10 +268,9 @@
       "dataset_id": "istruzione_profilo",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "calendar",
@@ -245,10 +291,9 @@
       "dataset_id": "lavoro_profilo",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "calendar",
@@ -270,10 +315,9 @@
       "dataset_id": "redditi_mef",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "calendar",
@@ -296,10 +340,9 @@
       "dataset_id": "scuole_miur",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "source-label",
@@ -319,10 +362,9 @@
       "dataset_id": "contratti_anac",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "source-label",
@@ -345,10 +387,9 @@
       "dataset_id": "opere_bdap",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "snapshot",
@@ -371,10 +412,9 @@
       "dataset_id": "pnrr",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "snapshot",
@@ -399,10 +439,9 @@
       "dataset_id": "siope",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "calendar",
@@ -423,10 +462,9 @@
       "dataset_id": "patrimonio_pa",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "snapshot",
@@ -448,10 +486,9 @@
       "dataset_id": "ambiente",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "snapshot",
@@ -472,10 +509,9 @@
       "dataset_id": "turismo",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "calendar",
@@ -496,10 +532,9 @@
       "dataset_id": "veicoli_aci",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "calendar",
@@ -522,10 +557,9 @@
       "dataset_id": "banda_larga_agcom",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "calendar",
@@ -548,10 +582,9 @@
       "dataset_id": "ricarica_ev_pun",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "snapshot",
@@ -574,10 +607,9 @@
       "dataset_id": "carburanti_mimit",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "snapshot",
@@ -601,10 +633,9 @@
       "dataset_id": "terzo_settore_runts",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "snapshot",
@@ -627,10 +658,9 @@
       "dataset_id": "imprese_asia",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "calendar",
@@ -653,10 +683,9 @@
       "dataset_id": "sanita_mds",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "snapshot",
@@ -679,10 +708,9 @@
       "dataset_id": "pendolarismo",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "calendar",
@@ -708,10 +736,9 @@
       "dataset_id": "beni_culturali_mic",
       "arguments": {},
       "varying": {
-        "istat_code": [
-          "075035",
-          "066050"
-        ]
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
       },
       "when": "always",
       "period_representation": "snapshot",
@@ -731,6 +758,106 @@
         "percent": "percent"
       },
       "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "aria_ispra",
+      "arguments": {},
+      "varying": {
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
+      },
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "no2_media": "Mean nitrogen dioxide concentration",
+        "pm10_media": "Mean PM10 concentration",
+        "pm25_media": "Mean PM2.5 concentration"
+      },
+      "unit_labels": {
+        "micrograms_per_cubic_metre": "µg/m³"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "meteo_italiameteo",
+      "arguments": {},
+      "varying": {
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
+      },
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "neve_cm": "Snow depth",
+        "nuvolosita_pct": "Cloud cover",
+        "prec_24h_mm": "Precipitation over 24 hours",
+        "raffica_max24h_kmh": "Maximum wind gust over 24 hours",
+        "t2m_c": "Air temperature at two metres",
+        "t2m_max24h_c": "Maximum temperature over 24 hours",
+        "t2m_min24h_c": "Minimum temperature over 24 hours",
+        "umidita_pct": "Relative humidity",
+        "vento_dir_deg": "Wind direction",
+        "vento_kmh": "Wind speed"
+      },
+      "unit_labels": {
+        "celsius": "°C",
+        "millimetres": "mm",
+        "percent": "Percent",
+        "kilometres_per_hour": "km/h",
+        "degrees": "Degrees",
+        "centimetres": "cm"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "morfologia_cnr",
+      "arguments": {},
+      "varying": {
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
+      },
+      "when": "always",
+      "period_representation": "snapshot",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "elev_max": "Maximum elevation",
+        "elev_mean": "Mean elevation",
+        "elev_min": "Minimum elevation",
+        "slope_gt15_pct": "Area with slope above 15 degrees",
+        "slope_mean": "Mean slope",
+        "solar_mean": "Mean estimated annual solar irradiation"
+      },
+      "unit_labels": {
+        "metres": "m",
+        "degrees": "Degrees",
+        "percent": "Percent",
+        "kilowatt_hours_per_square_metre_year": "kWh/m²/year"
+      },
+      "valid_for_seconds": 86400
     }
-  ]
+  ],
+  "inventories": {
+    "cruscotto-municipalities": {
+      "url": "https://cruscotto-italia.dati.gov.it/data/lookup/comuni-index.json",
+      "code_field": "i",
+      "code_pattern": "[0-9]{6}",
+      "max_bytes": 8388608,
+      "max_records": 20000,
+      "timeout_seconds": 60
+    }
+  }
 }

@@ -54,6 +54,7 @@ class AvailabilityBuildTests(unittest.TestCase):
         archive = self.archive(self.spec)
         report = inspect_availability(archive, self.policy)
         (self.root / "scope.json").write_text(json.dumps(self.spec))
+        (self.root / "inventories.json").write_text(json.dumps({"schema_version": 1, "inventories": {}, "bindings": []}))
         (self.root / "quality.json").write_text(json.dumps(report))
         policy = self.root / "policy.toml"
         policy.write_text((ROOT / "availability-policy.example.toml").read_text().replace(
@@ -66,7 +67,7 @@ class AvailabilityBuildTests(unittest.TestCase):
 
     def test_publication_includes_only_validated_files_in_its_own_directory(self):
         report, files = self.publication(datetime(2026, 9, 8, 13, tzinfo=UTC))
-        self.assertEqual(len(files), 6)
+        self.assertEqual(len(files), 7)
         self.assertTrue(all(name.startswith("availability/") for name in files))
         target = self.root / "publication" / "availability"
         self.assertEqual(hashlib.sha256((target / "availability.tar.gz").read_bytes()).hexdigest(), report["sha256"])

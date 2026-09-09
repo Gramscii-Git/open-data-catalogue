@@ -15,6 +15,11 @@ All declared partitions passed independent archive and exact-scope validation.
 `quality.json` records the checks. Presence is explicitly `observed`, `missing`
 or `suppressed`; observed zero is not missing. Labels retain source identities.
 
+`inventories.json` records any complete upstream code inventories used to expand
+the request grid, including their original source specifications, HTTP receipts
+and dataset/argument bindings. Each bound grid must equal its complete inventory.
+An explicit scope without an inventory records empty inventories and bindings.
+
 Dataset `period_kind` distinguishes calendar observations, source snapshots and
 source labels. Opaque labels have no calendar bounds; they cannot satisfy a
 dated query by interpreting digits in a school year or publication label.
