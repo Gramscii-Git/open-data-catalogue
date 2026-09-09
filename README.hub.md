@@ -16,13 +16,15 @@ $viewer_metadata
 
 # Open Data catalogue
 
-This repository publishes two independently versioned metadata artifacts:
+This repository publishes independently versioned metadata and licensed source snapshots:
 
 - A **discovery catalogue** with **$catalogue_datasets dataset entries** from
   ISTAT, Eurostat, OECD, ILO, DoveVannoINostriSoldi (DVNS) and Cruscotto Italia.
 - A **verified availability index** with **$availability_combinations joint
   combinations across $availability_datasets datasets**, built from complete
   source responses within the explicitly declared scope.
+- **Licensed Cruscotto source snapshots**, stored separately from the metadata,
+  preserve the source photographs used to construct the index.
 
 Neither archive contains observation values. The availability index adds evidence
 about existing source datasets; its combinations are not additional datasets.
@@ -73,8 +75,9 @@ query. Missing domains and measurements do not acquire a fabricated year.
 
 The index preserves actual period/territory/dimension combinations and source
 receipts. `observed`, `missing` and `suppressed` are distinct; observed zero is
-not missing. Numeric values must be acquired from the original source after
-selection and confirmation. Consumers must reject expired evidence and changed
+not missing. Numeric values are acquired after selection and confirmation, using
+the original source or an explicitly pinned licensed source snapshot. Consumers
+must reject expired evidence and changed
 source definitions. The expiry limits use for new selections; it does not delete
 this reproducible historical artifact.
 
@@ -84,6 +87,15 @@ See [the index contract](availability/README.md),
 
 [Download the pinned availability archive]($availability_url).
 Size: **$availability_bytes bytes**. SHA-256: `$availability_sha256`.
+
+The [source snapshot manifest](source-snapshots/manifest.json) binds the exact
+availability digest and dataset definitions to immutable response shards. It
+records original HTTP receipts, permitted projection fields, licences,
+attribution and source URLs. Cruscotto's native photographs can be regenerated
+during a national scan; archived acquisition retains the confirmed source time
+and values. It must fail on missing or altered archive bytes without replacing
+them with a newer native response. Undeclared and unlicensed domains are excluded.
+Readers pin the manifest and response files to their full publication revision.
 
 ## Discovery catalogue
 
