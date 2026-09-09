@@ -7,11 +7,14 @@ release policy, archive validation, publication and publication receipts.
 [Boundaries](https://github.com/Gramscii-Git/boundaries) is the separate geographic
 asset repository; matching territorial codes and vintages must be checked.
 
-The [published availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/de4c3addcb1e808bc229d0be90a5f7fc3d9567ef/availability)
-contains 72,482 joint combinations for five DVNS datasets and 21 Cruscotto domains across 65 completed
-partitions. COFOG covers 34 geographies for 2014–2024; four OpenCivitas annual
-datasets cover Calabria, Lazio and Lombardia. Cruscotto covers Lecce and Lecce
-nei Marsi, with 132 observed and nine missing combinations. Source evidence has an explicit
+The [published availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/a6c77126656f5b4fc3ae782268f14822c0039919/availability)
+contains 888,000 joint combinations for five DVNS datasets and 24 Cruscotto domains
+across 189,575 completed partitions. COFOG covers 34 geographies for 2014–2024;
+four OpenCivitas annual datasets cover all 15 ordinary-statute regions. Cruscotto
+covers the complete 7,896-municipality inventory. Its
+[licensed source snapshots](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/e55e80da98d9e801f54d25efcc5d911f630c78a6/source-snapshots)
+preserve the original responses in 256 immutable shards, with source receipts,
+licences and attribution. Source evidence has an explicit
 24-hour selection lifetime; the archived evidence remains reproducible afterwards.
 The seven-table discovery archive remains a separate, older release with recorded
 quality defects. The [Hub card](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue)
