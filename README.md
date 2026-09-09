@@ -130,7 +130,7 @@ Requests are not retried automatically.
 Every build owns a unique directory. `source/progress.jsonl` records its declared
 scope and partition states; a failed build retains `source/failure.json` and
 produces no completed archive. A successful preparation contains
-`availability.tar.gz`, `manifest.json`, `quality.json`, `scope.json` and
+`availability.tar.gz`, `manifest.json`, `quality.json`, `scope.json`, `inventories.json` and
 `SHA256SUMS`. The publisher independently verifies the exact datasets and every
 request partition against the requested scope, in addition to archive contents.
 
@@ -142,12 +142,38 @@ source-version guarantee, and there is no automatic resume.
 `scopes/dvns-expanded.json` declares the five-dataset scope described above;
 use it with `scopes/dvns-expanded.policy.toml` for the wider build.
 
-`scopes/verified-selection.json` adds the 21 mapped, licensed Cruscotto domains
-for Lecce (`075035`) and Lecce nei Marsi (`066050`) to that DVNS scope. Use
-`scopes/verified-selection.policy.toml` for its build and publication. Calendar
-periods, source snapshot dates and opaque source labels remain distinct; an
-unreported domain never receives invented observations or a guessed period.
-This is a declared two-municipality scope, not national Cruscotto coverage.
+`scopes/verified-selection.json` declares all 15 ordinary-statute regions for
+the four OpenCivitas datasets, all native COFOG geographies for 2014–2024, and
+24 mapped, licensed Cruscotto domains for the complete official municipality
+inventory. Use `scopes/verified-selection.policy.toml` for its build and
+publication. Air quality, weather and morphology retain their physical units;
+ANNCSU has no explicit source licence and remains a visible rights refusal.
+Calendar periods, weather validity instants, source snapshot dates and opaque
+source labels remain distinct. An unreported domain never receives invented
+observations or a guessed period.
+
+Publisher scope schema 2 requires an explicit `inventories` object. A request
+grid may list values directly or name an inventory using
+`{"inventory": "municipalities"}`. Every inventory declares a direct HTTPS URL,
+code field and pattern, byte and row limits, and timeout. The publisher reads
+each inventory once, validates every code, and expands every reference to the
+complete sorted code list. Invalid or duplicate codes, redirects and budget
+violations fail the build; no municipality is silently omitted. Explicit scopes
+without inventories declare `"inventories": {}`.
+
+The native harvester receives a fully resolved schema-1 `scope.json`.
+`inventories.json` preserves the complete source code lists, original inventory
+specifications, HTTP receipts and their dataset/argument bindings. Publication
+verifies that each bound request grid equals its recorded inventory exactly.
+
+Within one build, identical native requests share their original response body
+and receipt, stored under `source/responses/`. Thus the 24 Cruscotto domains use
+one native municipality response each, rather than 24 separate source reads.
+Checksums are verified on reuse. Every new build acquires its own responses;
+corrupt or unavailable evidence fails explicitly and is never replaced by a
+hidden refetch. Provider quota and total-response budgets still apply. The
+national scan can take several hours; its operation deadline and all memory,
+disk and validation budgets are explicit scope policy.
 
 ### Availability publication and Hub documentation
 
@@ -158,7 +184,7 @@ This is a declared two-municipality scope, not national Cruscotto coverage.
 ```
 
 Publication repeats independent archive and exact-scope validation, rejects
-expired source evidence and uploads only the six declared public files under the
+expired source evidence and uploads only the seven declared public files under the
 chosen repository directory. It preserves the separate discovery archive and its
 root manifest. Every uploaded file is read back at the returned immutable commit
 and verified against the local size and checksum.

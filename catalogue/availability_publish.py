@@ -9,6 +9,7 @@ from string import Template
 
 from .availability import policy_from
 from .availability_build import verify_build
+from .availability_scope import verify_inventory_scope
 from .publish import upload_files
 
 
@@ -20,6 +21,8 @@ def prepare(source, directory, destination, policy_path, template_path, *, now):
         raise ValueError("availability destination must be a canonical repository directory")
     policy = policy_from(policy_path)
     specification = json.loads((source / "scope.json").read_bytes())
+    inventories = json.loads((source / "inventories.json").read_bytes())
+    verify_inventory_scope(specification, inventories)
     exported = json.loads((source / "quality.json").read_bytes())
     archive = source / "availability.tar.gz"
     report = verify_build(archive, exported, specification, policy)
@@ -33,6 +36,7 @@ def prepare(source, directory, destination, policy_path, template_path, *, now):
     target = directory / destination
     target.mkdir(parents=True)
     shutil.copyfile(archive, target / archive.name)
+    shutil.copyfile(source / "inventories.json", target / "inventories.json")
     for name, value in (("manifest.json", report["manifest"]), ("quality.json", report), ("scope.json", specification)):
         (target / name).write_text(json.dumps(value, indent=2), encoding="utf-8")
     (target / "SHA256SUMS").write_text(f"{report['sha256']}  {archive.name}\n", encoding="utf-8")
@@ -47,7 +51,7 @@ def prepare(source, directory, destination, policy_path, template_path, *, now):
         raise ValueError("availability README must declare every publication placeholder")
     (target / "README.md").write_text(template.substitute(values), encoding="utf-8")
     files = tuple(str(prefix / name) for name in (
-        "availability.tar.gz", "manifest.json", "quality.json", "scope.json", "SHA256SUMS", "README.md",
+        "availability.tar.gz", "manifest.json", "quality.json", "scope.json", "inventories.json", "SHA256SUMS", "README.md",
     ))
     return report, files
 

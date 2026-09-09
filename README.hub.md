@@ -51,16 +51,20 @@ $availability_rows
 
 COFOG covers the geographies returned by DVNS for each indexed year, including
 countries and European aggregates. Aggregates must not be added to their members.
-OpenCivitas coverage is limited to **Calabria, Lazio and Lombardia**. Its separately
-named annual datasets retain their distinct source contracts; they are not
-automatically comparable or additive. These scopes do not cover every dataset,
-region, municipality or year in the discovery catalogue.
+The national OpenCivitas scope queries all 15 ordinary-statute regions. Its
+separately named annual datasets retain their distinct municipality sets and
+source contracts; they are not automatically comparable or additive. The table
+reports actual source coverage for each dataset. These scopes do not cover every
+dataset or year in the separate discovery catalogue.
 
-Cruscotto indexes 21 mapped domains with declared licences for **Lecce
-(`075035`) and Lecce nei Marsi (`066050`)**. A completed municipality request
-does not imply that every domain contains measurements there. ANNCSU remains
-excluded because its source rights declaration does not grant an explicit
-licence; air quality, weather and morphology require additional unit mappings.
+The national Cruscotto scope indexes 24 mapped domains with declared licences,
+using the complete official municipality inventory. The exact codes and original
+HTTP inventory receipt are published in [inventories.json](availability/inventories.json);
+every domain's request grid is verified against that full list. A completed
+municipality request does not imply that every domain contains measurements
+there. ANNCSU remains excluded because its source rights declaration does not
+grant an explicit licence. Air quality, weather and morphology retain their
+physical units; weather periods identify forecast validity instants.
 Annual observations retain calendar bounds. School years and other source
 labels retain their native meaning without invented calendar bounds. Source
 snapshot dates identify a published photograph, not historical observations.
@@ -75,7 +79,7 @@ source definitions. The expiry limits use for new selections; it does not delete
 this reproducible historical artifact.
 
 See [the index contract](availability/README.md),
-[declared scope](availability/scope.json) and
+[declared scope](availability/scope.json), [inventory evidence](availability/inventories.json) and
 [independent validation](availability/quality.json).
 
 [Download the pinned availability archive]($availability_url).

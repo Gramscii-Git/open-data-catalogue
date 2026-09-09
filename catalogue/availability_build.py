@@ -7,6 +7,7 @@ from itertools import product
 from pathlib import Path
 
 from .availability import inspect_availability, policy_from
+from .availability_scope import resolve
 
 
 def verify_build(archive, exported, specification, policy):
@@ -43,7 +44,10 @@ def verify_build(archive, exported, specification, policy):
 
 
 def prepare(directory, config, scope_path, policy_path, harvester):
-    specification = json.loads(scope_path.read_bytes())
+    specification, inventories = resolve(json.loads(scope_path.read_bytes()))
+    resolved_path = directory / "scope.json"
+    resolved_path.write_text(json.dumps(specification, indent=2), encoding="utf-8")
+    (directory / "inventories.json").write_text(json.dumps(inventories, indent=2), encoding="utf-8")
     policy = policy_from(policy_path)
     requested_providers = {row["provider"] for row in specification["datasets"]}
     if requested_providers != set(policy["providers"]):
@@ -52,7 +56,7 @@ def prepare(directory, config, scope_path, policy_path, harvester):
     if contract != "1":
         raise ValueError("harvester availability construction contract must be 1")
     produced = json.loads(harvester(
-        config, "index-availability", "--spec", str(scope_path.resolve()),
+        config, "index-availability", "--spec", str(resolved_path.resolve()),
         "--to", str(directory / "source"), capture=True,
     ))
     archive = directory / "source" / "availability.tar.gz"

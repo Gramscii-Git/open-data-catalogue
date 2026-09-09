@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "limits": {
     "max_partitions": 20,
     "max_pages_per_partition": 100,
@@ -18,17 +18,40 @@
     {
       "provider": "dvns",
       "dataset_id": "eurostat_cofog",
-      "arguments": {"country": "IT"},
-      "varying": {"year": [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]},
+      "arguments": {
+        "country": "IT"
+      },
+      "varying": {
+        "year": [
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024
+        ]
+      },
       "when": "always",
       "period_representation": "annual",
-      "argument_axes": {"country": "territory", "year": "period"},
+      "argument_axes": {
+        "country": "territory",
+        "year": "period"
+      },
       "measure_labels": {
         "eurostat_cofog_amount": "General government expenditure",
         "shareOfGdpHundredths": "Share of GDP"
       },
-      "unit_labels": {"euro": "Euro", "percent": "Percent"},
+      "unit_labels": {
+        "euro": "Euro",
+        "percent": "Percent"
+      },
       "valid_for_seconds": 86400
     }
-  ]
+  ],
+  "inventories": {}
 }
