@@ -45,7 +45,7 @@ See [viewer integrity and source hashes](viewer-manifest.json).
 Snapshot: **$availability_taken_at**. Completed indexing partitions:
 **$availability_partitions**.
 
-| Provider | Dataset | Observed years | Distinct territories | Combinations | Evidence expires (UTC) |
+| Provider | Dataset | Source periods | Distinct territories | Combinations | Evidence expires (UTC) |
 | --- | --- | --- | ---: | ---: | --- |
 $availability_rows
 
@@ -55,6 +55,17 @@ OpenCivitas coverage is limited to **Calabria, Lazio and Lombardia**. Its separa
 named annual datasets retain their distinct source contracts; they are not
 automatically comparable or additive. These scopes do not cover every dataset,
 region, municipality or year in the discovery catalogue.
+
+Cruscotto indexes 21 mapped domains with declared licences for **Lecce
+(`075035`) and Lecce nei Marsi (`066050`)**. A completed municipality request
+does not imply that every domain contains measurements there. ANNCSU remains
+excluded because its source rights declaration does not grant an explicit
+licence; air quality, weather and morphology require additional unit mappings.
+Annual observations retain calendar bounds. School years and other source
+labels retain their native meaning without invented calendar bounds. Source
+snapshot dates identify a published photograph, not historical observations.
+Cruscotto accepts only a municipality argument and exposes no historical-period
+query. Missing domains and measurements do not acquire a fabricated year.
 
 The index preserves actual period/territory/dimension combinations and source
 receipts. `observed`, `missing` and `suppressed` are distinct; observed zero is

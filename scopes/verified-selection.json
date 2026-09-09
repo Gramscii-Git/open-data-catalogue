@@ -1,0 +1,736 @@
+{
+  "schema_version": 1,
+  "limits": {
+    "max_partitions": 128,
+    "max_pages_per_partition": 100,
+    "max_response_bytes": 8388608,
+    "max_total_response_bytes": 134217728,
+    "max_unpacked_bytes": 536870912,
+    "max_line_bytes": 1048576,
+    "max_records": 300000,
+    "max_database_bytes": 536870912,
+    "chunk_bytes": 65536,
+    "min_free_disk_bytes": 536870912,
+    "request_timeout_seconds": 45,
+    "operation_timeout_seconds": 900
+  },
+  "datasets": [
+    {
+      "provider": "dvns",
+      "dataset_id": "eurostat_cofog",
+      "arguments": {},
+      "varying": {
+        "year": [
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024
+        ]
+      },
+      "when": "always",
+      "period_representation": "annual",
+      "argument_axes": {
+        "year": "period"
+      },
+      "measure_labels": {
+        "eurostat_cofog_amount": "General government expenditure",
+        "shareOfGdpHundredths": "Share of GDP"
+      },
+      "unit_labels": {
+        "euro": "Euro",
+        "percent": "Percent"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "dvns",
+      "dataset_id": "opencivitas_fabbisogni_2018",
+      "arguments": {
+        "year": 2018
+      },
+      "varying": {
+        "region": [
+          "CALABRIA",
+          "LAZIO",
+          "LOMBARDIA"
+        ]
+      },
+      "when": "always",
+      "period_representation": "annual",
+      "argument_axes": {
+        "year": "period",
+        "region": "region"
+      },
+      "measure_labels": {
+        "historicalSpendingCents": "Historical expenditure",
+        "standardSpendingCents": "Standard expenditure",
+        "differenceCents": "Expenditure difference",
+        "historicalPerCapitaCents": "Historical expenditure per capita",
+        "standardPerCapitaCents": "Standard expenditure per capita",
+        "differencePerCapitaCents": "Expenditure difference per capita",
+        "differenceBasisPoints": "Expenditure difference percentage"
+      },
+      "unit_labels": {
+        "euro": "Euro",
+        "basis_points": "Basis points"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "dvns",
+      "dataset_id": "opencivitas_fabbisogni_2019",
+      "arguments": {
+        "year": 2019
+      },
+      "varying": {
+        "region": [
+          "CALABRIA",
+          "LAZIO",
+          "LOMBARDIA"
+        ]
+      },
+      "when": "always",
+      "period_representation": "annual",
+      "argument_axes": {
+        "year": "period",
+        "region": "region"
+      },
+      "measure_labels": {
+        "historicalSpendingCents": "Historical expenditure",
+        "standardSpendingCents": "Standard expenditure",
+        "differenceCents": "Expenditure difference",
+        "historicalPerCapitaCents": "Historical expenditure per capita",
+        "standardPerCapitaCents": "Standard expenditure per capita",
+        "differencePerCapitaCents": "Expenditure difference per capita",
+        "differenceBasisPoints": "Expenditure difference percentage"
+      },
+      "unit_labels": {
+        "euro": "Euro",
+        "basis_points": "Basis points"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "dvns",
+      "dataset_id": "opencivitas_fabbisogni_2021",
+      "arguments": {
+        "year": 2021
+      },
+      "varying": {
+        "region": [
+          "CALABRIA",
+          "LAZIO",
+          "LOMBARDIA"
+        ]
+      },
+      "when": "always",
+      "period_representation": "annual",
+      "argument_axes": {
+        "year": "period",
+        "region": "region"
+      },
+      "measure_labels": {
+        "historicalSpendingCents": "Historical expenditure",
+        "standardSpendingCents": "Standard expenditure",
+        "differenceCents": "Expenditure difference",
+        "historicalPerCapitaCents": "Historical expenditure per capita",
+        "standardPerCapitaCents": "Standard expenditure per capita",
+        "differencePerCapitaCents": "Expenditure difference per capita",
+        "differenceBasisPoints": "Expenditure difference percentage"
+      },
+      "unit_labels": {
+        "euro": "Euro",
+        "basis_points": "Basis points"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "dvns",
+      "dataset_id": "opencivitas_fabbisogni",
+      "arguments": {
+        "year": 2022
+      },
+      "varying": {
+        "region": [
+          "CALABRIA",
+          "LAZIO",
+          "LOMBARDIA"
+        ]
+      },
+      "when": "always",
+      "period_representation": "annual",
+      "argument_axes": {
+        "year": "period",
+        "region": "region"
+      },
+      "measure_labels": {
+        "historicalSpendingCents": "Historical expenditure",
+        "standardSpendingCents": "Standard expenditure",
+        "differenceCents": "Expenditure difference",
+        "historicalPerCapitaCents": "Historical expenditure per capita",
+        "standardPerCapitaCents": "Standard expenditure per capita",
+        "differencePerCapitaCents": "Expenditure difference per capita",
+        "differenceBasisPoints": "Expenditure difference percentage"
+      },
+      "unit_labels": {
+        "euro": "Euro",
+        "basis_points": "Basis points"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "demografia",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "source-label",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "femmine": "Femmine",
+        "indice_dipendenza": "Indice di dipendenza",
+        "indice_vecchiaia": "Indice di vecchiaia",
+        "maschi": "Maschi",
+        "morti": "Morti",
+        "nati": "Nati",
+        "popolazione": "Popolazione",
+        "saldo_naturale": "Saldo naturale"
+      },
+      "unit_labels": {
+        "count": "count",
+        "percent": "percent"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "istruzione_profilo",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "pct_diploma_oltre": "Diplomati e oltre",
+        "pct_terziario": "Con titolo terziario"
+      },
+      "unit_labels": {
+        "percent": "percent"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "lavoro_profilo",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "tasso_attivita": "Tasso di attività",
+        "tasso_disoccupazione": "Tasso di disoccupazione",
+        "tasso_occupazione": "Tasso di occupazione"
+      },
+      "unit_labels": {
+        "percent": "percent"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "redditi_mef",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "imposta_netta_media_eur": "Imposta netta media",
+        "n_contribuenti": "Contribuenti",
+        "reddito_medio_eur": "Reddito medio"
+      },
+      "unit_labels": {
+        "count": "count",
+        "euro": "euro"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "scuole_miur",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "source-label",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "n_scuole": "Scuole"
+      },
+      "unit_labels": {
+        "count": "count"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "contratti_anac",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "source-label",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "importo_per_abitante_eur": "Importo per abitante",
+        "importo_totale_eur": "Importo totale",
+        "n_aggiudicazioni": "Aggiudicazioni"
+      },
+      "unit_labels": {
+        "count": "count",
+        "euro": "euro"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "opere_bdap",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "snapshot",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "importo_per_abitante_eur": "Importo per abitante",
+        "importo_totale_eur": "Importo totale",
+        "n_progetti": "Progetti"
+      },
+      "unit_labels": {
+        "count": "count",
+        "euro": "euro"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "pnrr",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "snapshot",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "importo_assegnato_eur": "Importo assegnato",
+        "importo_per_abitante_eur": "Importo per abitante",
+        "n_concluso": "Progetti conclusi",
+        "n_in_corso": "Progetti in corso",
+        "n_progetti": "Progetti"
+      },
+      "unit_labels": {
+        "count": "count",
+        "euro": "euro"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "siope",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "totale_incassi_eur": "Incassi",
+        "totale_uscite_eur": "Uscite"
+      },
+      "unit_labels": {
+        "euro": "euro"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "patrimonio_pa",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "snapshot",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "n_fabbricati": "Fabbricati",
+        "n_immobili": "Immobili",
+        "n_terreni": "Terreni"
+      },
+      "unit_labels": {
+        "count": "count"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "ambiente",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "snapshot",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "consumo_suolo_pct": "Consumo di suolo",
+        "raccolta_differenziata_pct": "Raccolta differenziata"
+      },
+      "unit_labels": {
+        "percent": "percent"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "turismo",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "totale_letti": "Posti letto",
+        "totale_strutture": "Strutture ricettive"
+      },
+      "unit_labels": {
+        "count": "count"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "veicoli_aci",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "autovetture": "Autovetture",
+        "pct_inquinanti": "Veicoli più inquinanti",
+        "totale_veicoli": "Veicoli"
+      },
+      "unit_labels": {
+        "count": "count",
+        "percent": "percent"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "banda_larga_agcom",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "copertura_ftth_20m_pct": "Copertura sopra 20 Mbit",
+        "copertura_ftth_pct": "Copertura in fibra",
+        "famiglie_residenti": "Famiglie residenti"
+      },
+      "unit_labels": {
+        "count": "count",
+        "percent": "percent"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "ricarica_ev_pun",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "snapshot",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "n_attivi": "Punti di ricarica attivi",
+        "n_totale": "Punti di ricarica",
+        "pct_attivi": "Punti di ricarica attivi sul totale"
+      },
+      "unit_labels": {
+        "count": "count",
+        "percent": "percent"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "carburanti_mimit",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "snapshot",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "n_impianti": "Distributori di carburante",
+        "n_pompe_bianche": "Pompe bianche",
+        "prezzo_medio_benzina_self": "Prezzo medio benzina self",
+        "prezzo_medio_gasolio_self": "Prezzo medio gasolio self"
+      },
+      "unit_labels": {
+        "count": "count",
+        "euro": "euro"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "terzo_settore_runts",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "snapshot",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "n_5x1000": "Enti iscritti al 5x1000",
+        "n_enti_totali": "Enti del terzo settore",
+        "pct_5x1000": "Quota iscritta al 5x1000"
+      },
+      "unit_labels": {
+        "count": "count",
+        "percent": "percent"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "imprese_asia",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "addetti_totali": "Addetti",
+        "ul_totali": "Unità locali",
+        "ul_yoy_pct": "Variazione delle unità locali sull'anno"
+      },
+      "unit_labels": {
+        "count": "count",
+        "percent": "percent"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "sanita_mds",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "snapshot",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "n_farmacie": "Farmacie",
+        "n_ospedali": "Ospedali",
+        "n_parafarmacie": "Parafarmacie",
+        "posti_letto_ospedalieri": "Posti letto ospedalieri"
+      },
+      "unit_labels": {
+        "count": "count"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "pendolarismo",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "auto_contenimento_pct": "Quota che resta nel comune",
+        "entranti_totali": "Chi entra",
+        "n_destinazioni": "Comuni di destinazione",
+        "n_origini": "Comuni di origine",
+        "saldo_netto": "Saldo degli spostamenti",
+        "uscenti_totali": "Chi esce"
+      },
+      "unit_labels": {
+        "count": "count",
+        "percent": "percent"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
+      "dataset_id": "beni_culturali_mic",
+      "arguments": {},
+      "varying": {
+        "istat_code": [
+          "075035",
+          "066050"
+        ]
+      },
+      "when": "always",
+      "period_representation": "snapshot",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "n_beni_immobili": "Beni culturali immobili",
+        "n_con_coordinate": "Beni con coordinate",
+        "n_senza_coordinate": "Beni senza coordinate",
+        "n_visitabili": "Beni visitabili",
+        "pct_con_descrizione": "Beni con descrizione",
+        "pct_con_foto": "Beni con fotografia"
+      },
+      "unit_labels": {
+        "count": "count",
+        "percent": "percent"
+      },
+      "valid_for_seconds": 86400
+    }
+  ]
+}

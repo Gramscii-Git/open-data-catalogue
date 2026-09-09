@@ -15,6 +15,11 @@ All declared partitions passed independent archive and exact-scope validation.
 `quality.json` records the checks. Presence is explicitly `observed`, `missing`
 or `suppressed`; observed zero is not missing. Labels retain source identities.
 
+Dataset `period_kind` distinguishes calendar observations, source snapshots and
+source labels. Opaque labels have no calendar bounds; they cannot satisfy a
+dated query by interpreting digits in a school year or publication label.
+Snapshot bounds record the source photograph and are not observation periods.
+
 `availability.tar.gz` contains `manifest.json`, `datasets.jsonl`,
 `partitions.jsonl` and `combinations.jsonl`. The archive is **$bytes bytes**,
 SHA-256 `$sha256`.

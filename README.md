@@ -7,10 +7,11 @@ release policy, archive validation, publication and publication receipts.
 [Boundaries](https://github.com/Gramscii-Git/boundaries) is the separate geographic
 asset repository; matching territorial codes and vintages must be checked.
 
-The [published availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/de6a4bd676273ef2937119906e78cc94676b95ba/availability)
-contains 72,341 joint combinations for five DVNS datasets across 23 completed
+The [published availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/de4c3addcb1e808bc229d0be90a5f7fc3d9567ef/availability)
+contains 72,482 joint combinations for five DVNS datasets and 21 Cruscotto domains across 65 completed
 partitions. COFOG covers 34 geographies for 2014–2024; four OpenCivitas annual
-datasets cover Calabria, Lazio and Lombardia. Source evidence has an explicit
+datasets cover Calabria, Lazio and Lombardia. Cruscotto covers Lecce and Lecce
+nei Marsi, with 132 observed and nine missing combinations. Source evidence has an explicit
 24-hour selection lifetime; the archived evidence remains reproducible afterwards.
 The seven-table discovery archive remains a separate, older release with recorded
 quality defects. The [Hub card](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue)
@@ -141,12 +142,19 @@ source-version guarantee, and there is no automatic resume.
 `scopes/dvns-expanded.json` declares the five-dataset scope described above;
 use it with `scopes/dvns-expanded.policy.toml` for the wider build.
 
+`scopes/verified-selection.json` adds the 21 mapped, licensed Cruscotto domains
+for Lecce (`075035`) and Lecce nei Marsi (`066050`) to that DVNS scope. Use
+`scopes/verified-selection.policy.toml` for its build and publication. Calendar
+periods, source snapshot dates and opaque source labels remain distinct; an
+unreported domain never receives invented observations or a guessed period.
+This is a declared two-municipality scope, not national Cruscotto coverage.
+
 ### Availability publication and Hub documentation
 
 ```sh
 ./update --config publisher.local.toml publish-availability \
   --directory build/availability-REPLACE_WITH_BUILD_ID --destination availability \
-  --policy scopes/dvns-expanded.policy.toml --readme-template README.availability.md
+  --policy scopes/verified-selection.policy.toml --readme-template README.availability.md
 ```
 
 Publication repeats independent archive and exact-scope validation, rejects
@@ -163,7 +171,7 @@ The main Hub card is generated independently from the exact published artifacts:
   --catalogue-revision FULL_CATALOGUE_COMMIT \
   --availability-archive path/to/availability.tar.gz \
   --availability-revision FULL_AVAILABILITY_COMMIT \
-  --policy scopes/dvns-expanded.policy.toml --readme-template README.hub.md \
+  --policy scopes/verified-selection.policy.toml --readme-template README.hub.md \
   --viewer-config viewer.json
 ```
 
