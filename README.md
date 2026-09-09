@@ -159,6 +159,29 @@ pinned capture and inventory, retains original receipts and evidence expiry,
 and refuses missing requests or changed bytes. It writes a new complete archive;
 it does not continue a partially written index or renew source freshness.
 
+Mutable source photographs require an explicit archived source mode. Add
+`--snapshot-provider cruscotto --snapshot-shard-prefix-length 2` to the build
+command to stage licensed response projections in `source/snapshots` alongside
+the metadata archive. Both snapshot arguments are required together. Prefix
+length controls the source-digest grouping; a shard exceeding the declared
+response budget fails the build. Source timestamps and HTTP receipts remain
+unchanged. The manifest records licence, attribution, source URL and permitted
+fields for each archived dataset; undeclared domains are excluded.
+
+Publish the source snapshots independently, linked to the completed index:
+
+```sh
+./update --config publisher.local.toml publish-snapshots \
+  --directory build/availability-BUILD_ID/source/snapshots \
+  --availability build/availability-BUILD_ID/availability.tar.gz \
+  --destination source-snapshots --policy scopes/verified-selection.policy.toml
+```
+
+The publisher verifies the index, every source receipt, complete provider scope,
+projection rights, file inventory and content digest before upload, then reads
+back every published file at its immutable revision. These snapshots contain
+licensed source values; the availability archive contains only selection metadata.
+
 `scopes/dvns-expanded.json` declares the five-dataset scope described above;
 use it with `scopes/dvns-expanded.policy.toml` for the wider build.
 
@@ -247,6 +270,14 @@ available. The receipt must identify the same configured repository and artifact
 path. An unverified publication, a stale expected digest or a concurrent
 configuration edit fails explicitly. Failed verification preserves the active
 pin. The publisher records a successful result in `build/activation-*/activation.json`.
+
+For archived providers, also pass `--snapshot-publications path/to/snapshots.json`.
+That JSON object maps provider identifiers to the corresponding verified
+publication receipt paths. Activation verifies the snapshot manifests against
+the new index and all expected source responses before changing either pin.
+An active archived provider requires explicit snapshot publication receipts on
+the next activation. The plugin downloads observation shards only after the user
+confirms a selection, retaining the original source time when upstream data changes.
 
 Publishing and activation are explicit operator steps. Repeat the build,
 publication and activation before the source evidence expires; publishing to

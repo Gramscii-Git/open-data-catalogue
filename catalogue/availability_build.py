@@ -55,7 +55,7 @@ def captured_scope(scope_path, inventory_path, inventory_sha256):
     return specification, inventories
 
 
-def prepare(directory, config, scope_path, policy_path, harvester, *, capture=None):
+def prepare(directory, config, scope_path, policy_path, harvester, *, capture=None, snapshot_providers=(), snapshot_shard_prefix_length=None):
     if capture is None:
         specification, inventories = resolve(json.loads(scope_path.read_bytes()))
         source_arguments = []
@@ -68,6 +68,13 @@ def prepare(directory, config, scope_path, policy_path, harvester, *, capture=No
     (directory / "inventories.json").write_text(json.dumps(inventories, indent=2), encoding="utf-8")
     policy = policy_from(policy_path)
     requested_providers = {row["provider"] for row in specification["datasets"]}
+    if (len(set(snapshot_providers)) != len(snapshot_providers) or not set(snapshot_providers) <= requested_providers
+            or bool(snapshot_providers) != (snapshot_shard_prefix_length is not None)):
+        raise ValueError("source snapshots require distinct scoped providers and an explicit shard prefix length")
+    for provider in snapshot_providers:
+        source_arguments.extend(("--snapshot-provider", provider))
+    if snapshot_shard_prefix_length is not None:
+        source_arguments.extend(("--snapshot-shard-prefix-length", str(snapshot_shard_prefix_length)))
     if requested_providers != set(policy["providers"]):
         raise ValueError("availability scope and validation policy require different providers")
     contract = harvester(config, "--availability-contract", capture=True).strip()

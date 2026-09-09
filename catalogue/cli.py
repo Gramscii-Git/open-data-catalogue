@@ -160,6 +160,13 @@ def main(argv=None) -> int:
     build_availability.add_argument("--capture-sha256")
     build_availability.add_argument("--inventory-evidence", type=Path)
     build_availability.add_argument("--inventory-sha256")
+    build_availability.add_argument("--snapshot-provider", action="append", default=[])
+    build_availability.add_argument("--snapshot-shard-prefix-length", type=int)
+    snapshots = commands.add_parser("publish-snapshots", help="validate and publish licensed immutable source projections")
+    snapshots.add_argument("--directory", type=Path, required=True)
+    snapshots.add_argument("--availability", type=Path, required=True)
+    snapshots.add_argument("--destination", required=True)
+    snapshots.add_argument("--policy", type=Path, required=True)
     publish_availability = commands.add_parser(
         "publish-availability", help="revalidate and publish a completed index in its own repository directory"
     )
@@ -172,6 +179,7 @@ def main(argv=None) -> int:
     )
     activate_availability.add_argument("--publication", type=Path, required=True)
     activate_availability.add_argument("--expect-sha256", required=True)
+    activate_availability.add_argument("--snapshot-publications", type=Path)
     documentation = commands.add_parser("publish-documentation", help="verify published bytes and update the Hub card without replacing archives")
     documentation.add_argument("--catalogue-archive", type=Path, required=True)
     documentation.add_argument("--catalogue-revision", required=True)
@@ -191,10 +199,11 @@ def main(argv=None) -> int:
         config_path = args.config.resolve()
         config = load(config_path)
         if args.command == "activate-availability":
+            source_arguments = ["--snapshot-publications", str(args.snapshot_publications.resolve())] if args.snapshot_publications is not None else []
             with publication_lock(config["deployment"]["build"]):
                 result = json.loads(harvester(
                     config, "activate-availability", "--publication", str(args.publication.resolve()),
-                    "--expect-sha256", args.expect_sha256, capture=True,
+                    "--expect-sha256", args.expect_sha256, *source_arguments, capture=True,
                 ))
                 if not isinstance(result, dict) or result.get("activated") is not True:
                     raise ValueError("consumer did not confirm availability activation")
@@ -212,6 +221,13 @@ def main(argv=None) -> int:
                                       args.availability_archive, args.availability_revision, args.policy, args.readme_template,
                                       args.viewer_config)
                 print(json.dumps(publish_documentation(directory, config), indent=2))
+            return 0
+        if args.command == "publish-snapshots":
+            from .snapshots import publish
+            with publication_lock(config["deployment"]["build"]):
+                directory = Path(tempfile.mkdtemp(prefix="snapshots-publication-", dir=config["deployment"]["build"]))
+                print(f"publication directory: {directory}", file=sys.stderr, flush=True)
+                print(json.dumps(publish(args.directory, args.availability, directory, args.destination, config, args.policy), indent=2))
             return 0
         if args.command == "publish-availability":
             from .availability_publish import publish
@@ -249,7 +265,8 @@ def main(argv=None) -> int:
             with publication_lock(config["deployment"]["build"]):
                 directory = Path(tempfile.mkdtemp(prefix="availability-", dir=config["deployment"]["build"]))
                 report = prepare_availability(directory, config, args.scope, args.policy, harvester,
-                                              capture=captured if args.capture is not None else None)
+                                              capture=captured if args.capture is not None else None,
+                                              snapshot_providers=args.snapshot_provider, snapshot_shard_prefix_length=args.snapshot_shard_prefix_length)
             print(json.dumps({"directory": str(directory), "report": report}, indent=2))
             return 0
         with publication_lock(config["deployment"]["build"]):
