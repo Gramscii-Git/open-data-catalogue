@@ -85,6 +85,19 @@ class DocumentationTests(unittest.TestCase):
             self.prepare()
         self.assertFalse((self.root / "publication/README.md").exists())
 
+    def test_source_labels_publish_without_invented_calendar_bounds(self):
+        content = tables()
+        content["datasets.jsonl"][0]["period_kind"] = "source-label"
+        period = {"id": "2026/27", "label": "School year 2026/27", "start": None, "end": None}
+        content["combinations.jsonl"][0]["period"] = period
+        archive_at(self.availability, content)
+        self.payloads["availability.tar.gz"] = self.availability.read_bytes()
+        directory = self.prepare()
+        row = json.loads((directory / "viewer/availability_combinations.jsonl").read_text())
+        self.assertEqual(row["period"], period["id"])
+        self.assertIsNone(row["period_start"])
+        self.assertIsNone(row["period_end"])
+
     def test_viewer_selects_only_typed_tables_and_preserves_source_rows(self):
         directory = self.prepare()
         text = (directory / "README.md").read_text()
