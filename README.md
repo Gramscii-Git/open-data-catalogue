@@ -209,9 +209,30 @@ authorize replacing that archive. Availability counts, periods, territory counts
 and evidence expiries come from the validated index.
 
 SDG's indexed-selection contract requires its own explicit pin, budgets, metadata
-read allowlist and native argument bindings. Installing new reader code and
-changing deployment pins are separate from publishing on the Hub; source or index
-changes require renewed verification and confirmation.
+read allowlist and native argument bindings. After publication, activate the
+verified receipt in the SDG deployment selected by `deployment.harvester` and
+`deployment.environment_file`:
+
+```sh
+./update --config publisher.local.toml activate-availability \
+  --publication build/publication-REPLACE_WITH_BUILD_ID/publication.json \
+  --expect-sha256 CURRENT_CONSUMER_ARCHIVE_SHA256
+```
+
+The consumer downloads the immutable archive, verifies its bytes, imports it
+under the configured storage limits and checks that every configured dataset is
+present, unexpired and has the required axes. Only then does it atomically update
+the deployment's `availability-selection.yaml` and make the imported index
+available. The receipt must identify the same configured repository and artifact
+path. An unverified publication, a stale expected digest or a concurrent
+configuration edit fails explicitly. Failed verification preserves the active
+pin. The publisher records a successful result in `build/activation-*/activation.json`.
+
+Publishing and activation are explicit operator steps. Repeat the build,
+publication and activation before the source evidence expires; publishing to
+the Hub alone does not refresh a deployment. Source or index changes require
+renewed selection verification and confirmation. Installing new reader code is
+separate from activating a new data revision.
 
 ### Discovery snapshot publication
 
