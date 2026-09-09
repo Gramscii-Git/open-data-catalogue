@@ -7,7 +7,7 @@ from itertools import product
 from pathlib import Path
 
 from .availability import inspect_availability, policy_from
-from .availability_scope import resolve
+from .availability_scope import resolve, verify_inventory_scope
 
 
 def verify_build(archive, exported, specification, policy):
@@ -43,8 +43,26 @@ def verify_build(archive, exported, specification, policy):
     return report
 
 
-def prepare(directory, config, scope_path, policy_path, harvester):
-    specification, inventories = resolve(json.loads(scope_path.read_bytes()))
+def captured_scope(scope_path, inventory_path, inventory_sha256):
+    specification = json.loads(scope_path.read_bytes())
+    if set(specification) != {"schema_version", "limits", "datasets"} or specification["schema_version"] != 1:
+        raise ValueError("captured-source reconstruction requires an explicitly resolved version-1 scope")
+    evidence = inventory_path.read_bytes()
+    if hashlib.sha256(evidence).hexdigest() != inventory_sha256:
+        raise ValueError("captured inventory evidence differs from its explicit digest pin")
+    inventories = json.loads(evidence)
+    verify_inventory_scope(specification, inventories)
+    return specification, inventories
+
+
+def prepare(directory, config, scope_path, policy_path, harvester, *, capture=None):
+    if capture is None:
+        specification, inventories = resolve(json.loads(scope_path.read_bytes()))
+        source_arguments = []
+    else:
+        specification, inventories = captured_scope(scope_path, capture["inventory_evidence"], capture["inventory_sha256"])
+        source_arguments = ["--capture", str(capture["directory"]), "--capture-manifest", str(capture["manifest"]),
+                            "--capture-sha256", capture["sha256"]]
     resolved_path = directory / "scope.json"
     resolved_path.write_text(json.dumps(specification, indent=2), encoding="utf-8")
     (directory / "inventories.json").write_text(json.dumps(inventories, indent=2), encoding="utf-8")
@@ -57,7 +75,7 @@ def prepare(directory, config, scope_path, policy_path, harvester):
         raise ValueError("harvester availability construction contract must be 1")
     produced = json.loads(harvester(
         config, "index-availability", "--spec", str(resolved_path.resolve()),
-        "--to", str(directory / "source"), capture=True,
+        "--to", str(directory / "source"), *source_arguments, capture=True,
     ))
     archive = directory / "source" / "availability.tar.gz"
     if Path(produced["archive"]).resolve() != archive.resolve():

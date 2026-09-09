@@ -139,6 +139,26 @@ declares per-response consistency: this is not an upstream dataset snapshot or a
 source-version guarantee, and there is no automatic resume.
 `build-availability` makes no upload and does not change a deployment's reader pin.
 
+An operator can explicitly reconstruct an index from retained native responses
+after correcting its projection. Seal the response directory with the harvester's
+`seal-availability-capture --responses <directory> --to <manifest>` command and
+retain the returned manifest digest. Pass the resolved version-1 scope and its
+original inventory evidence to the publisher:
+
+```sh
+./update --config publisher.local.toml build-availability \
+  --scope build/resolved-scope.json --policy scopes/verified-selection.policy.toml \
+  --capture build/source/responses --capture-manifest build/capture.json \
+  --capture-sha256 <manifest-sha256> \
+  --inventory-evidence build/inventories.json --inventory-sha256 <inventory-sha256>
+```
+
+All capture arguments are required together. This path reads neither source
+observations nor the municipality inventory from the network. It verifies the
+pinned capture and inventory, retains original receipts and evidence expiry,
+and refuses missing requests or changed bytes. It writes a new complete archive;
+it does not continue a partially written index or renew source freshness.
+
 `scopes/dvns-expanded.json` declares the five-dataset scope described above;
 use it with `scopes/dvns-expanded.policy.toml` for the wider build.
 

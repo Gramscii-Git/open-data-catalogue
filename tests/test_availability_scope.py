@@ -1,15 +1,18 @@
 """Complete inventory expansion against a native, isolated HTTPS source."""
 
 import copy
+import hashlib
 import http.server
 import json
 import os
 import ssl
+import tempfile
 import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from catalogue.availability_build import captured_scope
 from catalogue.availability_scope import resolve, verify_inventory_scope
 
 TLS = Path(__file__).parent / "fixtures/tls"
@@ -91,6 +94,25 @@ class ScopeTests(unittest.TestCase):
         resolved["datasets"][0]["varying"]["istat_code"] = ["000001"]
         with self.assertRaisesRegex(ValueError, "complete source inventory"):
             verify_inventory_scope(resolved, evidence)
+
+    def test_pinned_inventory_reconstruction_performs_no_new_source_read(self):
+        resolved, evidence = resolve(self.spec)
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            scope, receipt = directory / "scope.json", directory / "inventory.json"
+            scope.write_text(json.dumps(resolved))
+            receipt.write_text(json.dumps(evidence))
+            digest = hashlib.sha256(receipt.read_bytes()).hexdigest()
+            self.calls.clear()
+            self.assertEqual(captured_scope(scope, receipt, digest), (resolved, evidence))
+            self.assertEqual(self.calls, [])
+            with self.assertRaisesRegex(ValueError, "digest pin"):
+                captured_scope(scope, receipt, "0" * 64)
+            resolved["datasets"][0]["varying"]["istat_code"].pop()
+            scope.write_text(json.dumps(resolved))
+            with self.assertRaisesRegex(ValueError, "complete source inventory"):
+                captured_scope(scope, receipt, digest)
+            self.assertEqual(self.calls, [])
 
     def test_resource_limits_are_enforced(self):
         for name in ("max_bytes", "max_records"):

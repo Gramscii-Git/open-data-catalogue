@@ -367,7 +367,7 @@
         }
       },
       "when": "always",
-      "period_representation": "source-label",
+      "period_representation": "snapshot",
       "argument_axes": {
         "istat_code": "territory"
       },

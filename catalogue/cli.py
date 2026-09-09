@@ -155,6 +155,11 @@ def main(argv=None) -> int:
     )
     build_availability.add_argument("--scope", type=Path, required=True)
     build_availability.add_argument("--policy", type=Path, required=True)
+    build_availability.add_argument("--capture", type=Path)
+    build_availability.add_argument("--capture-manifest", type=Path)
+    build_availability.add_argument("--capture-sha256")
+    build_availability.add_argument("--inventory-evidence", type=Path)
+    build_availability.add_argument("--inventory-sha256")
     publish_availability = commands.add_parser(
         "publish-availability", help="revalidate and publish a completed index in its own repository directory"
     )
@@ -237,9 +242,14 @@ def main(argv=None) -> int:
         if args.command == "build-availability":
             from .availability_build import prepare as prepare_availability
 
+            captured = {"directory": args.capture, "manifest": args.capture_manifest, "sha256": args.capture_sha256,
+                        "inventory_evidence": args.inventory_evidence, "inventory_sha256": args.inventory_sha256}
+            if any(value is not None for value in captured.values()) and not all(value is not None for value in captured.values()):
+                raise ValueError("captured-source builds require response directory, manifest, inventory evidence and both digest pins")
             with publication_lock(config["deployment"]["build"]):
                 directory = Path(tempfile.mkdtemp(prefix="availability-", dir=config["deployment"]["build"]))
-                report = prepare_availability(directory, config, args.scope, args.policy, harvester)
+                report = prepare_availability(directory, config, args.scope, args.policy, harvester,
+                                              capture=captured if args.capture is not None else None)
             print(json.dumps({"directory": str(directory), "report": report}, indent=2))
             return 0
         with publication_lock(config["deployment"]["build"]):
