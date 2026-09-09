@@ -7,11 +7,14 @@ release policy, archive validation, publication and publication receipts.
 [Boundaries](https://github.com/Gramscii-Git/boundaries) is the separate geographic
 asset repository; matching territorial codes and vintages must be checked.
 
-The [published availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/de4c3addcb1e808bc229d0be90a5f7fc3d9567ef/availability)
-contains 72,482 joint combinations for five DVNS datasets and 21 Cruscotto domains across 65 completed
-partitions. COFOG covers 34 geographies for 2014–2024; four OpenCivitas annual
-datasets cover Calabria, Lazio and Lombardia. Cruscotto covers Lecce and Lecce
-nei Marsi, with 132 observed and nine missing combinations. Source evidence has an explicit
+The [published availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/a6c77126656f5b4fc3ae782268f14822c0039919/availability)
+contains 888,000 joint combinations for five DVNS datasets and 24 Cruscotto domains
+across 189,575 completed partitions. COFOG covers 34 geographies for 2014–2024;
+four OpenCivitas annual datasets cover all 15 ordinary-statute regions. Cruscotto
+covers the complete 7,896-municipality inventory. Its
+[licensed source snapshots](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/e55e80da98d9e801f54d25efcc5d911f630c78a6/source-snapshots)
+preserve the original responses in 256 immutable shards, with source receipts,
+licences and attribution. Source evidence has an explicit
 24-hour selection lifetime; the archived evidence remains reproducible afterwards.
 The seven-table discovery archive remains a separate, older release with recorded
 quality defects. The [Hub card](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue)
@@ -139,6 +142,49 @@ declares per-response consistency: this is not an upstream dataset snapshot or a
 source-version guarantee, and there is no automatic resume.
 `build-availability` makes no upload and does not change a deployment's reader pin.
 
+An operator can explicitly reconstruct an index from retained native responses
+after correcting its projection. Seal the response directory with the harvester's
+`seal-availability-capture --responses <directory> --to <manifest>` command and
+retain the returned manifest digest. Pass the resolved version-1 scope and its
+original inventory evidence to the publisher:
+
+```sh
+./update --config publisher.local.toml build-availability \
+  --scope build/resolved-scope.json --policy scopes/verified-selection.policy.toml \
+  --capture build/source/responses --capture-manifest build/capture.json \
+  --capture-sha256 <manifest-sha256> \
+  --inventory-evidence build/inventories.json --inventory-sha256 <inventory-sha256>
+```
+
+All capture arguments are required together. This path reads neither source
+observations nor the municipality inventory from the network. It verifies the
+pinned capture and inventory, retains original receipts and evidence expiry,
+and refuses missing requests or changed bytes. It writes a new complete archive;
+it does not continue a partially written index or renew source freshness.
+
+Mutable source photographs require an explicit archived source mode. Add
+`--snapshot-provider cruscotto --snapshot-shard-prefix-length 2` to the build
+command to stage licensed response projections in `source/snapshots` alongside
+the metadata archive. Both snapshot arguments are required together. Prefix
+length controls the source-digest grouping; a shard exceeding the declared
+response budget fails the build. Source timestamps and HTTP receipts remain
+unchanged. The manifest records licence, attribution, source URL and permitted
+fields for each archived dataset; undeclared domains are excluded.
+
+Publish the source snapshots independently, linked to the completed index:
+
+```sh
+./update --config publisher.local.toml publish-snapshots \
+  --directory build/availability-BUILD_ID/source/snapshots \
+  --availability build/availability-BUILD_ID/availability.tar.gz \
+  --destination source-snapshots --policy scopes/verified-selection.policy.toml
+```
+
+The publisher verifies the index, every source receipt, complete provider scope,
+projection rights, file inventory and content digest before upload, then reads
+back every published file at its immutable revision. These snapshots contain
+licensed source values; the availability archive contains only selection metadata.
+
 `scopes/dvns-expanded.json` declares the five-dataset scope described above;
 use it with `scopes/dvns-expanded.policy.toml` for the wider build.
 
@@ -227,6 +273,14 @@ available. The receipt must identify the same configured repository and artifact
 path. An unverified publication, a stale expected digest or a concurrent
 configuration edit fails explicitly. Failed verification preserves the active
 pin. The publisher records a successful result in `build/activation-*/activation.json`.
+
+For archived providers, also pass `--snapshot-publications path/to/snapshots.json`.
+That JSON object maps provider identifiers to the corresponding verified
+publication receipt paths. Activation verifies the snapshot manifests against
+the new index and all expected source responses before changing either pin.
+An active archived provider requires explicit snapshot publication receipts on
+the next activation. The plugin downloads observation shards only after the user
+confirms a selection, retaining the original source time when upstream data changes.
 
 Publishing and activation are explicit operator steps. Repeat the build,
 publication and activation before the source evidence expires; publishing to

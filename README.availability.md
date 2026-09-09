@@ -34,6 +34,13 @@ Consumers must reject expired evidence and changed source definitions. The
 index certifies the recorded responses; it does not establish a stable snapshot
 of the upstream source or authorize resumption across source changes.
 
+A deployment can separately pin licensed source snapshots produced from the same
+responses. Their manifest identifies this availability archive by digest, binds
+every original response to an immutable shard, and records source rights and
+projection fields. Values are downloaded from those explicit snapshots only
+after confirmation; they are not included in this metadata archive. Missing or
+changed snapshot bytes must fail acquisition without substituting current data.
+
 This artifact has its own manifest and checksums. It does not certify or replace
 the separate discovery catalogue. Source rights remain those of each original
 dataset; the index does not grant additional rights to measurement values.
