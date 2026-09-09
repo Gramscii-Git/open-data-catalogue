@@ -162,6 +162,11 @@ def main(argv=None) -> int:
     publish_availability.add_argument("--destination", required=True)
     publish_availability.add_argument("--policy", type=Path, required=True)
     publish_availability.add_argument("--readme-template", type=Path, required=True)
+    activate_availability = commands.add_parser(
+        "activate-availability", help="verify and activate a published index in the configured SDG deployment"
+    )
+    activate_availability.add_argument("--publication", type=Path, required=True)
+    activate_availability.add_argument("--expect-sha256", required=True)
     documentation = commands.add_parser("publish-documentation", help="verify published bytes and update the Hub card without replacing archives")
     documentation.add_argument("--catalogue-archive", type=Path, required=True)
     documentation.add_argument("--catalogue-revision", required=True)
@@ -180,6 +185,18 @@ def main(argv=None) -> int:
     try:
         config_path = args.config.resolve()
         config = load(config_path)
+        if args.command == "activate-availability":
+            with publication_lock(config["deployment"]["build"]):
+                result = json.loads(harvester(
+                    config, "activate-availability", "--publication", str(args.publication.resolve()),
+                    "--expect-sha256", args.expect_sha256, capture=True,
+                ))
+                if not isinstance(result, dict) or result.get("activated") is not True:
+                    raise ValueError("consumer did not confirm availability activation")
+                directory = Path(tempfile.mkdtemp(prefix="activation-", dir=config["deployment"]["build"]))
+                (directory / "activation.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+                print(json.dumps({"directory": str(directory), **result}, indent=2))
+            return 0
         if args.command == "publish-documentation":
             from .documentation import prepare as prepare_documentation
             from .documentation import publish as publish_documentation
