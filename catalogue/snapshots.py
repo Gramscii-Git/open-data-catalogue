@@ -58,7 +58,7 @@ def inspect(directory, availability, policy):
         if assets.setdefault(asset["sha256"], asset["bytes"]) != asset["bytes"]:
             raise ValueError("source snapshot asset has inconsistent sizes")
     filenames = {f"responses/{digest}.json" for digest in assets}
-    if {str(path.relative_to(directory)) for path in directory.rglob("*") if path.is_file()} != filenames | {"manifest.json"}:
+    if {path.relative_to(directory).as_posix() for path in directory.rglob("*") if path.is_file()} != filenames | {"manifest.json"}:
         raise ValueError("source snapshot directory has missing or undeclared files")
     seen, size = set(), len(body)
     for digest, count in assets.items():
