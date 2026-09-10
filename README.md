@@ -261,13 +261,17 @@ verified receipt in the SDG deployment selected by `deployment.harvester` and
 
 ```sh
 ./update --config publisher.local.toml activate-availability \
+  --index national \
   --publication build/publication-REPLACE_WITH_BUILD_ID/publication.json \
   --expect-sha256 CURRENT_CONSUMER_ARCHIVE_SHA256
 ```
 
 The consumer downloads the immutable archive, verifies its bytes, imports it
-under the configured storage limits and checks that every configured dataset is
-present, unexpired and has the required axes. Only then does it atomically update
+under the configured storage limits and checks that every dataset bound to
+`--index` is present, unexpired and has the required axes. The schema-2 consumer
+configuration names each dataset's index explicitly and keeps snapshot pins
+inside that index. Other indexes and their bindings remain unchanged. Only then
+does activation atomically update
 the deployment's `availability-selection.yaml` and make the imported index
 available. The receipt must identify the same configured repository and artifact
 path. An unverified publication, a stale expected digest or a concurrent

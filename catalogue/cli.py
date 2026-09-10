@@ -178,6 +178,7 @@ def main(argv=None) -> int:
         "activate-availability", help="verify and activate a published index in the configured SDG deployment"
     )
     activate_availability.add_argument("--publication", type=Path, required=True)
+    activate_availability.add_argument("--index", required=True)
     activate_availability.add_argument("--expect-sha256", required=True)
     activate_availability.add_argument("--snapshot-publications", type=Path)
     documentation = commands.add_parser("publish-documentation", help="verify published bytes and update the Hub card without replacing archives")
@@ -202,7 +203,7 @@ def main(argv=None) -> int:
             source_arguments = ["--snapshot-publications", str(args.snapshot_publications.resolve())] if args.snapshot_publications is not None else []
             with publication_lock(config["deployment"]["build"]):
                 result = json.loads(harvester(
-                    config, "activate-availability", "--publication", str(args.publication.resolve()),
+                    config, "activate-availability", "--index", args.index, "--publication", str(args.publication.resolve()),
                     "--expect-sha256", args.expect_sha256, *source_arguments, capture=True,
                 ))
                 if not isinstance(result, dict) or result.get("activated") is not True:
