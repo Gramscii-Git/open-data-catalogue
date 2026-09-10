@@ -153,12 +153,17 @@ def main(argv=None) -> int:
     activate_availability.add_argument("--index", required=True)
     activate_availability.add_argument("--expect-sha256", required=True)
     activate_availability.add_argument("--snapshot-publications", type=Path)
-    documentation = commands.add_parser("publish-documentation", help="verify published bytes and update the Hub card without replacing archives")
-    documentation.add_argument("--catalogue-archive", type=Path, required=True)
-    documentation.add_argument("--catalogue-revision", required=True)
-    documentation.add_argument("--availability-releases", type=Path, required=True)
-    documentation.add_argument("--readme-template", type=Path, required=True)
-    documentation.add_argument("--viewer-config", type=Path, required=True)
+    for name in ("publish-documentation", "publish-reported-documentation"):
+        documentation = commands.add_parser(name, help="verify explicit catalogue evidence and update the Hub card without replacing archives")
+        if name == "publish-documentation":
+            documentation.add_argument("--catalogue-archive", type=Path, required=True)
+            documentation.add_argument("--catalogue-revision", required=True)
+        else:
+            documentation.add_argument("--catalogue-evidence", type=Path, required=True)
+            documentation.add_argument("--catalogue-status-artifact", required=True)
+        documentation.add_argument("--availability-releases", type=Path, required=True)
+        documentation.add_argument("--readme-template", type=Path, required=True)
+        documentation.add_argument("--viewer-config", type=Path, required=True)
     for name in ("prepare", "refresh", "publish", "release"):
         commands.add_parser(name)
     for name, help_text in (
@@ -211,16 +216,22 @@ def main(argv=None) -> int:
                 (directory / "activation.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
                 print(json.dumps({"directory": str(directory), **result}, indent=2))
             return 0
-        if args.command == "publish-documentation":
+        if args.command in {"publish-documentation", "publish-reported-documentation"}:
             from .documentation import prepare as prepare_documentation
+            from .documentation import prepare_reported
             from .documentation import publish as publish_documentation
             with publication_lock(config["deployment"]["build"]):
                 directory = Path(tempfile.mkdtemp(prefix="documentation-", dir=config["deployment"]["build"]))
                 print(f"documentation directory: {directory}", file=sys.stderr, flush=True)
-                prepare_documentation(directory, config, args.catalogue_archive, args.catalogue_revision,
-                                      args.availability_releases, args.readme_template,
-                                      args.viewer_config)
-                print(json.dumps(publish_documentation(directory, config), indent=2))
+                if args.command == "publish-documentation":
+                    status_artifact = None
+                    prepare_documentation(directory, config, args.catalogue_archive, args.catalogue_revision,
+                                          args.availability_releases, args.readme_template, args.viewer_config)
+                else:
+                    status_artifact = args.catalogue_status_artifact
+                    prepare_reported(directory, config, args.catalogue_evidence, status_artifact,
+                                     args.availability_releases, args.readme_template, args.viewer_config)
+                print(json.dumps(publish_documentation(directory, config, status_artifact=status_artifact), indent=2))
             return 0
         if args.command == "publish-snapshots":
             from .snapshots import publish

@@ -107,12 +107,13 @@ class UpdateTests(unittest.TestCase):
             "archive": str(self.archive), "publication": availability_pub["path"], "activation": str(self.activation),
             "policy": str(self.policy), "destination": "availability",
         }}}))
-        self.plan = {"schema_version": 1, "state": str(self.state), "cadence": {
+        self.plan = {"schema_version": 2, "state": str(self.state), "cadence": {
             "interval_seconds": 3600, "maximum_run_seconds": 300, "minimum_remaining_seconds": 60,
         }, "discovery": {"action": "retain"}, "indexes": {"national": {
             "scope": str(self.scope), "policy": str(self.policy), "destination": "availability",
             "readme_template": str(ROOT / "README.availability.md"), "snapshots": None,
-        }}, "documentation": {"readme_template": str(ROOT / "README.hub.md"), "viewer_config": str(self.viewer)}}
+        }}, "documentation": {"readme_template": str(ROOT / "README.hub.md"), "viewer_config": str(self.viewer),
+                              "catalogue": {"mode": "current_validation"}}}
         self.plan_path = self.root / "plan.json"
         self.harvester_calls = []
         self.fail_activation = False
@@ -211,6 +212,80 @@ class UpdateTests(unittest.TestCase):
         self.assertIn(publication["revision"], (directory / "documentation/README.md").read_text())
         self.assertEqual(len([call for call in self.harvester_calls if call[0] == "availability-status"]), 2)
         self.assertTrue(any(path.endswith("/viewer/national_combinations.jsonl") for path in self.requests))
+
+    def reported_catalogue(self):
+        from test_documentation_evidence import evidence_pin, historical_archive
+
+        from catalogue.archive import inspect_archive
+
+        report = inspect_archive(self.catalogue, self.config["quality"])
+        historical = self.root / "historical-catalogue.tar.gz"
+        shutil.copyfile(self.catalogue, historical)
+        self.catalogue = historical
+        report = historical_archive(self.catalogue, report)
+        catalogue = self.initial_publication(self.catalogue, self.config["hub"]["archive"], "d" * 40)
+        self.verification = self.root / "historical-catalogue-verification.json"
+        verify_catalogue(self.config, self.catalogue, catalogue["revision"], catalogue["sha256"],
+                         catalogue["bytes"], self.verification)
+        state = json.loads(self.state.read_text())
+        state["catalogue"] = {"archive": str(self.catalogue), "verification": str(self.verification)}
+        self.state.write_text(json.dumps(state))
+        quality = self.root / "historical-quality.json"
+        quality.write_text(json.dumps({"accepted": True, "policy": report["policy"], "report": report}, indent=2))
+        self.initial_publication(quality, "catalogue-quality.json", "c" * 40)
+        evidence = self.root / "catalogue-evidence.json"
+        evidence.write_text(json.dumps({"schema_version": 1,
+            "archive": evidence_pin(self.catalogue, self.config["hub"], "d" * 40, self.config["hub"]["archive"]),
+            "quality_report": evidence_pin(quality, self.config["hub"], "c" * 40, "catalogue-quality.json")}))
+        self.plan["documentation"].update(readme_template=str(ROOT / "README.hub.reported.md"), catalogue={
+            "mode": "published_report", "evidence": str(evidence), "status_artifact": "catalogue-status.json"})
+        return quality, evidence
+
+    def test_reported_catalogue_run_preserves_report_and_publishes_separate_status(self):
+        quality, _ = self.reported_catalogue()
+        original = quality.read_bytes()
+        directory, result = self.execute()
+        self.assertTrue(result["complete"])
+        self.assertEqual((directory / "documentation/catalogue-quality.json").read_bytes(), original)
+        status = json.loads((directory / "documentation/catalogue-status.json").read_text())
+        self.assertFalse(status["admitted"])
+        self.assertEqual(status["current_quality_evaluation"], "not_performed")
+        self.assertTrue((directory / "catalogue-evidence/result.json").exists())
+        self.assertTrue(any(path.endswith("/catalogue-status.json") for path in self.requests))
+
+    def test_reported_catalogue_tamper_stops_before_source_collection_or_upload(self):
+        self.reported_catalogue()
+        remote = self.hub / "datasets" / self.config["hub"]["repository"] / "resolve" / ("c" * 40) / "catalogue-quality.json"
+        remote.write_bytes(b"tampered")
+        original = self.state.read_bytes()
+        with self.assertRaisesRegex(RuntimeError, "SHA-256"):
+            self.execute()
+        self.assertEqual(self.state.read_bytes(), original)
+        self.assertEqual(self.harvester_calls, [("availability-status",)])
+        self.assertFalse((self.hub / "uploads.jsonl").exists())
+
+    def test_reported_evidence_must_match_retained_state_and_discovery_action(self):
+        _, evidence = self.reported_catalogue()
+        original = json.loads(evidence.read_text())
+        changed = json.loads(evidence.read_text())
+        changed["archive"]["revision"] = "e" * 40
+        changed["archive"]["url"] = changed["archive"]["url"].replace("d" * 40, "e" * 40)
+        evidence.write_text(json.dumps(changed))
+        with self.assertRaisesRegex(ValueError, "differs from the retained update state"):
+            self.configured()
+        evidence.write_text(json.dumps(original))
+        self.plan["discovery"]["action"] = "release"
+        with self.assertRaisesRegex(ValueError, "requires discovery action retain"):
+            self.configured()
+
+    def test_update_plan_requires_explicit_documentation_mode_without_schema_fallback(self):
+        self.plan["schema_version"] = 1
+        with self.assertRaisesRegex(ValueError, "schema must be 2"):
+            self.configured()
+        self.plan["schema_version"] = 2
+        del self.plan["documentation"]["catalogue"]
+        with self.assertRaisesRegex(ValueError, "update documentation must contain exactly"):
+            self.configured()
 
     def test_changed_consumer_pin_fails_before_collection_or_upload(self):
         original = self.state.read_bytes()

@@ -388,6 +388,36 @@ current strict policy; a failed catalogue policy remains visible and does not
 authorize replacing that archive. Availability counts, periods, territory counts
 and evidence expiries come from the validated index.
 
+An existing discovery publication can have a schema that the current export
+contract refuses. Document its original measured report explicitly instead of
+treating it as a new export or silently changing inspectors:
+
+```sh
+./update --config publisher.local.toml publish-reported-documentation \
+  --catalogue-evidence catalogue-evidence.local.json \
+  --catalogue-status-artifact catalogue-status.json \
+  --availability-releases documentation-releases.local.json \
+  --readme-template README.hub.reported.md --viewer-config viewer.json
+```
+
+The evidence JSON has exactly `schema_version: 1`, `archive` and `quality_report`.
+Each pin requires `path`, `revision`, `url`, `sha256` and positive integer `bytes`.
+Paths are relative to the evidence file; URLs must identify the configured HF
+repository's discovery archive and `catalogue-quality.json` at their full commit
+hashes. The report must identify the exact archive, manifest and historical
+policy. Both files are read back at their immutable revisions before staging.
+Unknown fields, mutable revisions, changed bytes and inconsistent identities
+fail explicitly.
+
+This command preserves the original `catalogue-quality.json` bytes and adds the
+explicitly named status artifact. The status records the two immutable pins,
+current policy and its digest, required/observed snapshot schema,
+`current_quality_evaluation: not_performed` and `admitted: false`. Matching the
+current schema alone is not admission. The separate template attributes the
+measurements to the original report and links the current status. The ordinary
+`publish-documentation` and every new export remain subject to the strict current
+inspector; an inspector failure never switches modes.
+
 SDG's indexed-selection contract requires its own explicit pin, budgets, metadata
 read allowlist and native argument bindings. After publication, activate the
 verified receipt in the SDG deployment selected by `deployment.harvester` and
@@ -464,6 +494,15 @@ discovery archive. This proof is separate from the historical upload receipt and
 does not claim that a publication occurred during verification. Configuration
 paths are relative to their owning file. State schema 1 is rejected; there is no
 automatic migration or reconstruction from `main`.
+
+Update plan schema 2 requires `documentation.catalogue` with an explicit `mode`.
+`current_validation` accepts exactly that field and uses the current inspector.
+`published_report` also requires `evidence` and `status_artifact`, and is valid
+only with discovery action `retain`. Its archive pin must equal the retained
+state's verified archive. The run verifies both evidence publications before
+collecting any source data and repeats verification when preparing the card.
+Plan schema 1 or missing mode is rejected; existing operational plans must be
+reviewed explicitly rather than inferred or upgraded automatically.
 
 Create the discovery proof from an explicitly pinned immutable revision, local
 archive, expected checksum and byte count:

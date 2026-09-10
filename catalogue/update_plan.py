@@ -7,6 +7,8 @@ from pathlib import Path, PurePosixPath
 
 from .availability import policy_from
 from .config import fields, text
+from .documentation_evidence import read as read_evidence
+from .documentation_evidence import status_path
 from .publish import file_url
 from .receipts import read_verification
 from .viewer import load as load_viewer
@@ -81,8 +83,8 @@ def load_state(path, config):
 def load(path, config):
     plan = json.loads(path.read_bytes())
     fields(plan, {"schema_version", "state", "cadence", "discovery", "indexes", "documentation"}, "update plan")
-    if type(plan["schema_version"]) is not int or plan["schema_version"] != 1:
-        raise ValueError("update plan schema must be 1")
+    if type(plan["schema_version"]) is not int or plan["schema_version"] != 2:
+        raise ValueError("update plan schema must be 2 with an explicit catalogue documentation mode")
     paths(plan, ("state",), path.parent)
     cadence = plan["cadence"]
     fields(cadence, {"interval_seconds", "maximum_run_seconds", "minimum_remaining_seconds"}, "update cadence")
@@ -94,9 +96,24 @@ def load(path, config):
     if plan["discovery"]["action"] not in {"retain", "publish", "release"}:
         raise ValueError("discovery action must be retain, publish or release")
     document = plan["documentation"]
-    fields(document, {"readme_template", "viewer_config"}, "update documentation")
+    fields(document, {"readme_template", "viewer_config", "catalogue"}, "update documentation")
     paths(document, ("readme_template", "viewer_config"), path.parent)
     state, _ = load_state(Path(plan["state"]), config)
+    source = document["catalogue"]
+    if not isinstance(source, dict) or source.get("mode") not in {"current_validation", "published_report"}:
+        raise ValueError("catalogue documentation requires an explicit current_validation or published_report mode")
+    expected = {"mode"} if source["mode"] == "current_validation" else {"mode", "evidence", "status_artifact"}
+    fields(source, expected, "catalogue documentation")
+    if source["mode"] == "published_report":
+        if plan["discovery"]["action"] != "retain":
+            raise ValueError("published catalogue evidence requires discovery action retain")
+        paths(source, ("evidence",), path.parent)
+        status_path(source["status_artifact"])
+        evidence = read_evidence(Path(source["evidence"]), config, verify_remote=False)
+        verified = read_verification(Path(state["catalogue"]["verification"]), config["hub"], config["hub"]["archive"])
+        if (evidence["archive"]["path"] != Path(state["catalogue"]["archive"])
+                or any(evidence["archive"][key] != verified[key] for key in ("revision", "url", "sha256", "bytes"))):
+            raise ValueError("published catalogue evidence differs from the retained update state")
     tables = load_viewer(Path(document["viewer_config"]))
     if {table["archive"] for table in tables} != {"catalogue", *state["indexes"]}:
         raise ValueError("update documentation must cover exactly the state archive set")

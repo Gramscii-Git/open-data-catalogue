@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "state": "update-state.local.json",
   "cadence": {
     "interval_seconds": 43200,
@@ -35,6 +35,7 @@
     }
   },
   "documentation": {
+    "catalogue": {"mode": "current_validation"},
     "readme_template": "README.hub.md",
     "viewer_config": "viewer.json"
   }

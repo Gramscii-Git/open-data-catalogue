@@ -10,6 +10,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from . import availability_build, availability_publish, documentation, snapshots
+from .documentation_evidence import read as read_evidence
 from .publish import upload
 from .receipts import (
     read_verification,
@@ -121,6 +122,9 @@ def run(directory, config, plan, harvester, prepare_catalogue):
         state, original = load_state(state_path, config)
         write_json(directory / "initial-state.json", state)
         execution.phase("consumer-before", lambda _: preflight(state, config, harvester))
+        document_source = plan["documentation"]["catalogue"]
+        if document_source["mode"] == "published_report":
+            execution.phase("catalogue-evidence", lambda _: verify_documentation_evidence(config, document_source))
         action = plan["discovery"]["action"]
         if action != "retain":
             release_dir = directory / "discovery"
@@ -145,7 +149,7 @@ def run(directory, config, plan, harvester, prepare_catalogue):
         doc = plan["documentation"]
         execution.phase("documentation", lambda target: document_release(
             target, config, Path(catalogue["archive"]), published["revision"], releases_path,
-            Path(doc["readme_template"]), Path(doc["viewer_config"]),
+            Path(doc["readme_template"]), Path(doc["viewer_config"]), document_source,
         ))
         result = {"complete": True, "directory": str(directory), "state": str(state_path),
                   "updated_indexes": list(plan["indexes"]), "discovery_action": action,
@@ -195,9 +199,20 @@ def activate(config, harvester, name, publication_path, expected, snapshot_paths
     return result
 
 
-def document_release(directory, config, archive, revision, releases, template, viewer):
-    documentation.prepare(directory, config, archive, revision, releases, template, viewer)
-    return documentation.publish(directory, config)
+def verify_documentation_evidence(config, source):
+    evidence = read_evidence(Path(source["evidence"]), config, verify_remote=True)
+    return {name: {key: value for key, value in evidence[name].items() if key != "path"}
+            for name in ("archive", "quality_report")}
+
+
+def document_release(directory, config, archive, revision, releases, template, viewer, source):
+    if source["mode"] == "current_validation":
+        documentation.prepare(directory, config, archive, revision, releases, template, viewer)
+        status_artifact = None
+    else:
+        status_artifact = source["status_artifact"]
+        documentation.prepare_reported(directory, config, Path(source["evidence"]), status_artifact, releases, template, viewer)
+    return documentation.publish(directory, config, status_artifact=status_artifact)
 
 
 def update_index(execution, name, definition, previous_release, required_until, harvester):

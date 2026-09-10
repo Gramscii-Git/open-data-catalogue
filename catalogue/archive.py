@@ -8,6 +8,8 @@ from pathlib import Path
 
 from .documents import inspect_contract, inspect_membership
 
+SCHEMA_VERSION = 2
+
 TABLE_KEYS = {
     "opendata_catalog": ("provider", "dataset_id"),
     "opendata_structures": ("provider", "dataset_id"),
@@ -58,7 +60,7 @@ def inspect_archive(path: Path, policy: dict) -> dict:
         if (
             not isinstance(manifest, dict)
             or type(manifest.get("schema_version")) is not int
-            or manifest["schema_version"] != 2
+            or manifest["schema_version"] != SCHEMA_VERSION
         ):
             raise ValueError("snapshot schema_version must be 2 with explicit document provenance")
         document_contract = inspect_contract(manifest, policy)
