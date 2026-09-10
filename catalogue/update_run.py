@@ -168,8 +168,8 @@ def preflight(state, config, harvester):
 
 
 def discovery_release(directory, config, action, harvester, prepare_catalogue):
-    if harvester(config, "--release-contract", capture=True).strip() != "1":
-        raise ValueError("harvester release contract must be 1")
+    if harvester(config, "--release-contract", capture=True).strip() != "2":
+        raise ValueError("harvester release contract must be 2 with document provenance")
     if action == "release":
         harvester(config, "sync")
         harvester(config, "structure", "--patience", str(config["deployment"]["patience_seconds"]))

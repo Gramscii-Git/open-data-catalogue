@@ -47,8 +47,13 @@ Discovery snapshots use schema 2 and carry the validated document-language
 contract and projection provenance. `quality.document_contract_sha256` pins that
 exact contract; obtain it from the configured harvester's `document-policy-status`
 command and review its provider languages, authorities and query routes before
-changing the deployment configuration. The example pin matches the shipped
-OpenData contract; a different plugin definition requires its own verified pin.
+changing the deployment configuration. The example pin matches OpenData core
+commit `b1c4fd11`; the final installed code requires its own verified pin.
+The contract includes an explicit renderer manifest and hashes of its executed
+modules, provider configuration, external words and input schema. Each document
+binds its actual catalogue fields, structure, metadata report, localization
+vocabulary, content and declared language authority to that contract. A change
+to one of those inputs requires rebuilding its affected projections.
 
 Native metadata documents retain their source language. Eurostat, OECD and ILO
 require English documents; Italian discovery searches the explicitly declared
@@ -67,7 +72,7 @@ contract change.
 
 All fields are required and validated. Paths are resolved relative to the
 configuration file. There are no implicit deployment paths or release thresholds.
-The harvester must implement publication contract 1; an incompatible checkout is
+The harvester must implement publication contract 2; an incompatible checkout is
 refused before any catalogue mutation. Its embedder must be available for indexing.
 
 ## Commands

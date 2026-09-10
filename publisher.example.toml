@@ -18,7 +18,7 @@ commit_message = "Publish verified Open Data catalogue"
 timeout_seconds = 60
 
 [quality]
-document_contract_sha256 = "8db1ee47089d310a6fd0f5c8e664f9c93004d82ca5fa6463d471f04df13fbfab"
+document_contract_sha256 = "1987fdcad638bc5e73a667c48bbad4542d941e7d55edf5189609cacce172e1d5"
 query_languages = ["it", "en"]
 minimum_datasets = 15990
 maximum_structure_errors = 0

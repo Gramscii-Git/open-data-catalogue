@@ -18,6 +18,7 @@ from catalogue.archive import TABLE_KEYS, QualityError, inspect_archive
 from catalogue.cli import publication_lock, schedule
 from catalogue.config import load
 from catalogue.discovery import dataset_readme
+from catalogue.document_inputs import Inputs
 from catalogue.documents import digest
 from catalogue.publish import file_url, revision_from_result, verify_download
 
@@ -70,6 +71,7 @@ def rows():
             "structure_id": "S",
             "dimension_id": "D",
             "concept_scope": "codelist:AREA",
+            "concept_id": "AREA",
             "codelist_scope": "codelist:AREA",
         }
     ]
@@ -78,12 +80,12 @@ def rows():
     row = result["opendata_catalog"][0]
     document["projection"] = {
         "contract_sha256": digest(DOCUMENT_CONTRACT), "authority": "native_metadata", "source_language": "en",
-        "source_sha256": digest({"title": row["title"], "metadata": {
+        "source_sha256": digest(Inputs(result, DOCUMENT_CONTRACT, digest).envelope(row, "en", {"title": row["title"], "metadata": {
             field: row.get(field) for field in (
                 "names", "descriptions", "category_paths", "keywords", "caveat",
                 "filters", "sources", "period_start", "period_end", "freshness",
             )
-        }}),
+        }})),
         "text_sha256": document["text_hash"],
     }
     return result
@@ -167,6 +169,27 @@ class Releases(unittest.TestCase):
             self.inspect(data)
         self.assertEqual(caught.exception.report["metrics"]["invalid_document_projections"], 1)
 
+    def test_projection_covers_licence_structure_values_and_native_periods(self):
+        for table, change in (
+            ("opendata_catalog", {"licence": "Changed source terms"}),
+            ("opendata_catalog", {"attribution": "Changed attribution"}),
+            ("opendata_structures", {"time": {"start": "2000", "end": "2005"}}),
+            ("opendata_structures", {"dimensions": [{"id": "AREA", "values": [{"code": "B", "name": "Area B"}]}]}),
+        ):
+            with self.subTest(table=table, change=change):
+                data = rows()
+                data[table][0].update(change)
+                with self.assertRaises(QualityError) as caught:
+                    self.inspect(data)
+                self.assertEqual(caught.exception.report["metrics"]["invalid_document_projections"], 1)
+
+    def test_changed_renderer_implementation_rejects_held_document_proofs(self):
+        self.contract["rendering"]["implementations"]["sample"]["files"]["tests/test_release.py"] = "0" * 64
+        self.policy["document_contract_sha256"] = digest(self.contract)
+        with self.assertRaises(QualityError) as caught:
+            self.inspect(rows())
+        self.assertEqual(caught.exception.report["metrics"]["invalid_document_projections"], 1)
+
     def test_retired_catalogue_records_are_preserved_without_current_documents(self):
         data = rows()
         data["opendata_catalog"][0]["active"] = False
@@ -200,6 +223,7 @@ class Releases(unittest.TestCase):
         self.policy["providers"]["sample"]["languages"].append("it")
         self.contract["providers"]["sample"]["it"] = "native_metadata"
         self.contract["searches"] = {"it": ["it", "en"], "en": ["en", "it"]}
+        self.contract["rendering"]["words"]["it"] = {"sections": {"title": "Titolo"}}
         self.policy["document_contract_sha256"] = digest(self.contract)
         with self.assertRaises(QualityError) as caught:
             self.inspect(data)
@@ -259,6 +283,11 @@ class Releases(unittest.TestCase):
         data = rows()
         data["opendata_catalog"][0]["licence"] = None
         self.policy["maximum_missing_licences"] = 1
+        row = data["opendata_catalog"][0]
+        source = {"title": row["title"], "metadata": {field: row.get(field) for field in (
+            "names", "descriptions", "category_paths", "keywords", "caveat", "filters", "sources", "period_start", "period_end", "freshness",
+        )}}
+        data["opendata_documents"][0]["projection"]["source_sha256"] = digest(Inputs(data, self.contract, digest).envelope(row, "en", source))
         result = self.inspect(data)
         self.assertEqual(result["metrics"]["missing_licences"], 1)
         self.assertEqual(result["policy"]["maximum_missing_licences"], 1)

@@ -42,6 +42,7 @@ def inspect_archive(path: Path, policy: dict) -> dict:
     related_datasets = set()
     providers = Counter()
     issues = []
+    source_tables = {name: [] for name in ("opendata_structures", "opendata_terms", "opendata_structure_dims", "opendata_meta_reports")}
     with tarfile.open(path, "r:gz") as archive:
         members = archive.getmembers()
         expected = {f"{table}.jsonl" for table in TABLE_KEYS} | {"manifest.json"}
@@ -86,6 +87,8 @@ def inspect_archive(path: Path, policy: dict) -> dict:
                     raise ValueError(
                         f"{table}: provider {provider!r} has no release policy"
                     )
+                if table in source_tables and (table != "opendata_terms" or row["language"] in document_contract["localization_languages"][provider]):
+                    source_tables[table].append(row)
                 if "dataset_id" in row:
                     related_datasets.add((provider, row["dataset_id"]))
                 if table == "opendata_catalog":
@@ -158,7 +161,7 @@ def inspect_archive(path: Path, policy: dict) -> dict:
     for (provider, dataset), row in catalog.items():
         if all(row[field] is True for field in policy["structure_fields"]):
             metrics["missing_structures"] += (provider, dataset) not in structures
-    document_metrics, document_issues = inspect_membership(catalog, documents, document_contract, manifest)
+    document_metrics, document_issues = inspect_membership(catalog, documents, document_contract, manifest, source_tables)
     metrics.update(document_metrics)
     issues.extend(document_issues)
     if len(catalog) < policy["minimum_datasets"]:

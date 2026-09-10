@@ -263,9 +263,9 @@ def main(argv=None) -> int:
             return 0
         with publication_lock(config["deployment"]["build"]):
             contract = harvester(config, "--release-contract", capture=True).strip()
-            if contract != "1":
+            if contract != "2":
                 raise ValueError(
-                    "harvester release contract must be 1; update the harvester checkout"
+                    "harvester release contract must be 2 with document provenance; update the harvester checkout"
                 )
             if args.command in ("refresh", "release"):
                 harvester(config, "sync")

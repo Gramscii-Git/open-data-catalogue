@@ -28,6 +28,7 @@ from catalogue.runtime import remaining
 from catalogue.update_plan import load as load_plan
 from catalogue.update_plan import load_state
 from catalogue.update_run import (
+    discovery_release,
     require_fresh,
     require_initial_coverage,
     run,
@@ -145,8 +146,10 @@ class UpdateTests(unittest.TestCase):
         action = arguments[0]
         if action == "availability-status":
             return json.dumps(self.active)
-        if action in {"--availability-contract", "--release-contract"}:
+        if action == "--availability-contract":
             return "1"
+        if action == "--release-contract":
+            return "2"
         if action == "index-availability":
             source = Path(arguments[arguments.index("--to") + 1])
             source.mkdir()
@@ -322,6 +325,17 @@ class UpdateTests(unittest.TestCase):
         self.assertEqual(verification, self.pin(publication))
         self.assertTrue(any(call[0] == "export" for call in self.harvester_calls))
         self.assertEqual(len((self.hub / "uploads.jsonl").read_text().splitlines()), 3)
+
+    def test_incompatible_discovery_harvester_is_refused_before_catalogue_mutations(self):
+        calls = []
+
+        def incompatible(config, *arguments, capture=False):
+            calls.append(arguments)
+            return "1"
+
+        with self.assertRaisesRegex(ValueError, "release contract must be 2"):
+            discovery_release(self.root / "incompatible", self.config, "refresh", incompatible, prepare_catalogue)
+        self.assertEqual(calls, [("--release-contract",)])
 
     def test_a_retained_index_remains_explicitly_pinned_in_the_card(self):
         state = json.loads(self.state.read_bytes())
