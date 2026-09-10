@@ -630,6 +630,31 @@
     },
     {
       "provider": "cruscotto",
+      "dataset_id": "civici_anncsu",
+      "arguments": {},
+      "varying": {
+        "istat_code": {
+          "inventory": "cruscotto-municipalities"
+        }
+      },
+      "when": "always",
+      "period_representation": "snapshot",
+      "argument_axes": {
+        "istat_code": "territory"
+      },
+      "measure_labels": {
+        "n_strade": "Streets",
+        "n_civici": "Street addresses",
+        "pct_geo_ref": "Georeferenced street addresses"
+      },
+      "unit_labels": {
+        "count": "Count",
+        "percent": "Percent"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "cruscotto",
       "dataset_id": "terzo_settore_runts",
       "arguments": {},
       "varying": {
