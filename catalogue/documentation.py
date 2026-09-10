@@ -88,7 +88,7 @@ def coverage_rows(path, index, url):
                 f"<code>{html.escape(value).replace('|', '&#124;')}</code>"
                 for value in endpoints
             )
-            rows.append(f"| [{index}]({url}) | {row['provider']} | `{row['dataset_id']}` | {row['period_kind']} | {len(identifiers):,} | {bounds} | {len(territories[key]):,} | {counts[key]:,} | {row['valid_until']} |")
+            rows.append(f"| [{index}]({url}) | {row['provider']} | `{row['dataset_id']}` | {row['period_kind']} | {len(identifiers):,} | {bounds} | {len(territories[key]):,} | {counts[key]:,} | {row['verified_at']} | {row['valid_until']} |")
     return "\n".join(rows)
 
 

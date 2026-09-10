@@ -132,6 +132,8 @@ class DocumentationTests(unittest.TestCase):
         card = (directory / "README.md").read_text()
         self.assertLess(len(card), 20000)
         self.assertIn("| snapshot | 1,200 |", card)
+        evidence = content["datasets.jsonl"][0]
+        self.assertIn(f"| {evidence['verified_at']} | {evidence['valid_until']} |", card)
         self.assertIn(combinations[0]["period"]["id"], card)
         self.assertIn(combinations[-1]["period"]["id"], card)
         self.assertNotIn(combinations[600]["period"]["id"], card)

@@ -7,15 +7,23 @@ release policy, archive validation, publication and publication receipts.
 [Boundaries](https://github.com/Gramscii-Git/boundaries) is the separate geographic
 asset repository; matching territorial codes and vintages must be checked.
 
-The [published availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/a6c77126656f5b4fc3ae782268f14822c0039919/availability)
-contains 888,000 joint combinations for five DVNS datasets and 24 Cruscotto domains
-across 189,575 completed partitions. COFOG covers 34 geographies for 2014–2024;
+The [published availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/fc82d7bd8154da355a45a81d772615306413fdc9/availability)
+contains 911,670 joint combinations for five DVNS datasets and 25 Cruscotto domains
+across 197,471 completed partitions. COFOG covers 34 geographies for 2014–2024;
 four OpenCivitas annual datasets cover all 15 ordinary-statute regions. Cruscotto
-covers the complete 7,896-municipality inventory. Its
-[licensed source snapshots](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/e55e80da98d9e801f54d25efcc5d911f630c78a6/source-snapshots)
+covers the complete 7,896-code universe returned by its source inventory on
+September 10, 2026. The [inventory receipt](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/raw/fc82d7bd8154da355a45a81d772615306413fdc9/availability/inventories.json)
+records retrieval at 07:56:02 UTC and HTTP Last-Modified September 5, 2026.
+These source dates do not establish an administrative vintage or the current
+number of Italian municipalities. Its
+[licensed source snapshots](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/eaeeae1eca695583e2e4c1ae6fa956fd13c05023/source-snapshots)
 preserve the original responses in 256 immutable shards, with source receipts,
 licences and attribution. Source evidence has an explicit
-24-hour selection lifetime; the archived evidence remains reproducible afterwards.
+24-hour selection lifetime, expiring September 11 at 07:56–08:11 UTC for this
+release; the archived evidence remains reproducible afterwards. ANNCSU adds
+23,670 combinations across 7,890 source municipality codes; six completed
+municipality responses contain no ANNCSU observations. See the
+[release audit](docs/audits/2026-09-10-national-25-domains.md) for exact pins and limits.
 The seven-table discovery archive remains a separate, older release with recorded
 quality defects. The [Hub card](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue)
 describes both artifacts and their measured limits.
@@ -151,8 +159,9 @@ No measurement values are stored in the published artifact format.
 
 The harvester validates the live source integration and filter contract, shares
 the deployment's provider quota and stages bounded source responses. Its DVNS
-adapter accepts annual observations with complete unpaged or offset retrieval;
-cursor, bounded-only and other period contracts are explicit refusals. Repeated
+adapter accepts observations through explicitly declared complete unpaged,
+offset or cursor retrieval contracts. Unsupported bounded-only retrieval and
+period contracts are explicit refusals. Repeated
 combinations, changed pagination totals, malformed observation paths, scope
 mismatches, incomplete pages and exhausted resource budgets prevent completion.
 Requests are not retried automatically.
@@ -217,12 +226,10 @@ use it with `scopes/dvns-expanded.policy.toml` for the wider build.
 
 `scopes/verified-selection.json` declares all 15 ordinary-statute regions for
 the four OpenCivitas datasets, all native COFOG geographies for 2014–2024, and
-the mapped, licensed Cruscotto domains for the complete official municipality
+the mapped, licensed Cruscotto domains for the complete source municipality
 inventory. Use `scopes/verified-selection.policy.toml` for its build and
-publication. The source integration supports 25 domains, including ANNCSU under
-its verified CC BY 4.0 terms; the published national revision linked above still
-contains 24 domains. A new complete build and publication are required before
-ANNCSU can be counted as indexed coverage. Air quality, weather and morphology
+publication. The published national revision linked above indexes 25 domains,
+including ANNCSU under its verified CC BY 4.0 terms. Air quality, weather and morphology
 retain their physical units.
 Calendar periods, weather validity instants, source snapshot dates and opaque
 source labels remain distinct. An unreported domain never receives invented
@@ -243,8 +250,8 @@ specifications, HTTP receipts and their dataset/argument bindings. Publication
 verifies that each bound request grid equals its recorded inventory exactly.
 
 Within one build, identical native requests share their original response body
-and receipt, stored under `source/responses/`. Thus the 24 Cruscotto domains use
-one native municipality response each, rather than 24 separate source reads.
+and receipt, stored under `source/responses/`. Thus the 25 Cruscotto domains use
+one native municipality response each, rather than 25 separate source reads.
 Checksums are verified on reuse. Every new build acquires its own responses;
 corrupt or unavailable evidence fails explicitly and is never replaced by a
 hidden refetch. Provider quota and total-response budgets still apply. The
