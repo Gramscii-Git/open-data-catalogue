@@ -225,6 +225,72 @@ pinned capture and inventory, retains original receipts and evidence expiry,
 and refuses missing requests or changed bytes. It writes a new complete archive;
 it does not continue a partially written index or renew source freshness.
 
+### Explicit offline SDMX graph provenance
+
+Separately retained native graph responses may lack the original request digest
+and full header map required by HTTP capture. They cannot be inserted into a
+capture by inventing that metadata. A producer-only offline path accepts their
+original short receipts and bodies as distinct pinned inputs:
+
+```sh
+./update --config publisher.local.toml check-offline-availability \
+  --provenance build/offline/provenance.json \
+  --provenance-sha256 <input-manifest-sha256> \
+  --policy scopes/eurostat-qualified-series.policy.toml
+```
+
+The strict version-1 manifest has kind `sdmx-native-graph-reprojection`. It
+declares `original`, `candidate`, `scope` and `inventories` assets; each asset
+contains a canonical relative `path`, exact `bytes` and `sha256`. All paths
+remain under the manifest directory. `configuration` pins `providers.yaml`,
+`sdmx-query.yaml` and `levels.yaml` in one directory. `capture` declares a pinned
+original capture `manifest` and its relative `responses` directory. Each entry
+in `graphs` identifies `provider`, `dataset_id`, and pinned `receipt` and `body`
+assets. Each entry in `definitions` declares those dataset identities and the
+exact `original` and `candidate` definition digests. `core` declares its full
+commit `revision` and a `files` mapping of every `server/sdg/**/*.py` file,
+relative to `server/sdg`, to its digest. `timeout_seconds` sets the validation
+deadline. These are required inputs; the command infers no missing version,
+scope, timestamp or digest.
+
+The configured harvester Python executes the existing SDG parsers in a worker
+that rejects every network and database connection. The worker checks the core
+filesystem against both the declared manifest and actual commit blobs, then
+checks every imported SDG module's origin and digest. It reconstructs every
+definition from the exact dataflow/DSD graph, complete referenced domains and
+original Actual constraint; it reconstructs every combination from the original
+captured observations. Partition and combination table bytes must be unchanged.
+Dataset changes are limited to the declared definition digests. Source clocks
+and expiry cannot change; assembly time must be real and evidence still valid.
+The configured availability policy bounds manifest, individual and aggregate
+input bytes, archive records and temporary SQLite storage.
+
+After review, the explicit publication command repeats the whole verification
+before any remote effect:
+
+```sh
+./update --config publisher.local.toml publish-offline-availability \
+  --provenance build/offline/provenance.json \
+  --provenance-sha256 <input-manifest-sha256> \
+  --policy scopes/eurostat-qualified-series.policy.toml \
+  --destination availability/eurostat-series \
+  --readme-template README.availability.md
+```
+
+It publishes the seven ordinary availability files plus
+`offline-provenance.json`, binding the archive, input manifest, original asset
+hashes, graph URLs/clocks, core commit/files and observed Python/library versions.
+The lockfile digest identifies project evidence; it does not certify an
+identical runtime on another machine. The ordinary publication command refuses
+an offline provenance marker without its explicit verified path. No consumer
+archive schema changes, automatic retries or source fallbacks are introduced.
+
+Keep the input manifest, original archives, graphs, receipts and captured bodies
+in their durable local bundle. The public report contains hashes and short
+receipts, not the XML/CSV bodies, complete HTTP headers or measurement values.
+It neither publishes those source bodies nor grants additional source rights.
+The publication and consumer activation remain separate actions.
+
 Mutable source photographs require an explicit archived source mode. Add
 `--snapshot-provider cruscotto --snapshot-shard-prefix-length 2` to the build
 command to stage licensed response projections in `source/snapshots` alongside

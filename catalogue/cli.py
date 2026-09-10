@@ -114,6 +114,14 @@ def main(argv=None) -> int:
     )
     availability.add_argument("--archive", type=Path, required=True)
     availability.add_argument("--policy", type=Path, required=True)
+    for name in ("check-offline-availability", "publish-offline-availability"):
+        command = commands.add_parser(name, help="verify an explicit pinned offline SDMX provenance bundle before any publication")
+        command.add_argument("--provenance", type=Path, required=True)
+        command.add_argument("--provenance-sha256", required=True)
+        command.add_argument("--policy", type=Path, required=True)
+        if name == "publish-offline-availability":
+            command.add_argument("--destination", required=True)
+            command.add_argument("--readme-template", type=Path, required=True)
     build_availability = commands.add_parser(
         "build-availability", help="construct and verify a declared shared availability scope; no upload"
     )
@@ -229,6 +237,20 @@ def main(argv=None) -> int:
                 print(json.dumps(publish(
                     args.directory, directory, args.destination, config, args.policy, args.readme_template,
                 ), indent=2))
+            return 0
+        if args.command == "check-offline-availability":
+            from .availability_offline import validate
+
+            print(json.dumps(validate(config, args.provenance, args.provenance_sha256, args.policy), indent=2))
+            return 0
+        if args.command == "publish-offline-availability":
+            from .availability_offline import publish as publish_offline
+
+            with publication_lock(config["deployment"]["build"]):
+                directory = Path(tempfile.mkdtemp(prefix="offline-publication-", dir=config["deployment"]["build"]))
+                print(f"publication directory: {directory}", file=sys.stderr, flush=True)
+                print(json.dumps(publish_offline(config, args.provenance, args.provenance_sha256, args.policy,
+                                               directory, args.destination, args.readme_template), indent=2))
             return 0
         if args.command == "check-availability":
             print(
