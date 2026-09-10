@@ -1,5 +1,281 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "column_sets": {
+    "catalogue": [
+      {
+        "name": "provider",
+        "source": [
+          "provider"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "dataset_id",
+        "source": [
+          "dataset_id"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "title",
+        "source": [
+          "title"
+        ],
+        "type": "string",
+        "nullable": true
+      },
+      {
+        "name": "active",
+        "source": [
+          "active"
+        ],
+        "type": "bool",
+        "nullable": true
+      },
+      {
+        "name": "served",
+        "source": [
+          "served"
+        ],
+        "type": "bool",
+        "nullable": true
+      },
+      {
+        "name": "searchable",
+        "source": [
+          "searchable"
+        ],
+        "type": "bool",
+        "nullable": true
+      },
+      {
+        "name": "licence",
+        "source": [
+          "licence"
+        ],
+        "type": "string",
+        "nullable": true
+      },
+      {
+        "name": "record_json",
+        "source": [],
+        "type": "json",
+        "nullable": false
+      }
+    ],
+    "availability_datasets": [
+      {
+        "name": "provider",
+        "source": [
+          "provider"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "dataset_id",
+        "source": [
+          "dataset_id"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "title",
+        "source": [
+          "title"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "verified_at",
+        "source": [
+          "verified_at"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "valid_until",
+        "source": [
+          "valid_until"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "definition_sha256",
+        "source": [
+          "definition_sha256"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "scope_json",
+        "source": [
+          "scope"
+        ],
+        "type": "json",
+        "nullable": false
+      },
+      {
+        "name": "axes_json",
+        "source": [
+          "axes"
+        ],
+        "type": "json",
+        "nullable": false
+      },
+      {
+        "name": "partitions_json",
+        "source": [
+          "partitions"
+        ],
+        "type": "json",
+        "nullable": false
+      }
+    ],
+    "availability_combinations": [
+      {
+        "name": "provider",
+        "source": [
+          "provider"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "dataset_id",
+        "source": [
+          "dataset_id"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "period",
+        "source": [
+          "period",
+          "id"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "period_start",
+        "source": [
+          "period",
+          "start"
+        ],
+        "type": "string",
+        "nullable": true
+      },
+      {
+        "name": "period_end",
+        "source": [
+          "period",
+          "end"
+        ],
+        "type": "string",
+        "nullable": true
+      },
+      {
+        "name": "territory_code",
+        "source": [
+          "territory",
+          "code"
+        ],
+        "type": "string",
+        "nullable": true
+      },
+      {
+        "name": "territory_label",
+        "source": [
+          "territory",
+          "label"
+        ],
+        "type": "string",
+        "nullable": true
+      },
+      {
+        "name": "territory_level",
+        "source": [
+          "territory",
+          "level"
+        ],
+        "type": "string",
+        "nullable": true
+      },
+      {
+        "name": "measure_code",
+        "source": [
+          "dimensions",
+          "measure",
+          "code"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "measure_label",
+        "source": [
+          "dimensions",
+          "measure",
+          "label"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "unit_code",
+        "source": [
+          "dimensions",
+          "unit",
+          "code"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "unit_label",
+        "source": [
+          "dimensions",
+          "unit",
+          "label"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "dimensions_json",
+        "source": [
+          "dimensions"
+        ],
+        "type": "json",
+        "nullable": false
+      },
+      {
+        "name": "presence",
+        "source": [
+          "presence"
+        ],
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "partition",
+        "source": [
+          "partition"
+        ],
+        "type": "string",
+        "nullable": false
+      }
+    ]
+  },
   "tables": [
     {
       "name": "catalogue",
@@ -8,296 +284,61 @@
       "path": "viewer/catalogue.jsonl",
       "split": "data",
       "default": true,
-      "columns": [
-        {
-          "name": "provider",
-          "source": [
-            "provider"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "dataset_id",
-          "source": [
-            "dataset_id"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "title",
-          "source": [
-            "title"
-          ],
-          "type": "string",
-          "nullable": true
-        },
-        {
-          "name": "active",
-          "source": [
-            "active"
-          ],
-          "type": "bool",
-          "nullable": true
-        },
-        {
-          "name": "served",
-          "source": [
-            "served"
-          ],
-          "type": "bool",
-          "nullable": true
-        },
-        {
-          "name": "searchable",
-          "source": [
-            "searchable"
-          ],
-          "type": "bool",
-          "nullable": true
-        },
-        {
-          "name": "licence",
-          "source": [
-            "licence"
-          ],
-          "type": "string",
-          "nullable": true
-        },
-        {
-          "name": "record_json",
-          "source": [],
-          "type": "json",
-          "nullable": false
-        }
-      ]
+      "columns": "catalogue"
     },
     {
-      "name": "availability_datasets",
-      "archive": "availability",
+      "name": "national_datasets",
+      "archive": "national",
       "member": "datasets.jsonl",
-      "path": "viewer/availability_datasets.jsonl",
+      "path": "viewer/national_datasets.jsonl",
       "split": "data",
       "default": false,
-      "columns": [
-        {
-          "name": "provider",
-          "source": [
-            "provider"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "dataset_id",
-          "source": [
-            "dataset_id"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "title",
-          "source": [
-            "title"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "verified_at",
-          "source": [
-            "verified_at"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "valid_until",
-          "source": [
-            "valid_until"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "definition_sha256",
-          "source": [
-            "definition_sha256"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "scope_json",
-          "source": [
-            "scope"
-          ],
-          "type": "json",
-          "nullable": false
-        },
-        {
-          "name": "axes_json",
-          "source": [
-            "axes"
-          ],
-          "type": "json",
-          "nullable": false
-        },
-        {
-          "name": "partitions_json",
-          "source": [
-            "partitions"
-          ],
-          "type": "json",
-          "nullable": false
-        }
-      ]
+      "columns": "availability_datasets"
     },
     {
-      "name": "availability_combinations",
-      "archive": "availability",
+      "name": "national_combinations",
+      "archive": "national",
       "member": "combinations.jsonl",
-      "path": "viewer/availability_combinations.jsonl",
+      "path": "viewer/national_combinations.jsonl",
       "split": "data",
       "default": false,
-      "columns": [
-        {
-          "name": "provider",
-          "source": [
-            "provider"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "dataset_id",
-          "source": [
-            "dataset_id"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "period",
-          "source": [
-            "period",
-            "id"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "period_start",
-          "source": [
-            "period",
-            "start"
-          ],
-          "type": "string",
-          "nullable": true
-        },
-        {
-          "name": "period_end",
-          "source": [
-            "period",
-            "end"
-          ],
-          "type": "string",
-          "nullable": true
-        },
-        {
-          "name": "territory_code",
-          "source": [
-            "territory",
-            "code"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "territory_label",
-          "source": [
-            "territory",
-            "label"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "territory_level",
-          "source": [
-            "territory",
-            "level"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "measure_code",
-          "source": [
-            "dimensions",
-            "measure",
-            "code"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "measure_label",
-          "source": [
-            "dimensions",
-            "measure",
-            "label"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "unit_code",
-          "source": [
-            "dimensions",
-            "unit",
-            "code"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "unit_label",
-          "source": [
-            "dimensions",
-            "unit",
-            "label"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "dimensions_json",
-          "source": [
-            "dimensions"
-          ],
-          "type": "json",
-          "nullable": false
-        },
-        {
-          "name": "presence",
-          "source": [
-            "presence"
-          ],
-          "type": "string",
-          "nullable": false
-        },
-        {
-          "name": "partition",
-          "source": [
-            "partition"
-          ],
-          "type": "string",
-          "nullable": false
-        }
-      ]
+      "columns": "availability_combinations"
+    },
+    {
+      "name": "ssn_history_datasets",
+      "archive": "ssn-history",
+      "member": "datasets.jsonl",
+      "path": "viewer/ssn_history_datasets.jsonl",
+      "split": "data",
+      "default": false,
+      "columns": "availability_datasets"
+    },
+    {
+      "name": "ssn_history_combinations",
+      "archive": "ssn-history",
+      "member": "combinations.jsonl",
+      "path": "viewer/ssn_history_combinations.jsonl",
+      "split": "data",
+      "default": false,
+      "columns": "availability_combinations"
+    },
+    {
+      "name": "eurostat_series_datasets",
+      "archive": "eurostat-series",
+      "member": "datasets.jsonl",
+      "path": "viewer/eurostat_series_datasets.jsonl",
+      "split": "data",
+      "default": false,
+      "columns": "availability_datasets"
+    },
+    {
+      "name": "eurostat_series_combinations",
+      "archive": "eurostat-series",
+      "member": "combinations.jsonl",
+      "path": "viewer/eurostat_series_combinations.jsonl",
+      "split": "data",
+      "default": false,
+      "columns": "availability_combinations"
     }
   ]
 }

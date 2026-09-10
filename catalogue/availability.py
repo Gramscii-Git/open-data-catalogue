@@ -229,7 +229,10 @@ def _combination(conn, row, policy):
     )
     period, territory, dimensions = row["period"], row["territory"], row["dimensions"]
     fields(period, {"id", "label", "start", "end"}, "observation period")
-    fields(territory, {"code", "label", "level"}, "observation territory")
+    if territory is not None:
+        fields(territory, {"code", "label", "level"}, "observation territory")
+        for value in territory.values():
+            text(value, "territory identity")
     if (period["start"] is None) != (period["end"] is None):
         raise ValueError("availability period requires both bounds or neither")
     if period["start"] is not None and _time(period["start"]) > _time(period["end"]):
@@ -241,8 +244,7 @@ def _combination(conn, row, policy):
         fields(choice, {"code", "label"}, "dimension choice")
         text(choice["code"], "dimension code")
         text(choice["label"], "dimension label")
-    for value in (period["label"], territory["label"], territory["level"]):
-        text(value, "source label")
+    text(period["label"], "source label")
     if row["presence"] not in {"observed", "missing", "suppressed"}:
         raise ValueError(
             "availability combination requires explicit observation presence"
@@ -250,20 +252,21 @@ def _combination(conn, row, policy):
     identity = json.dumps(
         {
             "period": text(period["id"], "period identity"),
-            "territory": text(territory["code"], "territory identity"),
-            "level": territory["level"],
+            "territory": territory["code"] if territory is not None else None,
+            "level": territory["level"] if territory is not None else None,
             "dimensions": {key: value["code"] for key, value in dimensions.items()},
         },
         sort_keys=True,
     )
     conn.execute(
-        "INSERT INTO combinations VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO combinations VALUES (?, ?, ?, ?, ?, ?)",
         (
             _key(row),
             text(row["partition"], "partition identity"),
             hashlib.sha256(identity.encode()).hexdigest(),
             json.dumps(sorted(dimensions)),
             period["start"] is not None,
+            territory is not None,
         ),
     )
 
@@ -286,7 +289,7 @@ def inspect_availability(path: Path, policy: dict) -> dict:
                 "CREATE TABLE datasets (id TEXT PRIMARY KEY, provider TEXT, axes TEXT, partitions INTEGER, period_kind TEXT, verified_at TEXT, valid_until TEXT, scope TEXT);"
                 "CREATE TABLE expected (dataset TEXT, id TEXT, PRIMARY KEY(dataset, id));"
                 "CREATE TABLE partitions (dataset TEXT, id TEXT, first_read TEXT, last_read TEXT, PRIMARY KEY(dataset, id));"
-                "CREATE TABLE combinations (dataset TEXT, partition TEXT, id TEXT, axes TEXT, bounded INTEGER, PRIMARY KEY(dataset, id));"
+                "CREATE TABLE combinations (dataset TEXT, partition TEXT, id TEXT, axes TEXT, bounded INTEGER, geographic INTEGER, PRIMARY KEY(dataset, id));"
             )
             report = _inspect(path, policy, conn)
         finally:
@@ -365,6 +368,10 @@ def _inspect(path, policy, conn):
         raise ValueError(
             "availability timestamps conflict with source receipts or expire before the snapshot"
         )
+    if conn.execute(
+        "SELECT 1 FROM combinations GROUP BY dataset HAVING min(geographic) != max(geographic) LIMIT 1"
+    ).fetchone():
+        raise ValueError("availability dataset mixes geographic and non-geographic observations")
     if conn.execute(
         "SELECT 1 FROM datasets d WHERE d.partitions != (SELECT count(*) FROM partitions p WHERE p.dataset = d.id) "
         "OR NOT EXISTS (SELECT 1 FROM combinations c WHERE c.dataset = d.id) LIMIT 1"

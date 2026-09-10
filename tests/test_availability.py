@@ -120,6 +120,45 @@ class AvailabilityReleaseTests(unittest.TestCase):
         self.assertEqual(len(report["sha256"]), 64)
         self.assertEqual(list(self.policy["staging_directory"].iterdir()), [])
 
+    def test_non_geographic_observations_preserve_their_explicit_null_territory(self):
+        content = tables()
+        content["combinations.jsonl"][0]["territory"] = None
+        report = self.inspect(content)
+        self.assertEqual(report["tables"]["combinations.jsonl"], 1)
+        duplicate = copy.deepcopy(content["combinations.jsonl"][0])
+        duplicate["presence"] = "missing"
+        content["combinations.jsonl"].append(duplicate)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.inspect(content)
+
+    def test_missing_territory_or_incomplete_geography_cannot_be_invented(self):
+        for territory in ({}, {"code": "A", "label": "Territory A", "level": None}):
+            with self.subTest(territory=territory):
+                content = tables()
+                content["combinations.jsonl"][0]["territory"] = territory
+                with self.assertRaises(ValueError):
+                    self.inspect(content)
+        content = tables()
+        del content["combinations.jsonl"][0]["territory"]
+        with self.assertRaises(ValueError):
+            self.inspect(content)
+
+    def test_geographic_contract_is_consistent_within_each_dataset(self):
+        content = tables()
+        non_geographic = copy.deepcopy(content["combinations.jsonl"][0])
+        non_geographic["territory"] = None
+        content["combinations.jsonl"].append(non_geographic)
+        with self.assertRaisesRegex(ValueError, "mixes geographic"):
+            self.inspect(content)
+        for name in MEMBERS:
+            original = copy.deepcopy(content[name][0])
+            original["dataset_id"] = "exchange_rates"
+            if name == "combinations.jsonl":
+                original["territory"] = None
+                content[name].pop()
+            content[name].append(original)
+        self.assertEqual(self.inspect(content)["tables"]["combinations.jsonl"], 2)
+
     def test_missing_null_and_suppressed_states_are_not_collapsed(self):
         content = tables()
         for index, state in enumerate(["missing", "suppressed"], 1):

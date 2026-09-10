@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "indexes": {
+    "national": {
+      "archive": "build/NATIONAL_BUILD/availability.tar.gz",
+      "revision": "REPLACE_WITH_FULL_PUBLICATION_COMMIT",
+      "destination": "availability",
+      "policy": "scopes/verified-selection.policy.toml"
+    },
+    "ssn-history": {
+      "archive": "build/SSN_BUILD/availability.tar.gz",
+      "revision": "REPLACE_WITH_FULL_PUBLICATION_COMMIT",
+      "destination": "availability/ssn-history",
+      "policy": "scopes/ssn-history.policy.toml"
+    },
+    "eurostat-series": {
+      "archive": "build/EUROSTAT_BUILD/availability.tar.gz",
+      "revision": "REPLACE_WITH_FULL_PUBLICATION_COMMIT",
+      "destination": "availability/eurostat-series",
+      "policy": "scopes/eurostat-qualified-series.policy.toml"
+    }
+  }
+}

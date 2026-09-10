@@ -178,14 +178,13 @@ def main(argv=None) -> int:
         "activate-availability", help="verify and activate a published index in the configured SDG deployment"
     )
     activate_availability.add_argument("--publication", type=Path, required=True)
+    activate_availability.add_argument("--index", required=True)
     activate_availability.add_argument("--expect-sha256", required=True)
     activate_availability.add_argument("--snapshot-publications", type=Path)
     documentation = commands.add_parser("publish-documentation", help="verify published bytes and update the Hub card without replacing archives")
     documentation.add_argument("--catalogue-archive", type=Path, required=True)
     documentation.add_argument("--catalogue-revision", required=True)
-    documentation.add_argument("--availability-archive", type=Path, required=True)
-    documentation.add_argument("--availability-revision", required=True)
-    documentation.add_argument("--policy", type=Path, required=True)
+    documentation.add_argument("--availability-releases", type=Path, required=True)
     documentation.add_argument("--readme-template", type=Path, required=True)
     documentation.add_argument("--viewer-config", type=Path, required=True)
     for name in ("prepare", "refresh", "publish", "release"):
@@ -202,7 +201,7 @@ def main(argv=None) -> int:
             source_arguments = ["--snapshot-publications", str(args.snapshot_publications.resolve())] if args.snapshot_publications is not None else []
             with publication_lock(config["deployment"]["build"]):
                 result = json.loads(harvester(
-                    config, "activate-availability", "--publication", str(args.publication.resolve()),
+                    config, "activate-availability", "--index", args.index, "--publication", str(args.publication.resolve()),
                     "--expect-sha256", args.expect_sha256, *source_arguments, capture=True,
                 ))
                 if not isinstance(result, dict) or result.get("activated") is not True:
@@ -218,7 +217,7 @@ def main(argv=None) -> int:
                 directory = Path(tempfile.mkdtemp(prefix="documentation-", dir=config["deployment"]["build"]))
                 print(f"documentation directory: {directory}", file=sys.stderr, flush=True)
                 prepare_documentation(directory, config, args.catalogue_archive, args.catalogue_revision,
-                                      args.availability_archive, args.availability_revision, args.policy, args.readme_template,
+                                      args.availability_releases, args.readme_template,
                                       args.viewer_config)
                 print(json.dumps(publish_documentation(directory, config), indent=2))
             return 0

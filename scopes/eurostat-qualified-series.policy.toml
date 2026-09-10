@@ -1,0 +1,7 @@
+schema = 1
+providers = ["eurostat"]
+staging_directory = "../build/availability-validation"
+max_unpacked_bytes = 67108864
+max_line_bytes = 1048576
+max_rows = 100000
+max_database_bytes = 67108864

@@ -20,21 +20,21 @@ This repository publishes independently versioned metadata and licensed source s
 
 - A **discovery catalogue** with **$catalogue_datasets dataset entries** from
   ISTAT, Eurostat, OECD, ILO, DoveVannoINostriSoldi (DVNS) and Cruscotto Italia.
-- A **verified availability index** with **$availability_combinations joint
-  combinations across $availability_datasets datasets**, built from complete
+- **$availability_indexes independently pinned availability indexes** with
+  **$availability_combinations joint combinations across $availability_datasets datasets**, built from complete
   source responses within the explicitly declared scope.
 - **Licensed Cruscotto source snapshots**, stored separately from the metadata,
   preserve the source photographs used to construct the index.
 
-Neither archive contains observation values. The availability index adds evidence
+The metadata archives contain no observation values. Availability indexes add evidence
 about existing source datasets; its combinations are not additional datasets.
-Neither archive includes search vectors or credentials.
+The archives include no search vectors or credentials.
 
 ## Browse the tables
 
-The viewer exposes three explicitly configured subsets, each with a `data` split:
-`catalogue` (all discovery entries), `availability_datasets` (indexed dataset
-scope and evidence expiry), and `availability_combinations` (all indexed tuples).
+The viewer exposes explicitly configured subsets, each with a `data` split:
+`catalogue` contains all discovery entries. Each named availability index has
+separate dataset and combination tables, retaining its own source revision.
 These are metadata tables, not training examples or observation values.
 
 Viewer tables are derived from the exact archives linked below. Nested metadata
@@ -44,11 +44,15 @@ See [viewer integrity and source hashes](viewer-manifest.json).
 
 ## Verified availability
 
-Snapshot: **$availability_taken_at**. Completed indexing partitions:
-**$availability_partitions**.
+Each download identifies a full immutable publication commit. Counts and hashes
+are verified against that index's archive independently.
 
-| Provider | Dataset | Source periods | Distinct territories | Combinations | Evidence expires (UTC) |
-| --- | --- | --- | ---: | ---: | --- |
+| Index / pinned download | Built (UTC) | Datasets | Partitions | Combinations | Bytes | SHA-256 |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+$availability_releases
+
+| Index | Provider | Dataset | Source periods | Distinct territories | Combinations | Evidence expires (UTC) |
+| --- | --- | --- | --- | ---: | ---: | --- |
 $availability_rows
 
 COFOG covers the geographies returned by DVNS for each indexed year, including
@@ -59,19 +63,25 @@ source contracts; they are not automatically comparable or additive. The table
 reports actual source coverage for each dataset. These scopes do not cover every
 dataset or year in the separate discovery catalogue.
 
-The national Cruscotto scope indexes 24 mapped domains with declared licences,
+The national Cruscotto scope indexes mapped domains with verified licences,
 using the complete official municipality inventory. The exact codes and original
 HTTP inventory receipt are published in [inventories.json](availability/inventories.json);
 every domain's request grid is verified against that full list. A completed
 municipality request does not imply that every domain contains measurements
-there. ANNCSU remains excluded because its source rights declaration does not
-grant an explicit licence. Air quality, weather and morphology retain their
+there. Domain inclusion is recorded in the table and the published scope; a
+licence alone does not certify availability. Air quality, weather and morphology retain their
 physical units; weather periods identify forecast validity instants.
 Annual observations retain calendar bounds. School years and other source
 labels retain their native meaning without invented calendar bounds. Source
 snapshot dates identify a published photograph, not historical observations.
 Cruscotto accepts only a municipality argument and exposes no historical-period
 query. Missing domains and measurements do not acquire a fabricated year.
+
+The SSN index preserves the whole history returned by the native DVNS endpoint.
+The Eurostat index covers only its explicitly qualified annual, monthly,
+quarterly and daily series. It does not certify the entire Eurostat catalogue.
+Non-geographic series retain an explicit null territory, displayed as zero
+distinct territories; weekends and other source gaps are not fabricated.
 
 The index preserves actual period/territory/dimension combinations and source
 receipts. `observed`, `missing` and `suppressed` are distinct; observed zero is
@@ -84,9 +94,6 @@ this reproducible historical artifact.
 See [the index contract](availability/README.md),
 [declared scope](availability/scope.json), [inventory evidence](availability/inventories.json) and
 [independent validation](availability/quality.json).
-
-[Download the pinned availability archive]($availability_url).
-Size: **$availability_bytes bytes**. SHA-256: `$availability_sha256`.
 
 The [source snapshot manifest](source-snapshots/manifest.json) binds the exact
 availability digest and dataset definitions to immutable response shards. It
