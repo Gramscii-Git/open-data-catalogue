@@ -184,9 +184,7 @@ def main(argv=None) -> int:
     documentation = commands.add_parser("publish-documentation", help="verify published bytes and update the Hub card without replacing archives")
     documentation.add_argument("--catalogue-archive", type=Path, required=True)
     documentation.add_argument("--catalogue-revision", required=True)
-    documentation.add_argument("--availability-archive", type=Path, required=True)
-    documentation.add_argument("--availability-revision", required=True)
-    documentation.add_argument("--policy", type=Path, required=True)
+    documentation.add_argument("--availability-releases", type=Path, required=True)
     documentation.add_argument("--readme-template", type=Path, required=True)
     documentation.add_argument("--viewer-config", type=Path, required=True)
     for name in ("prepare", "refresh", "publish", "release"):
@@ -219,7 +217,7 @@ def main(argv=None) -> int:
                 directory = Path(tempfile.mkdtemp(prefix="documentation-", dir=config["deployment"]["build"]))
                 print(f"documentation directory: {directory}", file=sys.stderr, flush=True)
                 prepare_documentation(directory, config, args.catalogue_archive, args.catalogue_revision,
-                                      args.availability_archive, args.availability_revision, args.policy, args.readme_template,
+                                      args.availability_releases, args.readme_template,
                                       args.viewer_config)
                 print(json.dumps(publish_documentation(directory, config), indent=2))
             return 0
