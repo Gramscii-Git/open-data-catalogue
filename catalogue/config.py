@@ -97,12 +97,20 @@ def load(path: Path) -> dict:
     }
     fields(
         policy,
-        limits | {"structure_fields", "document_fields", "term_scopes", "providers"},
+        limits | {"structure_fields", "document_fields", "term_scopes", "providers", "document_contract_sha256", "query_languages"},
         "quality",
     )
     for key in limits:
         if type(policy[key]) is not int or policy[key] < 0:
             raise ValueError(f"quality.{key} must be a non-negative integer")
+    if policy["maximum_missing_documents"] != 0:
+        raise ValueError("exact document membership requires maximum_missing_documents=0")
+    document_digest = policy["document_contract_sha256"]
+    if not isinstance(document_digest, str) or len(document_digest) != 64 or any(char not in "0123456789abcdef" for char in document_digest):
+        raise ValueError("quality.document_contract_sha256 must be a lowercase SHA-256 digest")
+    policy["query_languages"] = strings(policy["query_languages"], "quality.query_languages")
+    if len(set(policy["query_languages"])) != len(policy["query_languages"]):
+        raise ValueError("quality.query_languages must be unique")
     for key in ("structure_fields", "document_fields", "term_scopes"):
         policy[key] = strings(policy[key], f"quality.{key}")
     if not isinstance(policy["providers"], dict) or not policy["providers"]:

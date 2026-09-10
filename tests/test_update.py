@@ -16,7 +16,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from test_availability import archive_at, tables
-from test_release import rows, write_archive
+from test_release import DOCUMENT_CONTRACT, digest, rows, write_archive
 
 from catalogue.availability import inspect_availability, policy_from
 from catalogue.cli import prepare as prepare_catalogue
@@ -72,6 +72,7 @@ class UpdateTests(unittest.TestCase):
         self.config["deployment"]["hf"] = [sys.executable, str(ROOT / "tests/fixtures/publication_cli.py"),
                                                "--root", str(self.hub), "--endpoint", self.config["hub"]["endpoint"]]
         self.config["quality"].update(minimum_datasets=1, providers={"sample": {"languages": ["en"], "vocabulary": True}})
+        self.config["quality"]["document_contract_sha256"] = digest(DOCUMENT_CONTRACT)
         self.policy = self.root / "policy.toml"
         self.policy.write_text((ROOT / "availability-policy.example.toml").read_text().replace(
             'providers = ["dvns", "cruscotto"]', 'providers = ["source"]'))

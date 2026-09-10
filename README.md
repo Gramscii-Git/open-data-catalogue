@@ -43,6 +43,28 @@ library. Copy `publisher.example.toml` to `publisher.local.toml`, then configure
 - Required providers, document languages, vocabulary requirements and release limits.
 - The scheduler interpreter, executable search path, log path and calendar.
 
+Discovery snapshots use schema 2 and carry the validated document-language
+contract and projection provenance. `quality.document_contract_sha256` pins that
+exact contract; obtain it from the configured harvester's `document-policy-status`
+command and review its provider languages, authorities and query routes before
+changing the deployment configuration. The example pin matches the shipped
+OpenData contract; a different plugin definition requires its own verified pin.
+
+Native metadata documents retain their source language. Eurostat, OECD and ILO
+require English documents; Italian discovery searches the explicitly declared
+English and Italian stores together. DVNS English workspace definitions declare
+`workspace_definition` authority. Italian section labels do not make native
+English prose an Italian source document.
+
+Publication requires zero missing required documents, zero documents outside the
+declared current membership, and valid provenance and content hashes. Catalogue
+records and source receipts remain preserved when obsolete derived documents
+are reconciled. Old schema-1 discovery artifacts remain historical evidence and
+are explicitly refused as current schema-2 releases; they must be reconstructed
+from retained metadata with the current contract. Availability indexes and their
+source snapshots have independent schemas and are unaffected by this discovery
+contract change.
+
 All fields are required and validated. Paths are resolved relative to the
 configuration file. There are no implicit deployment paths or release thresholds.
 The harvester must implement publication contract 1; an incompatible checkout is

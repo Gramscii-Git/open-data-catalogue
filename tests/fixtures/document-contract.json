@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "eligibility_fields": ["active", "searchable"],
+  "providers": {"sample": {"en": "native_metadata"}},
+  "searches": {"it": ["en"], "en": ["en"]},
+  "definitions": {}
+}

@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from test_availability import archive_at, tables
-from test_release import rows, write_archive
+from test_release import DOCUMENT_CONTRACT, digest, rows, write_archive
 
 from catalogue.config import load
 from catalogue.documentation import prepare
@@ -36,6 +36,7 @@ class DocumentationTests(unittest.TestCase):
         ))
         self.config = load(ROOT / "publisher.example.toml")
         self.config["quality"].update(minimum_datasets=1, providers={"sample": {"languages": ["en"], "vocabulary": True}})
+        self.config["quality"]["document_contract_sha256"] = digest(DOCUMENT_CONTRACT)
         self.releases = self.root / "releases.json"
         releases = json.loads((ROOT / "documentation-releases.example.json").read_text())
         self.payloads = {"open-data-catalogue.tar.gz": self.catalogue.read_bytes()}

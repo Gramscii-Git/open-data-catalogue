@@ -18,6 +18,8 @@ commit_message = "Publish verified Open Data catalogue"
 timeout_seconds = 60
 
 [quality]
+document_contract_sha256 = "8db1ee47089d310a6fd0f5c8e664f9c93004d82ca5fa6463d471f04df13fbfab"
+query_languages = ["it", "en"]
 minimum_datasets = 15990
 maximum_structure_errors = 0
 maximum_missing_structures = 0
@@ -32,13 +34,13 @@ term_scopes = ["codelist", "conceptscheme"]
 languages = ["it", "en"]
 vocabulary = true
 [quality.providers.eurostat]
-languages = ["it", "en"]
+languages = ["en"]
 vocabulary = true
 [quality.providers.oecd]
-languages = ["it", "en"]
+languages = ["en"]
 vocabulary = true
 [quality.providers.ilo]
-languages = ["it", "en"]
+languages = ["en"]
 vocabulary = true
 [quality.providers.dvns]
 languages = ["it", "en"]
