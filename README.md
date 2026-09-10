@@ -338,11 +338,19 @@ when that job is subsequently installed. Configure paths and credentials accessi
 to the service, validate a release first, then install the generated definition
 using launchd. Generation refuses to overwrite an existing output file.
 
-The scheduler is not part of Linux or Windows installation. The CI matrix runs
-the publisher's filesystem/HTTP contracts on macOS, Linux and Windows; a local
-macOS test run alone does not verify the other operating systems.
+The scheduler is not part of Linux or Windows installation. Platform
+qualification requires running the publisher's filesystem/HTTP contracts on
+each native operating system. A local macOS test run alone does not verify
+Linux or Windows.
 
 ## Verification
+
+Verification runs locally; GitHub hosts code, history and pull requests.
+GitHub Actions is disabled for this repository. Before merging code changes,
+run the complete suite in an isolated checkout, lint the affected Python
+modules and tests, and perform the relevant CLI and publication checks.
+Record the tested commit, commands, platform, results and any checks not run
+in the pull request. Integration changes must also be verified before merging.
 
 ```sh
 python3 -m unittest discover -s tests -v
@@ -351,6 +359,9 @@ python3 -m unittest discover -s tests -v
 Tests use isolated temporary archives, directories and local HTTP servers. They
 perform no Hub writes. Actual authenticated publication is a separate release
 qualification step and must not be inferred from local tests.
+Documentation-only changes require diff and reference review without rerunning
+unaffected runtime tests. Unavailable native platforms remain explicitly
+unverified. Missing remote checks do not waive the required local checks.
 
 ## Licence
 
