@@ -1,4 +1,7 @@
 build/
 publisher.local.toml
+update-plan.local.json
+update-state.local.json
+update-state.local.json.lock/
 __pycache__/
 .ruff_cache/

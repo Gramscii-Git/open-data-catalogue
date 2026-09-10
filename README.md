@@ -302,7 +302,8 @@ An active archived provider requires explicit snapshot publication receipts on
 the next activation. The plugin downloads observation shards only after the user
 confirms a selection, retaining the original source time when upstream data changes.
 
-Publishing and activation are explicit operator steps. Repeat the build,
+Publishing and activation are explicit operator steps, or named stages of the
+validated update plan described below. Repeat the build,
 publication and activation before the source evidence expires; publishing to
 the Hub alone does not refresh a deployment. Source or index changes require
 renewed selection verification and confirmation. Installing new reader code is
@@ -327,6 +328,88 @@ Pin the verified immutable URL, SHA-256 and size in consuming deployments. Updat
 a mutable branch must not break deployments pinned to an earlier release.
 
 ## Scheduling on macOS
+
+### Complete local update plans
+
+`run-update` completes the declared availability builds, source snapshot uploads,
+immutable readback, consumer activation and Hub card/viewer publication in one
+explicit run. Each index has its own scope, policy, destination and snapshot
+settings. The plan may update a subset of the deployment's indexes while the
+card retains the complete explicitly pinned set. No index is inferred from a
+provider name or the current Hub branch.
+
+Copy `update-plan.example.json` and `update-state.example.json` to local files.
+The state must name real existing archives, verified publication receipts and
+successful activation receipts for every deployed index. Its catalogue receipt
+must identify the existing discovery archive. Configuration paths are relative
+to their owning file. Initial state is never guessed or reconstructed from
+`main`; a missing receipt is an explicit error.
+
+```sh
+./update --config publisher.local.toml check-update --plan update-plan.local.json
+./update --config publisher.local.toml run-update --plan update-plan.local.json
+```
+
+`check-update` validates paths, receipt identities, archive hashes, viewer scope,
+source policies, configured lifetimes and the read-only consumer
+`availability-status` contract. It performs no source reads, uploads or consumer
+mutation. `run-update` repeats the active-pin comparison before collection and
+after activation. A stale state file fails before new source collection.
+
+Discovery behavior is required independently: `retain` documents the supplied
+published archive and its measured quality defects; `publish` validates and
+publishes the current database; `release` first syncs, harvests, enriches and
+verifies it. Strict discovery gates remain unchanged. `retain` does not claim
+that the discovery catalogue has been refreshed.
+
+The plan's cadence declares the start interval, maximum run duration and minimum
+freshness reserve. The run duration must be shorter than the interval and must
+exceed the sum of the declared source operation deadlines, leaving time for
+verification and publication. Every updated dataset's evidence lifetime must
+cover the interval, a maximum run and the reserve together. The completed
+archive is checked again against that future boundary before upload and
+activation, using the oldest original source evidence. Source timestamps and
+lifetimes are never renewed during reconstruction or publication.
+
+The example declares a 12-hour interval, a 9-hour run budget and a 1-hour reserve
+against 24-hour evidence. These are explicit planning limits to qualify with the
+deployment's measured throughput. Subprocesses and remote readback receive the
+remaining run budget; local archive operations are checked at phase boundaries.
+A deadline overrun fails the run. Sleeping computers, source outages and missed
+jobs can still leave expired evidence; the consumer must keep refusing it.
+
+Each execution owns `build/update-*/`. `progress.jsonl` is flushed to disk before
+and after every phase, including its output directory and errors. Original
+publication receipts survive failed remote readback. Successful activations
+advance the state file atomically, immediately after each confirmed index;
+`complete.json` exists only after the card and viewer are verified as well.
+`failure.json` records interrupted or failed runs. The build lock and state lock
+refuse concurrent mutation, including plans using different build directories
+but the same state file.
+
+A later failure does not undo a verified upload or a successful activation of an
+earlier independent index. There is no automatic retry or resume. Inspect the
+phase receipts and actual consumer status before starting a new run. A crash
+between consumer activation and saving its state requires explicit receipt
+reconciliation; the next preflight refuses the mismatched pin. A process killed
+without cleanup can leave a lock and a last `started` phase: inspect its owner
+before removing the lock. Keep these runtime files outside version control.
+
+To schedule this explicit pipeline, replace the calendar fields in `[schedule]`
+with its plan and matching interval:
+
+```toml
+[schedule]
+label = "it.gramscii.open-data-catalogue"
+python = "../semantic-deterministic-graph/server/.venv/bin/python"
+path = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+log = "build/schedule.log"
+action = "run-update"
+plan = "update-plan.local.json"
+interval_seconds = 43200
+```
+
+### Launchd definition
 
 Generate the launchd definition from the same validated configuration:
 

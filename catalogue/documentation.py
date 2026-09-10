@@ -12,6 +12,7 @@ from .archive import QualityError, inspect_archive
 from .availability import inspect_availability, policy_from
 from .documentation_releases import load as load_releases
 from .publish import file_url, upload_files, verify_download
+from .runtime import remaining
 
 
 def prepare(directory, config, catalogue_path, catalogue_revision, releases_path, template_path, viewer_path):
@@ -39,7 +40,8 @@ def prepare(directory, config, catalogue_path, catalogue_revision, releases_path
         )
         coverage.append(coverage_rows(release["archive"], name, url))
     for url, report in downloads:
-        verify_download(url, report["sha256"], report["bytes"], hub["timeout_seconds"])
+        verify_download(url, report["sha256"], report["bytes"], remaining(config, hub["timeout_seconds"]),
+                        deadline=config.get("run_deadline"))
     (directory / "catalogue-quality.json").write_text(json.dumps({
         "accepted": accepted, "policy": config["quality"], "report": catalogue,
     }, indent=2), encoding="utf-8")

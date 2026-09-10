@@ -15,8 +15,9 @@ import unittest
 from pathlib import Path
 
 from catalogue.archive import TABLE_KEYS, QualityError, inspect_archive
-from catalogue.cli import dataset_readme, publication_lock, schedule
+from catalogue.cli import publication_lock, schedule
 from catalogue.config import load
+from catalogue.discovery import dataset_readme
 from catalogue.publish import file_url, revision_from_result, verify_download
 
 ROOT = Path(__file__).resolve().parents[1]

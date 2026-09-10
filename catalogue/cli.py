@@ -11,12 +11,13 @@ import tarfile
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from string import Template
 
 from .archive import QualityError, inspect_archive
 from .availability import inspect_availability, policy_from
 from .config import load
+from .discovery import prepare
 from .publish import upload
+from .runtime import remaining
 
 
 def harvester(config, *arguments, capture=False):
@@ -32,6 +33,7 @@ def harvester(config, *arguments, capture=False):
         stdout=subprocess.PIPE if capture else None,
         text=True,
         check=True,
+        timeout=remaining(config),
     )
     return result.stdout
 
@@ -52,64 +54,6 @@ def publication_lock(build: Path):
         lock.rmdir()
 
 
-def dataset_readme(template_path: Path, config: dict, report: dict) -> str:
-    template = Template(template_path.read_text(encoding="utf-8"))
-    values = {
-        "taken_at": report["manifest"]["taken_at"],
-        "table_rows": "\n".join(
-            f"| {key} | {value} |" for key, value in report["tables"].items()
-        ),
-        "provider_rows": "\n".join(
-            f"| {key} | {value} |" for key, value in report["providers"].items()
-        ),
-        "quality_rows": "\n".join(
-            f"| {key} | {value} |" for key, value in report["metrics"].items()
-        ),
-        "archive": config["hub"]["archive"],
-        "sha256": report["sha256"],
-        "bytes": str(report["bytes"]),
-    }
-    if not template.is_valid() or set(template.get_identifiers()) != set(values):
-        raise ValueError(
-            "dataset README template must declare every release placeholder exactly by name"
-        )
-    return template.substitute(values)
-
-
-def prepare(directory: Path, config: dict) -> dict:
-    archive = directory / config["hub"]["archive"]
-    exported = json.loads(
-        harvester(config, "export", "--to", str(archive), capture=True)
-    )
-    try:
-        report = inspect_archive(archive, config["quality"])
-    except QualityError as error:
-        (directory / "quality.json").write_text(
-            json.dumps(error.report, indent=2), encoding="utf-8"
-        )
-        raise
-    if (
-        exported["sha256"] != report["sha256"]
-        or exported["bytes"] != report["bytes"]
-        or exported["tables"] != report["tables"]
-    ):
-        raise ValueError("export report does not match the validated archive")
-    (directory / "manifest.json").write_text(
-        json.dumps(report["manifest"], indent=2), encoding="utf-8"
-    )
-    (directory / "quality.json").write_text(
-        json.dumps(report, indent=2), encoding="utf-8"
-    )
-    (directory / "SHA256SUMS").write_text(
-        f"{report['sha256']}  {archive.name}\n", encoding="utf-8"
-    )
-    (directory / "README.md").write_text(
-        dataset_readme(config["deployment"]["readme_template"], config, report),
-        encoding="utf-8",
-    )
-    return report
-
-
 def schedule(config_path: Path, config: dict, output: Path) -> None:
     settings = config["schedule"]
     payload = {
@@ -123,14 +67,21 @@ def schedule(config_path: Path, config: dict, output: Path) -> None:
         ],
         "WorkingDirectory": str(config_path.parent),
         "EnvironmentVariables": {"PATH": settings["path"]},
-        "StartCalendarInterval": {
-            "Weekday": settings["weekday"],
-            "Hour": settings["hour"],
-            "Minute": settings["minute"],
-        },
         "StandardOutPath": str(settings["log"]),
         "StandardErrorPath": str(settings["log"]),
     }
+    if settings["action"] == "run-update":
+        from .update_plan import load as load_plan
+
+        plan = load_plan(settings["plan"], config)
+        if settings["interval_seconds"] != plan["cadence"]["interval_seconds"]:
+            raise ValueError("schedule interval must match the update plan's freshness budget")
+        payload["ProgramArguments"].extend(("--plan", str(settings["plan"])))
+        payload["StartInterval"] = settings["interval_seconds"]
+    else:
+        payload["StartCalendarInterval"] = {
+            "Weekday": settings["weekday"], "Hour": settings["hour"], "Minute": settings["minute"],
+        }
     settings["log"].parent.mkdir(parents=True, exist_ok=True)
     with output.open("xb") as stream:
         plistlib.dump(payload, stream)
@@ -189,6 +140,12 @@ def main(argv=None) -> int:
     documentation.add_argument("--viewer-config", type=Path, required=True)
     for name in ("prepare", "refresh", "publish", "release"):
         commands.add_parser(name)
+    for name, help_text in (
+        ("check-update", "validate an explicit update plan and its current deployment state; no source reads or uploads"),
+        ("run-update", "build, publish, activate and document an explicit update plan"),
+    ):
+        command = commands.add_parser(name, help=help_text)
+        command.add_argument("--plan", type=Path, required=True)
     scheduled = commands.add_parser(
         "schedule", help="write a launchd plist without installing or starting it"
     )
@@ -197,6 +154,23 @@ def main(argv=None) -> int:
     try:
         config_path = args.config.resolve()
         config = load(config_path)
+        if args.command in {"check-update", "run-update"}:
+            from .update_plan import load as load_plan
+            from .update_plan import load_state
+            from .update_run import preflight, run
+
+            plan = load_plan(args.plan.resolve(), config)
+            with publication_lock(config["deployment"]["build"]):
+                if args.command == "check-update":
+                    state, _ = load_state(Path(plan["state"]), config)
+                    preflight(state, config, harvester)
+                    result = {"valid": True, "updated_indexes": list(plan["indexes"]), "cadence": plan["cadence"], "uploaded": False}
+                else:
+                    directory = Path(tempfile.mkdtemp(prefix="update-", dir=config["deployment"]["build"]))
+                    print(f"update directory: {directory}", file=sys.stderr, flush=True)
+                    result = run(directory, config, plan, harvester, prepare)
+                print(json.dumps(result, indent=2))
+            return 0
         if args.command == "activate-availability":
             source_arguments = ["--snapshot-publications", str(args.snapshot_publications.resolve())] if args.snapshot_publications is not None else []
             with publication_lock(config["deployment"]["build"]):
@@ -288,7 +262,7 @@ def main(argv=None) -> int:
                 tempfile.mkdtemp(prefix="release-", dir=config["deployment"]["build"])
             )
             print(f"release directory: {directory}", file=sys.stderr, flush=True)
-            report = prepare(directory, config)
+            report = prepare(directory, config, harvester)
             if args.command in ("publish", "release"):
                 print(json.dumps(upload(directory, config, report), indent=2))
             else:

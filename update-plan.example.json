@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "state": "update-state.local.json",
+  "cadence": {
+    "interval_seconds": 43200,
+    "maximum_run_seconds": 32400,
+    "minimum_remaining_seconds": 3600
+  },
+  "discovery": {"action": "retain"},
+  "indexes": {
+    "national": {
+      "scope": "scopes/verified-selection.json",
+      "policy": "scopes/verified-selection.policy.toml",
+      "destination": "availability",
+      "readme_template": "README.availability.md",
+      "snapshots": {
+        "providers": ["cruscotto"],
+        "shard_prefix_length": 2,
+        "destination": "source-snapshots"
+      }
+    },
+    "ssn-history": {
+      "scope": "scopes/ssn-history.json",
+      "policy": "scopes/ssn-history.policy.toml",
+      "destination": "availability/ssn-history",
+      "readme_template": "README.availability.md",
+      "snapshots": null
+    },
+    "eurostat-series": {
+      "scope": "scopes/eurostat-qualified-series.json",
+      "policy": "scopes/eurostat-qualified-series.policy.toml",
+      "destination": "availability/eurostat-series",
+      "readme_template": "README.availability.md",
+      "snapshots": null
+    }
+  },
+  "documentation": {
+    "readme_template": "README.hub.md",
+    "viewer_config": "viewer.json"
+  }
+}

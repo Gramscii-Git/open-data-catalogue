@@ -116,9 +116,15 @@ def load(path: Path) -> dict:
         if type(provider["vocabulary"]) is not bool:
             raise ValueError(f"provider {name} vocabulary must be boolean")
     schedule = data["schedule"]
+    if not isinstance(schedule, dict) or "action" not in schedule:
+        raise ValueError("schedule.action is required")
+    actions = {"prepare", "refresh", "publish", "release", "run-update"}
+    if schedule["action"] not in actions:
+        raise ValueError("schedule.action must be prepare, refresh, publish, release or run-update")
+    timing = {"plan", "interval_seconds"} if schedule["action"] == "run-update" else {"weekday", "hour", "minute"}
     fields(
         schedule,
-        {"label", "python", "path", "log", "weekday", "hour", "minute", "action"},
+        {"label", "python", "path", "log", "action"} | timing,
         "schedule",
     )
     for key in ("label", "path"):
@@ -126,9 +132,12 @@ def load(path: Path) -> dict:
     for key in ("python", "log"):
         configured = path.parent / Path(text(schedule[key], f"schedule.{key}"))
         schedule[key] = Path(os.path.abspath(configured)) if key == "python" else configured.resolve()
-    for key, upper in (("weekday", 6), ("hour", 23), ("minute", 59)):
-        if type(schedule[key]) is not int or not 0 <= schedule[key] <= upper:
-            raise ValueError(f"schedule.{key} is outside its valid range")
-    if schedule["action"] not in ("prepare", "refresh", "publish", "release"):
-        raise ValueError("schedule.action must be prepare, refresh, publish or release")
+    if schedule["action"] == "run-update":
+        schedule["plan"] = (path.parent / text(schedule["plan"], "schedule.plan")).resolve(strict=True)
+        if type(schedule["interval_seconds"]) is not int or schedule["interval_seconds"] <= 0:
+            raise ValueError("schedule.interval_seconds must be a positive integer")
+    else:
+        for key, upper in (("weekday", 6), ("hour", 23), ("minute", 59)):
+            if type(schedule[key]) is not int or not 0 <= schedule[key] <= upper:
+                raise ValueError(f"schedule.{key} is outside its valid range")
     return data
