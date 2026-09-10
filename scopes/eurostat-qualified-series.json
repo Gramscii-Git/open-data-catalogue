@@ -1,0 +1,169 @@
+{
+  "schema_version": 2,
+  "limits": {
+    "max_partitions": 10,
+    "max_pages_per_partition": 1,
+    "max_response_bytes": 8388608,
+    "max_total_response_bytes": 67108864,
+    "max_unpacked_bytes": 8388608,
+    "max_line_bytes": 1048576,
+    "max_records": 1000,
+    "max_database_bytes": 1048576,
+    "chunk_bytes": 4096,
+    "min_free_disk_bytes": 1048576,
+    "request_timeout_seconds": 45,
+    "operation_timeout_seconds": 240
+  },
+  "datasets": [
+    {
+      "provider": "eurostat",
+      "dataset_id": "AACT_EAA05",
+      "arguments": {
+        "freq": "A",
+        "p_adj": "NP",
+        "am_item": "AM010000",
+        "indic_agr": "PRD_BP",
+        "unit": "I20"
+      },
+      "varying": {
+        "geo": [
+          "DE",
+          "FR",
+          "IT"
+        ]
+      },
+      "when": "2020/2022",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "freq": "freq",
+        "p_adj": "p_adj",
+        "am_item": "am_item",
+        "indic_agr": "indic_agr",
+        "unit": "unit",
+        "geo": "territory"
+      },
+      "measure_labels": {
+        "value": "Agricultural production index"
+      },
+      "unit_labels": {
+        "I20": "Index, 2020=100"
+      },
+      "valid_for_seconds": 86400,
+      "geography": {
+        "dimension": "geo",
+        "levels": {
+          "DE": "country",
+          "FR": "country",
+          "IT": "country"
+        }
+      }
+    },
+    {
+      "provider": "eurostat",
+      "dataset_id": "PRC_HICP_MANR",
+      "arguments": {
+        "freq": "M",
+        "unit": "RCH_A",
+        "coicop": "CP00"
+      },
+      "varying": {
+        "geo": [
+          "DE",
+          "FR",
+          "IT"
+        ]
+      },
+      "when": "2025-01/2025-12",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "freq": "freq",
+        "unit": "unit",
+        "coicop": "coicop",
+        "geo": "territory"
+      },
+      "measure_labels": {
+        "value": "Harmonised consumer price change"
+      },
+      "unit_labels": {
+        "RCH_A": "Annual rate of change"
+      },
+      "valid_for_seconds": 86400,
+      "geography": {
+        "dimension": "geo",
+        "levels": {
+          "DE": "country",
+          "FR": "country",
+          "IT": "country"
+        }
+      }
+    },
+    {
+      "provider": "eurostat",
+      "dataset_id": "NAMQ_10_GDP",
+      "arguments": {
+        "freq": "Q",
+        "unit": "CP_MEUR",
+        "s_adj": "SCA",
+        "na_item": "B1GQ"
+      },
+      "varying": {
+        "geo": [
+          "DE",
+          "FR",
+          "IT"
+        ]
+      },
+      "when": "2025-Q1/2025-Q4",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "freq": "freq",
+        "unit": "unit",
+        "s_adj": "s_adj",
+        "na_item": "na_item",
+        "geo": "territory"
+      },
+      "measure_labels": {
+        "value": "Gross domestic product"
+      },
+      "unit_labels": {
+        "CP_MEUR": "Current prices, million euro"
+      },
+      "valid_for_seconds": 86400,
+      "geography": {
+        "dimension": "geo",
+        "levels": {
+          "DE": "country",
+          "FR": "country",
+          "IT": "country"
+        }
+      }
+    },
+    {
+      "provider": "eurostat",
+      "dataset_id": "ERT_BIL_EUR_D",
+      "arguments": {
+        "freq": "D",
+        "statinfo": "AVG",
+        "unit": "NAC",
+        "currency": "USD"
+      },
+      "varying": {},
+      "when": "2025-02-27/2025-03-03",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "freq": "freq",
+        "statinfo": "statinfo",
+        "unit": "unit",
+        "currency": "currency"
+      },
+      "measure_labels": {
+        "value": "Exchange rate"
+      },
+      "unit_labels": {
+        "NAC": "National currency"
+      },
+      "valid_for_seconds": 86400
+    }
+  ],
+  "inventories": {}
+}

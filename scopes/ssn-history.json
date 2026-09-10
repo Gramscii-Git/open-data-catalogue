@@ -1,0 +1,40 @@
+{
+  "schema_version": 2,
+  "limits": {
+    "max_partitions": 1,
+    "max_pages_per_partition": 1,
+    "max_response_bytes": 8388608,
+    "max_total_response_bytes": 16777216,
+    "max_unpacked_bytes": 8388608,
+    "max_line_bytes": 1048576,
+    "max_records": 1000,
+    "max_database_bytes": 1048576,
+    "chunk_bytes": 4096,
+    "min_free_disk_bytes": 1048576,
+    "request_timeout_seconds": 45,
+    "operation_timeout_seconds": 120
+  },
+  "datasets": [
+    {
+      "provider": "dvns",
+      "dataset_id": "openbdap_ssn_storico_nazionale",
+      "arguments": {},
+      "varying": {},
+      "when": "always",
+      "period_representation": "annual",
+      "argument_axes": {},
+      "measure_labels": {
+        "values.productionCosts": "Production costs",
+        "values.personnelCost": "Personnel costs",
+        "values.healthcareWorkServices": "Healthcare work services",
+        "values.nonHealthcareWorkServices": "Non-healthcare work services",
+        "values.purchasedServices": "Purchased services"
+      },
+      "unit_labels": {
+        "euro": "Euro"
+      },
+      "valid_for_seconds": 86400
+    }
+  ],
+  "inventories": {}
+}

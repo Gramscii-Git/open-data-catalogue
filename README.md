@@ -88,6 +88,15 @@ to weaken the policy or present incomplete metadata as complete.
 
 ### Joint availability artifacts
 
+`scopes/ssn-history.json` declares the complete source-provided national SSN
+history. `scopes/eurostat-qualified-series.json` declares four qualified native
+series: annual agriculture, monthly consumer prices, quarterly GDP and daily
+exchange rates. Their exact countries, dimensions and periods live in the
+scope files; they do not represent the full Eurostat catalogue. Each has a
+separate validation policy and can be published and activated independently of
+the national municipality index. The September 10 builds validate 65 SSN and
+60 Eurostat combinations; their per-index README files record evidence expiry.
+
 The shared availability index is separate from the seven-table discovery
 snapshot. Its release contract records datasets and explicit indexing scopes,
 completed source partitions and joint period/territory/dimension combinations.
