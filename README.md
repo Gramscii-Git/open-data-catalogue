@@ -97,6 +97,24 @@ separate validation policy and can be published and activated independently of
 the national municipality index. The September 10 builds validate 65 SSN and
 60 Eurostat combinations; their per-index README files record evidence expiry.
 
+Four additional DVNS scopes are authoring inputs, with no publication or active
+reader pin supplied:
+
+| Scope | Declared coverage | Retained native qualification |
+| --- | --- | --- |
+| `dvns-cursor-observations` | Complete SIOPE entity census and hospital-bed corpus | Both complete traversals |
+| `dvns-irpef-history` | Declaration years 2017–2025, all source table families | Annual metadata; complete 2021 bonus tables |
+| `dvns-municipal-receipts-history` | Native national municipal receipts, source years 2024–2026 | Complete Calabria 2025 traversal and exact country/region/entity acquisitions |
+| `dvns-siope-payments` | Complete ASL, province, region and metropolitan-city payment corpora | First page of each; complete acquisition still required |
+
+Each JSON scope has a matching `.policy.toml` file. The component configuration
+`scopes/dvns-observations.selections.json` declares four verified acquisition
+bindings for future deployment assembly; it is not an activatable reader policy.
+The four large payment datasets require native qualification of an entity filter
+before adding their selection bindings. Coverage, temporal axes, resource limits
+and the remaining publication gates are recorded in the
+[DVNS selection audit](docs/audits/2026-09-10-dvns-selection-scopes.md).
+
 The shared availability index is separate from the seven-table discovery
 snapshot. Its release contract records datasets and explicit indexing scopes,
 completed source partitions and joint period/territory/dimension combinations.

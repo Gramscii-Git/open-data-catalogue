@@ -1,0 +1,99 @@
+{
+  "dvns": {
+    "siope_inventario_enti": {
+      "index": "dvns-cursor-observations",
+      "axes": [
+        "entity_type",
+        "territory",
+        "period",
+        "measure",
+        "unit"
+      ],
+      "single_axes": [
+        "entity_type",
+        "territory",
+        "measure",
+        "unit"
+      ],
+      "arguments": {},
+      "integer_arguments": []
+    },
+    "salute_posti_letto": {
+      "index": "dvns-cursor-observations",
+      "axes": [
+        "territory",
+        "region_source",
+        "discipline_type",
+        "discipline",
+        "period",
+        "measure",
+        "unit"
+      ],
+      "single_axes": [
+        "territory",
+        "region_source",
+        "discipline_type",
+        "discipline",
+        "measure",
+        "unit"
+      ],
+      "arguments": {},
+      "integer_arguments": []
+    },
+    "mef_irpef_dettaglio": {
+      "index": "dvns-irpef-history",
+      "axes": [
+        "family",
+        "breakdown",
+        "territory",
+        "income_class",
+        "breakdown_value",
+        "measure_nature",
+        "measure_occurrence",
+        "period",
+        "measure",
+        "unit"
+      ],
+      "single_axes": [
+        "family",
+        "breakdown",
+        "territory",
+        "income_class",
+        "breakdown_value",
+        "measure_nature",
+        "measure_occurrence",
+        "measure",
+        "unit"
+      ],
+      "arguments": {
+        "period": "year",
+        "family": "family"
+      },
+      "integer_arguments": [
+        "year"
+      ]
+    },
+    "siope_entrate_comuni": {
+      "index": "dvns-municipal-receipts-history",
+      "axes": [
+        "reference_year",
+        "territory",
+        "measure",
+        "unit",
+        "period"
+      ],
+      "single_axes": [
+        "reference_year",
+        "territory",
+        "measure",
+        "unit"
+      ],
+      "arguments": {
+        "reference_year": "year"
+      },
+      "integer_arguments": [
+        "year"
+      ]
+    }
+  }
+}

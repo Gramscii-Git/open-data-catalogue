@@ -1,0 +1,71 @@
+{
+  "schema_version": 2,
+  "limits": {
+    "max_partitions": 2,
+    "max_pages_per_partition": 100,
+    "max_response_bytes": 8388608,
+    "max_total_response_bytes": 134217728,
+    "max_unpacked_bytes": 67108864,
+    "max_line_bytes": 16777216,
+    "max_records": 100000,
+    "max_database_bytes": 67108864,
+    "chunk_bytes": 65536,
+    "min_free_disk_bytes": 536870912,
+    "request_timeout_seconds": 45,
+    "operation_timeout_seconds": 1800
+  },
+  "datasets": [
+    {
+      "provider": "dvns",
+      "dataset_id": "siope_inventario_enti",
+      "arguments": {},
+      "varying": {},
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {},
+      "measure_labels": {
+        "siope_inventory_distinctSiopeCodes": "Distinct SIOPE codes",
+        "siope_inventory_distinctTaxCodes": "Distinct tax codes",
+        "siope_inventory_ipaAmbiguous": "Ambiguous IPA identities",
+        "siope_inventory_ipaAmbiguousAmountCents": "Amount with an ambiguous IPA match",
+        "siope_inventory_ipaMatched": "Exact IPA matches",
+        "siope_inventory_ipaMatchedAmountCents": "Amount linked by exact IPA match",
+        "siope_inventory_ipaUnmatched": "Unmatched IPA identities",
+        "siope_inventory_ipaUnmatchedAmountCents": "Amount without an IPA match",
+        "siope_inventory_knownAmountCents": "Known amount for the coverage census",
+        "siope_inventory_observedSiopeCodes": "Entity codes with movements",
+        "siope_inventory_rawMovementRows": "Native movement rows",
+        "siope_inventory_registryRows": "Registry rows",
+        "siope_inventory_validAtObservationCodes": "Entity codes valid at observation",
+        "siope_inventory_withoutMovementsCodes": "Entity codes without movements"
+      },
+      "unit_labels": {
+        "count": "Count",
+        "euro": "Euro"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "dvns",
+      "dataset_id": "salute_posti_letto",
+      "arguments": {},
+      "varying": {},
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {},
+      "measure_labels": {
+        "day_hospital_beds": "Day hospital beds",
+        "day_surgery_beds": "Day surgery beds",
+        "hospital_wards": "Hospital wards",
+        "ordinary_beds": "Ordinary inpatient beds",
+        "paid_beds": "Paid inpatient beds",
+        "total_beds": "Total beds"
+      },
+      "unit_labels": {
+        "count": "Count"
+      },
+      "valid_for_seconds": 86400
+    }
+  ],
+  "inventories": {}
+}

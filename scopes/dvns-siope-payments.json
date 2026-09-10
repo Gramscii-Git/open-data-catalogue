@@ -1,0 +1,84 @@
+{
+  "schema_version": 2,
+  "limits": {
+    "max_partitions": 4,
+    "max_pages_per_partition": 4000,
+    "max_response_bytes": 8388608,
+    "max_total_response_bytes": 2147483648,
+    "max_unpacked_bytes": 2147483648,
+    "max_line_bytes": 16777216,
+    "max_records": 2000000,
+    "max_database_bytes": 1073741824,
+    "chunk_bytes": 65536,
+    "min_free_disk_bytes": 536870912,
+    "request_timeout_seconds": 45,
+    "operation_timeout_seconds": 28800
+  },
+  "datasets": [
+    {
+      "provider": "dvns",
+      "dataset_id": "siope_asl",
+      "arguments": {},
+      "varying": {},
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {},
+      "measure_labels": {
+        "siope_cash_payment": "SIOPE cash payment"
+      },
+      "unit_labels": {
+        "euro": "Euro"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "dvns",
+      "dataset_id": "siope_province",
+      "arguments": {},
+      "varying": {},
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {},
+      "measure_labels": {
+        "siope_cash_payment": "SIOPE cash payment"
+      },
+      "unit_labels": {
+        "euro": "Euro"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "dvns",
+      "dataset_id": "siope_regioni",
+      "arguments": {},
+      "varying": {},
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {},
+      "measure_labels": {
+        "siope_cash_payment": "SIOPE cash payment"
+      },
+      "unit_labels": {
+        "euro": "Euro"
+      },
+      "valid_for_seconds": 86400
+    },
+    {
+      "provider": "dvns",
+      "dataset_id": "siope_citta_metropolitane",
+      "arguments": {},
+      "varying": {},
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {},
+      "measure_labels": {
+        "siope_cash_payment": "SIOPE cash payment"
+      },
+      "unit_labels": {
+        "euro": "Euro"
+      },
+      "valid_for_seconds": 86400
+    }
+  ],
+  "inventories": {}
+}
