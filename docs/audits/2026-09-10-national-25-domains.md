@@ -51,6 +51,9 @@ ANNCSU contributes 23,670 combinations: `n_strade` and `n_civici` in counts, plu
 `pct_geo_ref` in percent, across 7,890 source municipality codes. Six completed
 municipality responses contain no ANNCSU observations. Completed acquisition
 therefore does not imply that each domain reports measurements for every code.
+The codes without ANNCSU observations are `018082`, `024027`, `024071`, `071029`,
+`082017` and `111099`, verified against the complete imported partition and
+combination tables; `anncsu-coverage.json` retains the local census.
 The snapshot manifest records CC BY 4.0, attribution to Agenzia delle Entrate and
 ISTAT, the official ANNCSU source URL, and the permitted `civici_anncsu` field.
 Its dataset definition SHA-256 is
@@ -81,10 +84,31 @@ lives under `build/national-20260910/`:
 - `publication-rdrgwffa/publication.json`: verified availability pin.
 - `activation-d5g2iys9/activation.json`: successful consumer activation receipt.
 
-The publisher's full local suite passed: 94 tests in 20.956 seconds on macOS,
-Python 3.14.6. Ruff and `git diff --check` passed. Tests use isolated loopback
+The publisher's full local suite on the code committed as `4b4216c` passed:
+94 tests in 20.956 seconds on macOS, Python 3.14.6. Ruff and `git diff --check`
+passed. The consumer activation/status tests at `63643fe0` also passed:
+17 tests in 39.34 seconds. Tests use isolated loopback
 servers; native Linux and Windows qualification was not performed. Separate
 authenticated publication and activation checks above used the real Hub bytes.
+
+## Hub documentation and viewer
+
+The [published Hub card](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/blob/c2eae1ea79ea39a2ad9c07c0a416da152bae2a6f/README.md)
+and seven viewer tables were published at
+`c2eae1ea79ea39a2ad9c07c0a416da152bae2a6f`. Every one of the ten publication files
+passed size and SHA-256 readback. The README is 27,817 bytes with SHA-256
+`113a5d846eec4f1052e50d6e22d9e0ef80bbec18c513048da7c43f394f16ac4c`.
+It reports 35 indexed datasets and 911,795 combinations across the three
+independent availability releases, preserving exact evidence verification and
+expiry times. Period summaries remain bounded; full identifiers and calendar
+bounds remain in the pinned archives and viewer rows.
+
+The [viewer manifest](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/resolve/c2eae1ea79ea39a2ad9c07c0a416da152bae2a6f/viewer-manifest.json)
+records every table's source archive digest, row count, size and checksum. Local
+evidence is `documentation-bgihbtyc/publication.json` and
+`documentation-bgihbtyc/viewer-manifest.json`, with the complete input set in
+`documentation-releases.json`. All four input archives were verified against
+their immutable Hub bytes before this documentation publication.
 
 The seven-table discovery archive remains pinned to
 `8854722f8a035cbed57b1cb2bbbed4a297f5c188`, with its recorded quality defects.
