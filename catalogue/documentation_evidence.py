@@ -15,7 +15,7 @@ from .runtime import remaining
 def status_path(value):
     path = PurePosixPath(text(value, "catalogue status artifact"))
     if (len(path.parts) != 1 or path.suffix != ".json" or str(path) != value
-            or value in {"catalogue-quality.json", "viewer-manifest.json", "publication.json"}):
+            or value in {"manifest.json", "quality.json", "catalogue-quality.json", "viewer-manifest.json", "publication.json"}):
         raise ValueError("catalogue status artifact must be a distinct root JSON filename")
     return value
 

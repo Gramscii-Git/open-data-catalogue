@@ -173,9 +173,15 @@ class PublishedDocumentationTests(unittest.TestCase):
         self.assertEqual(self.requests, [])
 
     def test_status_path_and_template_are_explicit(self):
-        for value in ("../status.json", "catalogue-quality.json", "viewer-manifest.json", "README.md"):
+        for value in ("../status.json", "manifest.json", "quality.json", "catalogue-quality.json",
+                      "viewer-manifest.json", "publication.json", "README.md", "open-data-catalogue.tar.gz"):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 status_path(value)
+            with self.subTest(staging=value), self.assertRaises(ValueError):
+                prepare_reported(self.target, self.config, self.evidence, value, self.releases,
+                                 ROOT / "README.hub.reported.md", ROOT / "viewer.json")
+            self.assertFalse(list(self.target.iterdir()))
+            self.assertEqual(self.requests, [])
         with self.assertRaisesRegex(ValueError, "every artifact placeholder"):
             prepare_reported(self.target, self.config, self.evidence, "status.json", self.releases,
                              ROOT / "README.hub.md", ROOT / "viewer.json")
