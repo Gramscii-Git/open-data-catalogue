@@ -407,7 +407,20 @@ log = "build/schedule.log"
 action = "run-update"
 plan = "update-plan.local.json"
 interval_seconds = 43200
+run_at_load = true
 ```
+
+`run_at_load` is required for `run-update`. A true value starts the first run
+when launchd loads the job; a false value waits for the declared interval.
+Schedule generation checks the verified initial archives against that wait,
+the maximum run duration and the reserve, measured from generation time.
+An index that is already five hours old cannot cover a twelve-hour wait plus
+a nine-hour run and a one-hour reserve with a twenty-four-hour lifetime.
+It can cover an immediate first run with the same duration and reserve.
+Generate the definition immediately before loading it; regenerate and recheck
+if installation is delayed. This check cannot guarantee execution on a sleeping
+or unavailable computer. The timer behavior is defined by Apple's
+[launchd configuration contract](https://github.com/apple-oss-distributions/launchd/blob/main/man/launchd.plist.5).
 
 ### Launchd definition
 

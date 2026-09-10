@@ -26,7 +26,13 @@ from catalogue.publish import file_url
 from catalogue.runtime import remaining
 from catalogue.update_plan import load as load_plan
 from catalogue.update_plan import load_state
-from catalogue.update_run import require_fresh, run, state_lock, write_json
+from catalogue.update_run import (
+    require_fresh,
+    require_initial_coverage,
+    run,
+    state_lock,
+    write_json,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -321,20 +327,45 @@ class UpdateTests(unittest.TestCase):
         self.assertEqual(self.state.read_text(), "changed")
 
     def test_schedule_uses_validated_interval_and_exact_plan_without_installing(self):
+        now = datetime.now(UTC)
+        self.content["datasets.jsonl"][0].update(
+            verified_at=now.isoformat(), valid_until=(now + timedelta(days=1)).isoformat(),
+        )
+        archive_at(self.archive, self.content)
+        published = self.initial_publication(self.archive, "availability/availability.tar.gz", "b" * 40)
+        self.active["indexes"]["national"]["artifact"] = self.pin(published)
+        self.activation.write_text(json.dumps({"activated": True, "index": "national", **self.active["indexes"]["national"]}))
         self.configured()
         settings = self.config["schedule"]
         for key in ("weekday", "hour", "minute"):
             del settings[key]
-        settings.update(action="run-update", plan=self.plan_path, interval_seconds=3600, log=self.root / "schedule.log")
+        settings.update(action="run-update", plan=self.plan_path, interval_seconds=3600, run_at_load=True, log=self.root / "schedule.log")
         output = self.root / "job.plist"
         schedule(self.root / "publisher.toml", self.config, output)
         payload = plistlib.loads(output.read_bytes())
         self.assertEqual(payload["StartInterval"], 3600)
+        self.assertIs(payload["RunAtLoad"], True)
         self.assertNotIn("StartCalendarInterval", payload)
         self.assertEqual(payload["ProgramArguments"][-3:], ["run-update", "--plan", str(self.plan_path)])
         settings["interval_seconds"] = 604800
         with self.assertRaisesRegex(ValueError, "must match"):
             schedule(self.root / "publisher.toml", self.config, self.root / "invalid.plist")
+
+    def test_initial_schedule_checks_evidence_age_and_first_run_delay(self):
+        self.plan["cadence"] = {
+            "interval_seconds": 43200, "maximum_run_seconds": 32400, "minimum_remaining_seconds": 3600,
+        }
+        plan = self.configured()
+        now = datetime(2026, 9, 8, 17, tzinfo=UTC)
+        require_initial_coverage(plan, self.config, now=now, run_at_load=True)
+        with self.assertRaisesRegex(ValueError, "next declared run budget"):
+            require_initial_coverage(plan, self.config, now=now, run_at_load=False)
+        with self.assertRaisesRegex(ValueError, "expired"):
+            require_initial_coverage(plan, self.config, now=now + timedelta(days=1), run_at_load=True)
+        with self.archive.open("ab") as stream:
+            stream.write(b"changed after publication")
+        with self.assertRaisesRegex(ValueError, "differs from its verified publication"):
+            require_initial_coverage(plan, self.config, now=now, run_at_load=True)
 
     def test_runtime_deadline_is_explicit_and_never_extends_a_request_timeout(self):
         self.assertEqual(remaining({}, 12), 12)
@@ -345,7 +376,7 @@ class UpdateTests(unittest.TestCase):
     def test_schedule_configuration_requires_plan_interval_instead_of_calendar_fields(self):
         self.configured()
         template = (ROOT / "publisher.example.toml").read_text()
-        template = template.replace('action = "prepare"', 'action = "run-update"\nplan = ' + json.dumps(str(self.plan_path)) + '\ninterval_seconds = 3600')
+        template = template.replace('action = "prepare"', 'action = "run-update"\nplan = ' + json.dumps(str(self.plan_path)) + '\ninterval_seconds = 3600\nrun_at_load = false')
         target = self.root / "publisher.toml"
         target.write_text(template)
         with self.assertRaisesRegex(ValueError, "exactly"):
@@ -356,6 +387,12 @@ class UpdateTests(unittest.TestCase):
         config = load_config(target)
         self.assertEqual(config["schedule"]["plan"], self.plan_path)
         self.assertEqual(config["schedule"]["interval_seconds"], 3600)
+        self.assertIs(config["schedule"]["run_at_load"], False)
+        for value in (None, '"true"', "1"):
+            with self.subTest(run_at_load=value):
+                target.write_text(template.replace("run_at_load = false", "" if value is None else "run_at_load = " + value))
+                with self.assertRaisesRegex(ValueError, "run_at_load"):
+                    load_config(target)
 
     def test_cli_refuses_invalid_update_state_before_any_harvester_execution(self):
         self.plan["cadence"]["interval_seconds"] = 604800

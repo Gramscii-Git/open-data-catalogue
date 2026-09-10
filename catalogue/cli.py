@@ -71,13 +71,18 @@ def schedule(config_path: Path, config: dict, output: Path) -> None:
         "StandardErrorPath": str(settings["log"]),
     }
     if settings["action"] == "run-update":
+        from datetime import UTC, datetime
+
         from .update_plan import load as load_plan
+        from .update_run import require_initial_coverage
 
         plan = load_plan(settings["plan"], config)
         if settings["interval_seconds"] != plan["cadence"]["interval_seconds"]:
             raise ValueError("schedule interval must match the update plan's freshness budget")
+        require_initial_coverage(plan, config, now=datetime.now(UTC), run_at_load=settings["run_at_load"])
         payload["ProgramArguments"].extend(("--plan", str(settings["plan"])))
         payload["StartInterval"] = settings["interval_seconds"]
+        payload["RunAtLoad"] = settings["run_at_load"]
     else:
         payload["StartCalendarInterval"] = {
             "Weekday": settings["weekday"], "Hour": settings["hour"], "Minute": settings["minute"],

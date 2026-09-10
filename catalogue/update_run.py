@@ -71,6 +71,21 @@ def require_fresh(archive, *, now, required_until):
                 raise ValueError(f"update evidence cannot cover its next declared run budget: {dataset['provider']}:{dataset['dataset_id']}")
 
 
+def require_initial_coverage(plan, config, *, now, run_at_load):
+    if type(run_at_load) is not bool:
+        raise ValueError("schedule.run_at_load must be boolean")
+    cadence = plan["cadence"]
+    wait = 0 if run_at_load else cadence["interval_seconds"]
+    required_until = now + timedelta(seconds=wait + cadence["maximum_run_seconds"] + cadence["minimum_remaining_seconds"])
+    state, _ = load_state(Path(plan["state"]), config)
+    for name in plan["indexes"]:
+        release = state["indexes"][name]
+        published = json.loads(Path(release["publication"]).read_bytes())
+        archive = Path(release["archive"])
+        verify_local_archive(archive, published)
+        require_fresh(archive, now=now, required_until=required_until)
+
+
 class Run:
     def __init__(self, directory, config):
         self.directory, self.config = directory, config

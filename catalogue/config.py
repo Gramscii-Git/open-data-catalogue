@@ -121,7 +121,7 @@ def load(path: Path) -> dict:
     actions = {"prepare", "refresh", "publish", "release", "run-update"}
     if schedule["action"] not in actions:
         raise ValueError("schedule.action must be prepare, refresh, publish, release or run-update")
-    timing = {"plan", "interval_seconds"} if schedule["action"] == "run-update" else {"weekday", "hour", "minute"}
+    timing = {"plan", "interval_seconds", "run_at_load"} if schedule["action"] == "run-update" else {"weekday", "hour", "minute"}
     fields(
         schedule,
         {"label", "python", "path", "log", "action"} | timing,
@@ -136,6 +136,8 @@ def load(path: Path) -> dict:
         schedule["plan"] = (path.parent / text(schedule["plan"], "schedule.plan")).resolve(strict=True)
         if type(schedule["interval_seconds"]) is not int or schedule["interval_seconds"] <= 0:
             raise ValueError("schedule.interval_seconds must be a positive integer")
+        if type(schedule["run_at_load"]) is not bool:
+            raise ValueError("schedule.run_at_load must be boolean")
     else:
         for key, upper in (("weekday", 6), ("hour", 23), ("minute", 59)):
             if type(schedule[key]) is not int or not 0 <= schedule[key] <= upper:
