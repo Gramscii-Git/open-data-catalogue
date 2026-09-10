@@ -57,16 +57,37 @@ before uploading. Its staging directory is retained separately as
 completed upload and readback. No native source request or publication-database
 mutation was used in either invocation.
 
-## Remaining adoption and documentation work
+## Published root card and viewers
 
-Consumer activation and the live metadata-context check are separate gates.
-The root Hub card and viewer still refer to the preceding documentation release
-`c2eae1ea79ea39a2ad9c07c0a416da152bae2a6f` at this checkpoint. Their preparation
-exposed a contract error: the current strict inspector rejects the existing
-schema-1 discovery archive before the documentation path can describe it.
-An explicit, pinned historical-publication evidence path is being qualified;
-new-export admission remains strict. The historical discovery errors and policy
-must remain attributable, without claiming a new schema-2 evaluation.
+The root card and seven viewer tables are published at immutable revision
+`6c7fa70bbe1e3dd7a7f456e62aad346742866816`. The publisher reread all eleven files
+and verified their sizes and SHA-256 digests. Root independently compared every
+staged file to the reviewed preview; all were byte-identical.
+
+[Immutable dataset card](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/blob/6c7fa70bbe1e3dd7a7f456e62aad346742866816/README.md)
+is 29,571 bytes, SHA-256
+`53024936e2d2fd0a2942c1e1d293cc4e32e920826292c327b43bc75cc9d70843`.
+The final producer `0d718e8` has the same code/tests as qualified `4bf752d`,
+whose full local suite passes 142 tests. The explicit reported-evidence mode
+is described in [its qualification audit](2026-09-11-retained-catalogue-documentation.md).
+
+Six viewer files remain byte-identical to the previous publication; the seventh
+changes only four Eurostat definition hashes. National, SSN and discovery
+archive pins and source snapshots are preserved. The historical quality report
+is unchanged. Separate `catalogue-status.json` states that no current quality
+evaluation was performed and admission is not granted; documenting schema 1
+does not qualify it as a new schema-2 export.
+
+The actual operation is retained under
+`publication-build/reported-documentation/documentation-ay38d1r8/`.
+`documentation-publication.json` records `verified: true`;
+`documentation-root-readback.json`, SHA-256
+`4baefc0a098f6dd592fe83e1f8a8b1a687421f0a3751ff613b59f6a709bade44`,
+pins all eleven preview/output digests. No native source request occurred.
+
+## Remaining adoption work
+
+Consumer activation and the live metadata-context check remain separate gates.
 
 The previous updater first-start deadline has already passed. This publication
 does not extend the national/SSN evidence, install a timer or change running
