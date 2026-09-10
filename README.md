@@ -199,10 +199,13 @@ use it with `scopes/dvns-expanded.policy.toml` for the wider build.
 
 `scopes/verified-selection.json` declares all 15 ordinary-statute regions for
 the four OpenCivitas datasets, all native COFOG geographies for 2014–2024, and
-24 mapped, licensed Cruscotto domains for the complete official municipality
+the mapped, licensed Cruscotto domains for the complete official municipality
 inventory. Use `scopes/verified-selection.policy.toml` for its build and
-publication. Air quality, weather and morphology retain their physical units;
-ANNCSU has no explicit source licence and remains a visible rights refusal.
+publication. The source integration supports 25 domains, including ANNCSU under
+its verified CC BY 4.0 terms; the published national revision linked above still
+contains 24 domains. A new complete build and publication are required before
+ANNCSU can be counted as indexed coverage. Air quality, weather and morphology
+retain their physical units.
 Calendar periods, weather validity instants, source snapshot dates and opaque
 source labels remain distinct. An unreported domain never receives invented
 observations or a guessed period.

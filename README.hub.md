@@ -51,9 +51,16 @@ are verified against that index's archive independently.
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 $availability_releases
 
-| Index | Provider | Dataset | Source periods | Distinct territories | Combinations | Evidence expires (UTC) |
-| --- | --- | --- | --- | ---: | ---: | --- |
+| Index / full metadata | Provider | Dataset | Period kind | Distinct source periods | First / last identifier (lexical order) | Distinct territories | Combinations | Evidence expires (UTC) |
+| --- | --- | --- | --- | ---: | --- | ---: | ---: | --- |
 $availability_rows
+
+The period columns summarize the exact distinct identifiers, without enumerating
+every source timestamp on this page. The first and last identifiers use lexical
+order, not inferred calendar order. They do not imply continuous coverage or
+fill gaps. Download each index's full metadata, or inspect its combination table
+in the viewer, for every identifier and its original calendar bounds. Snapshot
+timestamps and opaque source labels remain distinct from observation periods.
 
 COFOG covers the geographies returned by DVNS for each indexed year, including
 countries and European aggregates. Aggregates must not be added to their members.

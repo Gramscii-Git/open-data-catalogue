@@ -1,6 +1,7 @@
 """Document independently pinned catalogue and availability releases truthfully."""
 
 import hashlib
+import html
 import json
 import tarfile
 from collections import Counter, defaultdict
@@ -36,7 +37,7 @@ def prepare(directory, config, catalogue_path, catalogue_revision, releases_path
             f"| {report['tables']['partitions.jsonl']:,} | {report['tables']['combinations.jsonl']:,} "
             f"| {report['bytes']:,} | `{report['sha256']}` |"
         )
-        coverage.append(coverage_rows(release["archive"], name))
+        coverage.append(coverage_rows(release["archive"], name, url))
     for url, report in downloads:
         verify_download(url, report["sha256"], report["bytes"], hub["timeout_seconds"])
     (directory / "catalogue-quality.json").write_text(json.dumps({
@@ -65,7 +66,7 @@ def prepare(directory, config, catalogue_path, catalogue_revision, releases_path
     return values
 
 
-def coverage_rows(path, index):
+def coverage_rows(path, index, url):
     counts, periods, territories = Counter(), defaultdict(set), defaultdict(set)
     with tarfile.open(path, "r:gz") as archive:
         for line in archive.extractfile("combinations.jsonl"):
@@ -79,7 +80,13 @@ def coverage_rows(path, index):
         for line in archive.extractfile("datasets.jsonl"):
             row = json.loads(line)
             key = row["provider"], row["dataset_id"]
-            rows.append(f"| {index} | {row['provider']} | `{row['dataset_id']}` | {', '.join(sorted(periods[key]))} | {len(territories[key]):,} | {counts[key]:,} | {row['valid_until']} |")
+            identifiers = sorted(periods[key])
+            endpoints = [identifiers[0], identifiers[-1]] if len(identifiers) > 1 else identifiers
+            bounds = " / ".join(
+                f"<code>{html.escape(value).replace('|', '&#124;')}</code>"
+                for value in endpoints
+            )
+            rows.append(f"| [{index}]({url}) | {row['provider']} | `{row['dataset_id']}` | {row['period_kind']} | {len(identifiers):,} | {bounds} | {len(territories[key]):,} | {counts[key]:,} | {row['valid_until']} |")
     return "\n".join(rows)
 
 

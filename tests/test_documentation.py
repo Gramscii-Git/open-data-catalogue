@@ -5,6 +5,7 @@ import json
 import tempfile
 import threading
 import unittest
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from test_availability import archive_at, tables
@@ -113,6 +114,29 @@ class DocumentationTests(unittest.TestCase):
         self.assertEqual(row["period"], period["id"])
         self.assertIsNone(row["period_start"])
         self.assertIsNone(row["period_end"])
+
+    def test_snapshot_period_summary_is_bounded_and_full_viewer_evidence_is_retained(self):
+        content = tables()
+        content["datasets.jsonl"][0]["period_kind"] = "snapshot"
+        original = content["combinations.jsonl"][0]
+        combinations = []
+        start = datetime(2026, 9, 8, tzinfo=UTC)
+        for minute in range(1200):
+            identifier = (start + timedelta(minutes=minute)).isoformat()
+            period = {"id": identifier, "label": identifier, "start": identifier, "end": identifier}
+            combinations.append({**original, "period": period})
+        content["combinations.jsonl"] = combinations
+        archive_at(self.availability, content)
+        self.payloads["availability/availability.tar.gz"] = self.availability.read_bytes()
+        directory = self.prepare()
+        card = (directory / "README.md").read_text()
+        self.assertLess(len(card), 20000)
+        self.assertIn("| snapshot | 1,200 |", card)
+        self.assertIn(combinations[0]["period"]["id"], card)
+        self.assertIn(combinations[-1]["period"]["id"], card)
+        self.assertNotIn(combinations[600]["period"]["id"], card)
+        projected = [json.loads(line) for line in (directory / "viewer/national_combinations.jsonl").read_text().splitlines()]
+        self.assertEqual([row["period"] for row in projected], [row["period"]["id"] for row in combinations])
 
     def test_viewer_selects_only_typed_tables_and_preserves_source_rows(self):
         directory = self.prepare()
