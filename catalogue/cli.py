@@ -100,6 +100,14 @@ def main(argv=None) -> int:
         "check", help="validate an existing archive; no harvest or upload"
     )
     check.add_argument("--archive", type=Path, required=True)
+    verify_catalogue_command = commands.add_parser(
+        "verify-catalogue", help="record a new immutable discovery readback; no upload or quality waiver"
+    )
+    verify_catalogue_command.add_argument("--archive", type=Path, required=True)
+    verify_catalogue_command.add_argument("--revision", required=True)
+    verify_catalogue_command.add_argument("--expect-sha256", required=True)
+    verify_catalogue_command.add_argument("--expect-bytes", type=int, required=True)
+    verify_catalogue_command.add_argument("--output", type=Path, required=True)
     availability = commands.add_parser(
         "check-availability",
         help="validate a joint-availability artifact; no source reads or upload",
@@ -159,6 +167,12 @@ def main(argv=None) -> int:
     try:
         config_path = args.config.resolve()
         config = load(config_path)
+        if args.command == "verify-catalogue":
+            from .receipts import verify_catalogue
+
+            print(json.dumps(verify_catalogue(config, args.archive, args.revision, args.expect_sha256,
+                                             args.expect_bytes, args.output), indent=2))
+            return 0
         if args.command in {"check-update", "run-update"}:
             from .update_plan import load as load_plan
             from .update_plan import load_state

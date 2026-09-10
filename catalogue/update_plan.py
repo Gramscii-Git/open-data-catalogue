@@ -8,6 +8,7 @@ from pathlib import Path, PurePosixPath
 from .availability import policy_from
 from .config import fields, text
 from .publish import file_url
+from .receipts import read_verification
 from .viewer import load as load_viewer
 
 
@@ -50,12 +51,12 @@ def load_state(path, config):
     original = path.read_bytes()
     state = json.loads(original)
     fields(state, {"schema_version", "catalogue", "indexes"}, "update state")
-    if type(state["schema_version"]) is not int or state["schema_version"] != 1:
-        raise ValueError("update state schema must be 1")
-    fields(state["catalogue"], {"archive", "publication"}, "catalogue state")
-    paths(state["catalogue"], ("archive", "publication"), path.parent)
+    if type(state["schema_version"]) is not int or state["schema_version"] != 2:
+        raise ValueError("update state schema must be 2")
+    fields(state["catalogue"], {"archive", "verification"}, "catalogue state")
+    paths(state["catalogue"], ("archive", "verification"), path.parent)
     catalogue = state["catalogue"]
-    receipt(Path(catalogue["publication"]), config["hub"], config["hub"]["archive"])
+    read_verification(Path(catalogue["verification"]), config["hub"], config["hub"]["archive"])
     if not isinstance(state["indexes"], dict) or not state["indexes"]:
         raise ValueError("update state requires explicit availability indexes")
     destinations = set()
@@ -75,13 +76,6 @@ def load_state(path, config):
                 or not isinstance(activated.get("snapshots"), dict)):
             raise ValueError("update state requires a confirmed matching consumer activation")
     return state, original
-
-
-def verify_local_archive(path, published):
-    with path.open("rb") as stream:
-        digest = hashlib.file_digest(stream, "sha256").hexdigest()
-    if path.stat().st_size != published["bytes"] or digest != published["sha256"]:
-        raise ValueError(f"update archive differs from its verified publication receipt: {path}")
 
 
 def load(path, config):

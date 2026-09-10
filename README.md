@@ -365,10 +365,29 @@ provider name or the current Hub branch.
 
 Copy `update-plan.example.json` and `update-state.example.json` to local files.
 The state must name real existing archives, verified publication receipts and
-successful activation receipts for every deployed index. Its catalogue receipt
-must identify the existing discovery archive. Configuration paths are relative
-to their owning file. Initial state is never guessed or reconstructed from
-`main`; a missing receipt is an explicit error.
+successful activation receipts for every deployed index. State schema 2 requires
+`catalogue.verification` to identify a successful current readback of the existing
+discovery archive. This proof is separate from the historical upload receipt and
+does not claim that a publication occurred during verification. Configuration
+paths are relative to their owning file. State schema 1 is rejected; there is no
+automatic migration or reconstruction from `main`.
+
+Create the discovery proof from an explicitly pinned immutable revision, local
+archive, expected checksum and byte count:
+
+```sh
+./update --config publisher.local.toml verify-catalogue \
+  --archive path/to/open-data-catalogue.tar.gz --revision FULL_IMMUTABLE_COMMIT \
+  --expect-sha256 EXPECTED_ARCHIVE_SHA256 --expect-bytes EXPECTED_ARCHIVE_BYTES \
+  --output build/catalogue-verification.json
+```
+
+The command verifies local bytes before making a Hub request, then checks the
+remote size and checksum. It writes a distinct `immutable-readback` receipt with
+start/completion timestamps and explicit success or failure. Existing output is
+never overwritten. No upload, metadata quality waiver, source request or reader
+activation occurs. Discovery `publish` and `release` stages preserve their upload
+receipt and also create this independent readback proof for the updated state.
 
 ```sh
 ./update --config publisher.local.toml check-update --plan update-plan.local.json

@@ -23,6 +23,7 @@ from catalogue.cli import prepare as prepare_catalogue
 from catalogue.cli import schedule
 from catalogue.config import load as load_config
 from catalogue.publish import file_url
+from catalogue.receipts import read_verification, verify_catalogue, write_json
 from catalogue.runtime import remaining
 from catalogue.update_plan import load as load_plan
 from catalogue.update_plan import load_state
@@ -31,7 +32,6 @@ from catalogue.update_run import (
     require_initial_coverage,
     run,
     state_lock,
-    write_json,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -91,13 +91,16 @@ class UpdateTests(unittest.TestCase):
         self.content = tables()
         archive_at(self.archive, self.content)
         catalogue_pub = self.initial_publication(self.catalogue, self.config["hub"]["archive"], "a" * 40)
+        self.verification = self.root / "catalogue-verification.json"
+        verify_catalogue(self.config, self.catalogue, catalogue_pub["revision"], catalogue_pub["sha256"],
+                         catalogue_pub["bytes"], self.verification)
         availability_pub = self.initial_publication(self.archive, "availability/availability.tar.gz", "b" * 40)
         self.active = {"indexes": {"national": {"artifact": self.pin(availability_pub), "snapshots": {}}}}
         self.activation = self.root / "initial-activation.json"
         self.activation.write_text(json.dumps({"activated": True, "index": "national", **self.active["indexes"]["national"]}))
         self.state = self.root / "state.json"
-        self.state.write_text(json.dumps({"schema_version": 1, "catalogue": {
-            "archive": str(self.catalogue), "publication": catalogue_pub["path"],
+        self.state.write_text(json.dumps({"schema_version": 2, "catalogue": {
+            "archive": str(self.catalogue), "verification": str(self.verification),
         }, "indexes": {"national": {
             "archive": str(self.archive), "publication": availability_pub["path"], "activation": str(self.activation),
             "policy": str(self.policy), "destination": "availability",
@@ -215,6 +218,51 @@ class UpdateTests(unittest.TestCase):
         self.assertFalse((self.hub / "uploads.jsonl").exists())
         self.assertFalse(json.loads((self.root / "execution/failure.json").read_bytes())["complete"])
 
+    def test_catalogue_bootstrap_records_current_readback_without_fabricating_upload_history(self):
+        record = json.loads(self.verification.read_bytes())
+        self.assertEqual(record["method"], "immutable-readback")
+        self.assertTrue(record["verified"])
+        self.assertIsNone(record["error"])
+        self.assertGreaterEqual(datetime.fromisoformat(record["completed_at"]), datetime.fromisoformat(record["started_at"]))
+        self.assertFalse((self.hub / "uploads.jsonl").exists())
+        self.assertEqual(read_verification(self.verification, self.config["hub"], self.config["hub"]["archive"]), record["artifact"])
+        with self.assertRaises(FileExistsError):
+            pin = record["artifact"]
+            verify_catalogue(self.config, self.catalogue, pin["revision"], pin["sha256"], pin["bytes"], self.verification)
+
+    def test_catalogue_bootstrap_records_failed_remote_readback_and_rejects_it_as_state(self):
+        self.corrupt = self.config["hub"]["archive"]
+        pin = json.loads(self.verification.read_bytes())["artifact"]
+        failed = self.root / "failed-verification.json"
+        with self.assertRaisesRegex(RuntimeError, "SHA-256"):
+            verify_catalogue(self.config, self.catalogue, pin["revision"], pin["sha256"], pin["bytes"], failed)
+        record = json.loads(failed.read_bytes())
+        self.assertFalse(record["verified"])
+        self.assertEqual(record["error"]["type"], "RuntimeError")
+        self.assertIsNotNone(record["completed_at"])
+        with self.assertRaisesRegex(ValueError, "successful immutable readback"):
+            read_verification(failed, self.config["hub"], self.config["hub"]["archive"])
+
+    def test_catalogue_bootstrap_checks_local_pin_before_http_and_refuses_old_state_schema(self):
+        pin = json.loads(self.verification.read_bytes())["artifact"]
+        before = list(self.requests)
+        with self.assertRaisesRegex(ValueError, "differs from its verified artifact"):
+            verify_catalogue(self.config, self.catalogue, pin["revision"], "0" * 64, pin["bytes"], self.root / "wrong-local.json")
+        self.assertEqual(self.requests, before)
+        state = json.loads(self.state.read_bytes())
+        state["schema_version"] = 1
+        self.state.write_text(json.dumps(state))
+        with self.assertRaisesRegex(ValueError, "schema must be 2"):
+            self.configured()
+
+    def test_catalogue_verification_rejects_mutable_pins_and_unordered_times(self):
+        record = json.loads(self.verification.read_bytes())
+        for changes in ({"artifact": {**record["artifact"], "revision": "main"}},
+                        {"completed_at": "2020-01-01T00:00:00+00:00"}, {"verified": False}):
+            self.verification.write_text(json.dumps({**record, **changes}))
+            with self.assertRaises(ValueError):
+                self.configured()
+
     def test_failed_remote_verification_retains_actual_revision_without_activation(self):
         original = self.state.read_bytes()
         self.corrupt = "availability/availability.tar.gz"
@@ -267,6 +315,10 @@ class UpdateTests(unittest.TestCase):
         directory, _ = self.execute()
         state, _ = load_state(self.state, self.config)
         self.assertEqual(state["catalogue"]["archive"], str(directory / "discovery/open-data-catalogue.tar.gz"))
+        self.assertEqual(state["catalogue"]["verification"], str(directory / "discovery/verification.json"))
+        verification = read_verification(Path(state["catalogue"]["verification"]), self.config["hub"], self.config["hub"]["archive"])
+        publication = json.loads((directory / "discovery/publication.json").read_bytes())
+        self.assertEqual(verification, self.pin(publication))
         self.assertTrue(any(call[0] == "export" for call in self.harvester_calls))
         self.assertEqual(len((self.hub / "uploads.jsonl").read_text().splitlines()), 3)
 
@@ -364,7 +416,7 @@ class UpdateTests(unittest.TestCase):
             require_initial_coverage(plan, self.config, now=now + timedelta(days=1), run_at_load=True)
         with self.archive.open("ab") as stream:
             stream.write(b"changed after publication")
-        with self.assertRaisesRegex(ValueError, "differs from its verified publication"):
+        with self.assertRaisesRegex(ValueError, "differs from its verified artifact"):
             require_initial_coverage(plan, self.config, now=now, run_at_load=True)
 
     def test_runtime_deadline_is_explicit_and_never_extends_a_request_timeout(self):

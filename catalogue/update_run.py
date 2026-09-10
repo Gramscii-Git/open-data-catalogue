@@ -4,7 +4,6 @@ import json
 import os
 import sys
 import tarfile
-import tempfile
 import time
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
@@ -12,28 +11,14 @@ from pathlib import Path
 
 from . import availability_build, availability_publish, documentation, snapshots
 from .publish import upload
+from .receipts import (
+    read_verification,
+    verify_catalogue,
+    verify_local_archive,
+    write_json,
+)
 from .runtime import remaining
-from .update_plan import load_state, receipt, verify_local_archive
-
-
-def write_json(path, value, *, expected=None):
-    temporary = None
-    try:
-        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as stream:
-            temporary = Path(stream.name)
-            json.dump(value, stream, indent=2)
-            stream.write("\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-        if expected is not None and path.read_bytes() != expected:
-            raise ValueError("update state changed concurrently; inspect the published and active receipts")
-        if expected is None and path.exists():
-            raise FileExistsError(path)
-        temporary.replace(path)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
-    return path.read_bytes()
+from .update_plan import load_state, receipt
 
 
 @contextmanager
@@ -141,7 +126,7 @@ def run(directory, config, plan, harvester, prepare_catalogue):
             release_dir = directory / "discovery"
             execution.phase("discovery", lambda target: discovery_release(target, config, action, harvester, prepare_catalogue))
             state["catalogue"] = {"archive": str(release_dir / config["hub"]["archive"]),
-                                  "publication": str(release_dir / "publication.json")}
+                                  "verification": str(release_dir / "verification.json")}
             original = write_json(state_path, state, expected=original)
         required_until = started + timedelta(seconds=sum(cadence.values()))
         for name, definition in plan["indexes"].items():
@@ -156,7 +141,7 @@ def run(directory, config, plan, harvester, prepare_catalogue):
         releases_path = directory / "documentation-releases.json"
         write_json(releases_path, releases)
         catalogue = state["catalogue"]
-        published = receipt(Path(catalogue["publication"]), config["hub"], config["hub"]["archive"])
+        published = read_verification(Path(catalogue["verification"]), config["hub"], config["hub"]["archive"])
         doc = plan["documentation"]
         execution.phase("documentation", lambda target: document_release(
             target, config, Path(catalogue["archive"]), published["revision"], releases_path,
@@ -173,7 +158,10 @@ def run(directory, config, plan, harvester, prepare_catalogue):
 def preflight(state, config, harvester):
     actual = json.loads(harvester(config, "availability-status", capture=True))
     require_active(state, actual)
-    for release in (state["catalogue"], *state["indexes"].values()):
+    catalogue = state["catalogue"]
+    verified = read_verification(Path(catalogue["verification"]), config["hub"], config["hub"]["archive"])
+    verify_local_archive(Path(catalogue["archive"]), verified)
+    for release in state["indexes"].values():
         published = json.loads(Path(release["publication"]).read_bytes())
         verify_local_archive(Path(release["archive"]), published)
     return actual
@@ -188,7 +176,10 @@ def discovery_release(directory, config, action, harvester, prepare_catalogue):
         harvester(config, "enrich")
         harvester(config, "verify")
     report = prepare_catalogue(directory, config, harvester)
-    return upload(directory, config, report)
+    published = upload(directory, config, report)
+    verify_catalogue(config, directory / config["hub"]["archive"], published["revision"],
+                     published["sha256"], published["bytes"], directory / "verification.json")
+    return published
 
 
 def activate(config, harvester, name, publication_path, expected, snapshot_paths):
