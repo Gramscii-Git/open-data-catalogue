@@ -1,15 +1,44 @@
 """Own command processes until completion or explicit owner shutdown."""
 
 import argparse
+import fcntl
+import json
 import math
 import os
 import queue
 import signal
+import stat
 import subprocess
 import sys
 import threading
 import time
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
+
+_lock_descriptors = ContextVar("publisher_lock_descriptors", default=())
+
+
+@contextmanager
+def process_lock(path, *, label):
+    descriptor = os.open(path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise ValueError(f"{label} lock requires a regular file: {path}")
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise RuntimeError(f"{label} lock is held by an execution or its draining command: {path}") from error
+        os.ftruncate(descriptor, 0)
+        os.write(descriptor, json.dumps({"owner_pid": os.getpid()}).encode())
+        os.fsync(descriptor)
+        token = _lock_descriptors.set((*_lock_descriptors.get(), descriptor))
+        try:
+            yield
+        finally:
+            _lock_descriptors.reset(token)
+    finally:
+        os.close(descriptor)
 
 
 def run_command(arguments, *, stop_grace, **options):
@@ -34,7 +63,7 @@ def run_command(arguments, *, stop_grace, **options):
     try:
         command = [sys.executable, "-B", str(Path(__file__).resolve()), "--owner-fd", str(reader),
                    "--stop-grace", str(stop_grace), "--", *map(str, arguments)]
-        process = subprocess.Popen(command, pass_fds=(reader,), start_new_session=True, **options)
+        process = subprocess.Popen(command, pass_fds=(reader, *_lock_descriptors.get()), start_new_session=True, **options)
     except BaseException:
         os.close(owner)
         raise
@@ -95,11 +124,14 @@ def supervise(arguments, owner_fd, stop_grace):
 
     threading.Thread(target=owner_closed, daemon=True).start()
     process = subprocess.Popen(arguments, start_new_session=True)
-    threading.Thread(target=lambda: events.put(("exit", process.wait())), daemon=True).start()
-    reason, status = events.get()
-    if reason == "exit" and not signal_group(process.pid, 0):
-        return status if status >= 0 else 128 - status
-    stop_group(process, stop_grace)
+    try:
+        threading.Thread(target=lambda: events.put(("exit", process.wait())), daemon=True).start()
+        reason, status = events.get()
+        if reason == "exit" and not signal_group(process.pid, 0):
+            return status if status >= 0 else 128 - status
+    finally:
+        if process.poll() is None or signal_group(process.pid, 0):
+            stop_group(process, stop_grace)
     print(f"publisher command is incomplete: {reason}; owned process group is stopped", file=sys.stderr, flush=True)
     return 1
 
@@ -110,6 +142,8 @@ def main():
     parser.add_argument("--stop-grace", type=float, required=True)
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
+    if not math.isfinite(args.stop_grace) or args.stop_grace <= 0:
+        parser.error("stop grace must be positive and finite")
     if not args.command or args.command[0] != "--" or len(args.command) == 1:
         parser.error("an explicit command is required after --")
     return supervise(args.command[1:], args.owner_fd, args.stop_grace)

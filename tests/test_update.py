@@ -459,7 +459,7 @@ class UpdateTests(unittest.TestCase):
             self.configured()
 
     def test_state_lock_and_compare_before_replace_preserve_other_writers(self):
-        with state_lock(self.state), self.assertRaisesRegex(RuntimeError, "state lock exists"), state_lock(self.state):
+        with state_lock(self.state), self.assertRaisesRegex(RuntimeError, "state lock is held"), state_lock(self.state):
             self.fail("a concurrent state writer entered")
         original = self.state.read_bytes()
         self.state.write_text("changed")

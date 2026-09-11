@@ -328,12 +328,13 @@ class Releases(unittest.TestCase):
     def test_concurrent_publisher_is_refused_without_removing_the_owner_lock(self):
         with publication_lock(self.directory):
             with (
-                self.assertRaisesRegex(RuntimeError, "publisher lock exists"),
+                self.assertRaisesRegex(RuntimeError, "publisher lock is held"),
                 publication_lock(self.directory),
             ):
                 self.fail("another publisher entered")
-            self.assertTrue((self.directory / ".publisher.lock").is_dir())
-        self.assertFalse((self.directory / ".publisher.lock").exists())
+            self.assertTrue((self.directory / ".publisher.lock").is_file())
+        with publication_lock(self.directory):
+            self.assertTrue((self.directory / ".publisher.lock").is_file())
 
     def test_schedule_has_explicit_paths_and_does_not_install_a_job(self):
         configured = copy.deepcopy(self.config)

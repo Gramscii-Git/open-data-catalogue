@@ -8,8 +8,10 @@ import socket
 import subprocess
 import sys
 import threading
+from contextlib import ExitStack
 from pathlib import Path
 
+from catalogue.cli import publication_lock
 from catalogue.runtime import run_command
 
 
@@ -20,12 +22,16 @@ def main():
     parser.add_argument("--ignore-term", action="store_true")
     parser.add_argument("--stop-grace", type=float, required=True)
     parser.add_argument("--ready-fd", type=int)
+    parser.add_argument("--lock-build", type=Path)
     args = parser.parse_args()
     command = [sys.executable, __file__, "server", str(args.record), "--stop-grace", str(args.stop_grace)]
     if args.ignore_term:
         command.append("--ignore-term")
     if args.mode == "owner":
-        return run_command(command, stop_grace=args.stop_grace, check=True).returncode
+        with ExitStack() as resources:
+            if args.lock_build is not None:
+                resources.enter_context(publication_lock(args.lock_build))
+            return run_command(command, stop_grace=args.stop_grace, check=True).returncode
     if args.mode == "background":
         reader, writer = os.pipe()
         subprocess.Popen([*command, "--ready-fd", str(writer)], pass_fds=(writer,))

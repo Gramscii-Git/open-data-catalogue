@@ -576,6 +576,14 @@ advance the state file atomically, immediately after each confirmed index;
 refuse concurrent mutation, including plans using different build directories
 but the same state file.
 
+Build and state locks use kernel-held file locks. Each command supervisor
+inherits the active descriptors, so owner death does not admit a second writer
+while the old command is stopping. The lock is released only when the execution
+and all its command supervisors close their descriptors. Persistent lock files
+are not evidence of a running owner and are never unlinked during normal use;
+unlinking would permit concurrent locks on different inodes. An obsolete lock
+directory is rejected and requires explicit operator reconciliation.
+
 A later failure does not undo a verified upload or a successful activation of an
 earlier independent index. There is no automatic retry or resume. Inspect the
 phase receipts and actual consumer status before starting a new run. A crash

@@ -14,6 +14,7 @@ import time
 import unittest
 from pathlib import Path
 
+from catalogue.cli import publication_lock
 from catalogue.config import load
 from catalogue.publish import verify_download
 from catalogue.runtime import run_command
@@ -89,6 +90,23 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("incomplete: exit", result.stderr)
         self.assert_stopped(json.loads(record.read_bytes()))
+
+    def test_publication_lock_lasts_through_child_cleanup_after_owner_death(self):
+        record = self.root / "locked-listener.json"
+        build = self.root / "publication"
+        command = [sys.executable, str(COMMAND), "owner", str(record), "--ignore-term",
+                   "--stop-grace", "1", "--lock-build", str(build)]
+        owner = subprocess.Popen(command, env=self.environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.addCleanup(self.terminate_owner, owner)
+        child = self.wait_for_record(record)
+        owner.kill()
+        owner.wait(timeout=5)
+        with self.assertRaisesRegex(RuntimeError, "publisher lock"), publication_lock(build):
+            self.fail("publication lock is released while the owned child is still draining")
+        owner.communicate(timeout=5)
+        self.assert_stopped(child)
+        with publication_lock(build):
+            self.assertTrue((build / ".publisher.lock").is_file())
 
     def test_configuration_requires_current_schema_and_explicit_shutdown_policy(self):
         source = (ROOT / "publisher.example.toml").read_text()

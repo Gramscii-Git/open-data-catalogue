@@ -17,7 +17,7 @@ from .availability import inspect_availability, policy_from
 from .config import load
 from .discovery import prepare
 from .publish import upload
-from .runtime import run_command
+from .runtime import process_lock, run_command
 
 
 def harvester(config, *arguments, capture=False):
@@ -41,17 +41,8 @@ def harvester(config, *arguments, capture=False):
 @contextmanager
 def publication_lock(build: Path):
     build.mkdir(parents=True, exist_ok=True)
-    lock = build / ".publisher.lock"
-    try:
-        lock.mkdir()
-    except FileExistsError as error:
-        raise RuntimeError(
-            f"publisher lock exists: {lock}; inspect the owning process before removing a stale lock"
-        ) from error
-    try:
+    with process_lock(build / ".publisher.lock", label="publisher"):
         yield
-    finally:
-        lock.rmdir()
 
 
 def schedule(config_path: Path, config: dict, output: Path) -> None:

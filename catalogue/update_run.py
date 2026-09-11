@@ -17,20 +17,14 @@ from .receipts import (
     verify_local_archive,
     write_json,
 )
+from .runtime import process_lock
 from .update_plan import load_state, receipt
 
 
 @contextmanager
 def state_lock(path):
-    lock = path.with_name(path.name + ".lock")
-    try:
-        lock.mkdir()
-    except FileExistsError as error:
-        raise RuntimeError(f"update state lock exists; inspect its owning process: {lock}") from error
-    try:
+    with process_lock(path.with_name(path.name + ".lock"), label="update state"):
         yield
-    finally:
-        lock.rmdir()
 
 
 def require_active(state, actual):
