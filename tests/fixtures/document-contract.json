@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "eligibility_fields": [
     "active",
     "searchable"
@@ -41,7 +41,8 @@
         "sources",
         "served",
         "licence",
-        "attribution"
+        "attribution",
+        "document_role"
       ],
       "structure": [
         "dimensions",
@@ -89,5 +90,10 @@
   },
   "localization_languages": {
     "sample": []
+  },
+  "source_roles": {
+    "sample": {
+      "mode": "catalogue_fields"
+    }
   }
 }

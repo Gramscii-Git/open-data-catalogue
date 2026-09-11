@@ -1,6 +1,17 @@
 """Reconstruct document source envelopes from the archive's pinned input schema."""
 
 from collections import defaultdict
+from dataclasses import dataclass
+
+from .document_roles import resolve
+
+
+@dataclass(frozen=True)
+class Prepared:
+    row: dict
+    catalogue: dict
+    structure: dict | None
+    role: dict | None
 
 
 class Inputs:
@@ -25,11 +36,21 @@ class Inputs:
         self.provider_hashes = {key: digest(value) for key, value in contract["rendering"]["providers"].items()}
         self.word_hashes = {key: digest(value) for key, value in contract["rendering"]["words"].items()}
 
-    def envelope(self, row, language, authority):
+    def prepare(self, row):
         provider, dataset = row["provider"], row["dataset_id"]
+        effective, role = resolve(row, self.contract["source_roles"][provider], self.contract["rendering"]["providers"][provider])
         schema = self.contract["rendering"]["source_fields"]
         held = self.structures.get((provider, dataset))
-        structure = {field: held.get(field) for field in schema["structure"]} if held is not None else None
+        structure = {field: held.get(field) for field in schema["structure"]} if held is not None and role is None else None
+        catalogue = {"provider": provider, "dataset_id": dataset, "title": effective["title"],
+                     "fields": {field: effective.get(field) for field in schema["catalogue"]} | {
+                         "report_texts": self.reports.get((provider, effective.get("report_key"))),
+                     }}
+        return Prepared(effective, catalogue, structure, role)
+
+    def envelope(self, prepared, language, authority):
+        provider = prepared.row["provider"]
+        structure = prepared.structure
         localization = None
         if structure is not None and language in self.contract["localization_languages"][provider]:
             key = (provider, language)
@@ -40,10 +61,8 @@ class Inputs:
             localization = self.localization[key]
         return {
             "authority": authority,
-            "catalogue": {"provider": provider, "dataset_id": dataset, "title": row["title"],
-                          "fields": {field: row.get(field) for field in schema["catalogue"]} | {
-                              "report_texts": self.reports.get((provider, row.get("report_key"))),
-                          }},
+            "catalogue": prepared.catalogue,
+            "document_role": prepared.role,
             "structure": structure,
             "localization_sha256": localization,
             "provider_sha256": self.provider_hashes[provider],

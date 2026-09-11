@@ -78,9 +78,10 @@ def rows():
     document = result["opendata_documents"][0]
     document["text_hash"] = hashlib.sha256(document["text"].encode()).hexdigest()
     row = result["opendata_catalog"][0]
+    inputs = Inputs(result, DOCUMENT_CONTRACT, digest)
     document["projection"] = {
         "contract_sha256": digest(DOCUMENT_CONTRACT), "authority": "native_metadata", "source_language": "en",
-        "source_sha256": digest(Inputs(result, DOCUMENT_CONTRACT, digest).envelope(row, "en", {"title": row["title"], "metadata": {
+        "source_sha256": digest(inputs.envelope(inputs.prepare(row), "en", {"title": row["title"], "metadata": {
             field: row.get(field) for field in (
                 "names", "descriptions", "category_paths", "keywords", "caveat",
                 "filters", "sources", "period_start", "period_end", "freshness",
@@ -287,7 +288,8 @@ class Releases(unittest.TestCase):
         source = {"title": row["title"], "metadata": {field: row.get(field) for field in (
             "names", "descriptions", "category_paths", "keywords", "caveat", "filters", "sources", "period_start", "period_end", "freshness",
         )}}
-        data["opendata_documents"][0]["projection"]["source_sha256"] = digest(Inputs(data, self.contract, digest).envelope(row, "en", source))
+        inputs = Inputs(data, self.contract, digest)
+        data["opendata_documents"][0]["projection"]["source_sha256"] = digest(inputs.envelope(inputs.prepare(row), "en", source))
         result = self.inspect(data)
         self.assertEqual(result["metrics"]["missing_licences"], 1)
         self.assertEqual(result["policy"]["maximum_missing_licences"], 1)

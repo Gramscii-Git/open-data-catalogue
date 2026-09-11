@@ -8,6 +8,7 @@ from datetime import date, datetime
 
 from .config import fields
 from .document_inputs import Inputs
+from .document_roles import validate_rule
 
 
 def json_value(value):
@@ -26,9 +27,15 @@ def inspect_contract(manifest, policy):
     if policy["maximum_missing_documents"] != 0:
         raise ValueError("exact document membership requires maximum_missing_documents=0")
     contract = manifest.get("document_contract")
-    fields(contract, {"schema_version", "eligibility_fields", "providers", "searches", "definitions", "rendering", "localization_languages"}, "document contract")
-    if type(contract["schema_version"]) is not int or contract["schema_version"] != 1:
-        raise ValueError("document contract schema_version must be 1")
+    fields(contract, {"schema_version", "eligibility_fields", "providers", "searches", "definitions", "rendering", "localization_languages", "source_roles"}, "document contract")
+    if type(contract["schema_version"]) is not int or contract["schema_version"] != 2:
+        raise ValueError("document contract schema_version must be 2")
+    if not isinstance(contract["source_roles"], dict) or set(contract["source_roles"]) != set(contract["providers"]):
+        raise ValueError("document source roles must explicitly cover every provider")
+    for provider, rule in contract["source_roles"].items():
+        validate_rule(rule)
+        if rule["mode"] == "lifecycle_registry" and contract["rendering"]["providers"][provider].get("extra", {}).get("metadata_strategy") != "registry":
+            raise ValueError("document registry authority requires the provider's declared registry strategy")
     sha256 = digest(contract)
     if manifest.get("document_contract_sha256") != sha256 or policy["document_contract_sha256"] != sha256:
         raise ValueError("document contract digest differs from the explicitly configured release policy")
@@ -96,6 +103,8 @@ def inspect_membership(catalogue, documents, contract, manifest, source_tables):
             continue
         provider, dataset, language = identity
         row = catalogue[(provider, dataset)]
+        prepared = inputs.prepare(row)
+        row = prepared.row
         authority = contract["providers"][provider][language]
         if authority == "workspace_definition":
             source = contract["definitions"].get(language, {}).get(dataset)
@@ -115,7 +124,7 @@ def inspect_membership(catalogue, documents, contract, manifest, source_tables):
         text_sha256 = hashlib.sha256(text.encode()).hexdigest()
         proof = {
             "contract_sha256": sha256, "authority": authority, "source_language": language,
-            "source_sha256": digest(inputs.envelope(row, language, source)), "text_sha256": text_sha256,
+            "source_sha256": digest(inputs.envelope(prepared, language, source)), "text_sha256": text_sha256,
         }
         if (
             text.split("\n\n", 1)[0].partition("\n")[2] != source["title"]
