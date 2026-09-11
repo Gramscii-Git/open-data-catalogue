@@ -2,10 +2,9 @@
 
 import math
 import os
+import tomllib
 from pathlib import Path
 from urllib.parse import urlsplit
-
-import tomllib
 
 
 def fields(value, expected, name):
