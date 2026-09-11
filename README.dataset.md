@@ -62,7 +62,6 @@ Gramscii's contribution, not an expansion of rights to the underlying sources.
 ## Related projects
 
 - [Publisher and release policy](https://github.com/Gramscii-Git/open-data-catalogue)
-- [Harvester](https://github.com/Gramscii-Git/semantic-deterministic-graph)
 - [Geographic boundaries](https://github.com/Gramscii-Git/boundaries)
 
 Map joins require matching code systems and territorial vintages. Coverage of

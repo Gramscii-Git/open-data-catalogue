@@ -151,9 +151,8 @@ The catalogue's root `manifest.json` and `SHA256SUMS` describe the discovery
 archive. The availability directory has its own manifest and checksums.
 
 The [publisher](https://github.com/Gramscii-Git/open-data-catalogue) owns explicit
-coverage, independent validation and publication receipts. The
-[SDG harvester and reader](https://github.com/Gramscii-Git/semantic-deterministic-graph)
-own provider access and plugin integration. An HF update does not automatically
+coverage, independent validation and publication receipts. The SDG harvester and
+reader own provider access and plugin integration. An HF update does not automatically
 upgrade deployed plugin code or replace an installation's immutable pin.
 
 Geographic boundaries live in
