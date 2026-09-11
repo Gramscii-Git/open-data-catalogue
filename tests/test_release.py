@@ -312,7 +312,7 @@ class Releases(unittest.TestCase):
             original.replace(
                 "maximum_structure_errors = 0", "maximum_structure_errors = true"
             ),
-            original.replace("schema = 1", "schema = true"),
+            original.replace("schema = 2", "schema = true"),
             original.replace(
                 'archive = "open-data-catalogue.tar.gz"',
                 'archive = "../archive.tar.gz"',
@@ -320,6 +320,7 @@ class Releases(unittest.TestCase):
             original.replace("hour = 3", "hour = 24"),
         ):
             with self.subTest(source=source[:30]):
+                self.assertNotEqual(source, original)
                 target.write_text(source, encoding="utf-8")
                 with self.assertRaises(ValueError):
                     load(target)
