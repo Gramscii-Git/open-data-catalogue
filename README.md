@@ -208,7 +208,7 @@ source-version guarantee, and there is no automatic resume.
 An operator can explicitly reconstruct an index from retained native responses
 after correcting its projection. Seal the response directory with the harvester's
 `seal-availability-capture --responses <directory> --to <manifest>` command and
-retain the returned manifest digest. Pass the resolved version-1 scope and its
+retain the returned manifest digest. Pass the resolved version-2 scope and its
 original inventory evidence to the publisher:
 
 ```sh
@@ -239,7 +239,7 @@ original short receipts and bodies as distinct pinned inputs:
   --policy scopes/eurostat-qualified-series.policy.toml
 ```
 
-The strict version-1 manifest has kind `sdmx-native-graph-reprojection`. It
+The strict version-2 manifest has kind `sdmx-native-graph-reprojection`. It
 declares `original`, `candidate`, `scope` and `inventories` assets; each asset
 contains a canonical relative `path`, exact `bytes` and `sha256`. All paths
 remain under the manifest directory. `configuration` pins `providers.yaml`,
@@ -249,7 +249,7 @@ in `graphs` identifies `provider`, `dataset_id`, and pinned `receipt` and `body`
 assets. Each entry in `definitions` declares those dataset identities and the
 exact `original` and `candidate` definition digests. `core` declares its full
 commit `revision` and a `files` mapping of every `server/sdg/**/*.py` file,
-relative to `server/sdg`, to its digest. `timeout_seconds` sets the validation
+relative to `server/sdg`, to its digest. Verification has no elapsed-work
 deadline. These are required inputs; the command infers no missing version,
 scope, timestamp or digest.
 
@@ -328,7 +328,7 @@ Calendar periods, weather validity instants, source snapshot dates and opaque
 source labels remain distinct. An unreported domain never receives invented
 observations or a guessed period.
 
-Publisher scope schema 2 requires an explicit `inventories` object. A request
+Publisher scope schema 3 requires an explicit `inventories` object. A request
 grid may list values directly or name an inventory using
 `{"inventory": "municipalities"}`. Every inventory declares a direct HTTPS URL,
 code field and pattern, byte and row limits, and timeout. The publisher reads
@@ -337,7 +337,7 @@ complete sorted code list. Invalid or duplicate codes, redirects and budget
 violations fail the build; no municipality is silently omitted. Explicit scopes
 without inventories declare `"inventories": {}`.
 
-The native harvester receives a fully resolved schema-1 `scope.json`.
+The native harvester receives a fully resolved schema-2 `scope.json`.
 `inventories.json` preserves the complete source code lists, original inventory
 specifications, HTTP receipts and their dataset/argument bindings. Publication
 verifies that each bound request grid equals its recorded inventory exactly.
@@ -348,8 +348,8 @@ one native municipality response each, rather than 25 separate source reads.
 Checksums are verified on reuse. Every new build acquires its own responses;
 corrupt or unavailable evidence fails explicitly and is never replaced by a
 hidden refetch. Provider quota and total-response budgets still apply. The
-national scan can take several hours; its operation deadline and all memory,
-disk and validation budgets are explicit scope policy.
+national scan can take several hours. Its memory, disk, request, byte and
+validation budgets are explicit scope policy; valid work has no total deadline.
 
 ### Availability publication and Hub documentation
 
@@ -495,13 +495,13 @@ does not claim that a publication occurred during verification. Configuration
 paths are relative to their owning file. State schema 1 is rejected; there is no
 automatic migration or reconstruction from `main`.
 
-Update plan schema 2 requires `documentation.catalogue` with an explicit `mode`.
+Update plan schema 3 requires `documentation.catalogue` with an explicit `mode`.
 `current_validation` accepts exactly that field and uses the current inspector.
 `published_report` also requires `evidence` and `status_artifact`, and is valid
 only with discovery action `retain`. Its archive pin must equal the retained
 state's verified archive. The run verifies both evidence publications before
 collecting any source data and repeats verification when preparing the card.
-Plan schema 1 or missing mode is rejected; existing operational plans must be
+Earlier plan schemas or missing mode are rejected; operational plans must be
 reviewed explicitly rather than inferred or upgraded automatically.
 
 Create the discovery proof from an explicitly pinned immutable revision, local
@@ -538,21 +538,34 @@ publishes the current database; `release` first syncs, harvests, enriches and
 verifies it. Strict discovery gates remain unchanged. `retain` does not claim
 that the discovery catalogue has been refreshed.
 
-The plan's cadence declares the start interval, maximum run duration and minimum
-freshness reserve. The run duration must be shorter than the interval and must
-exceed the sum of the declared source operation deadlines, leaving time for
-verification and publication. Every updated dataset's evidence lifetime must
-cover the interval, a maximum run and the reserve together. The completed
-archive is checked again against that future boundary before upload and
-activation, using the oldest original source evidence. Source timestamps and
-lifetimes are never renewed during reconstruction or publication.
+The plan's cadence declares `interval_seconds`, `expected_run_seconds` and
+`minimum_remaining_seconds`. The expected duration is a planning estimate,
+shorter than the interval, and never cancels running work. Every updated
+dataset's evidence lifetime must cover the interval, expected duration and
+reserve together. The archive must still cover that future boundary and the
+reserve measured from the actual current time before publication and activation.
+The oldest original source evidence determines validity. Reconstruction and
+publication never renew source timestamps or lifetimes.
 
-The example declares a 12-hour interval, a 9-hour run budget and a 1-hour reserve
-against 24-hour evidence. These are explicit planning limits to qualify with the
-deployment's measured throughput. Subprocesses and remote readback receive the
-remaining run budget; local archive operations are checked at phase boundaries.
-A deadline overrun fails the run. Sleeping computers, source outages and missed
-jobs can still leave expired evidence; the consumer must keep refusing it.
+The example declares a 12-hour interval, a 9-hour execution estimate and a 1-hour
+reserve against 24-hour evidence. Qualify these estimates against measured
+deployment throughput. Exceeding an estimate does not terminate an acquisition,
+parser, database transaction, upload or readback. Expired evidence still fails
+admission. Sleeping computers, source outages and missed jobs can leave expired
+evidence; the consumer must keep refusing it.
+
+Publisher configuration schema 2 requires `deployment.stop_grace_seconds` for
+command shutdown after cancellation, owner death or an unclosed child process.
+Each harvester, upload and offline-verification command has a supervisor with an
+owner-lifetime pipe and a separate process group. Owner shutdown closes the pipe;
+the supervisor terminates the group and reaps its command before exiting. A
+command that exits with background processes still running is an explicit
+failure. The shutdown grace controls TERM-to-KILL escalation only; it is never
+an operation limit. The examples declare `hub.timeout_seconds = "unbounded"`
+and inventory `timeout_seconds: null`. A finite socket inactivity limit requires
+an explicit, justified transport requirement and never bounds total transfer
+duration. Obsolete configuration fields and operational scope versions are
+rejected explicitly.
 
 Each execution owns `build/update-*/`. `progress.jsonl` is flushed to disk before
 and after every phase, including its output directory and errors. Original

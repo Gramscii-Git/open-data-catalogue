@@ -5,12 +5,11 @@ import json
 import os
 import re
 import subprocess
-import time
 import urllib.request
 from pathlib import Path
 from urllib.parse import quote, urlsplit
 
-from .runtime import remaining
+from .runtime import run_command
 
 
 def revision_from_result(result: str, hub: dict) -> str:
@@ -42,15 +41,13 @@ def file_url(hub: dict, revision: str, filename: str) -> str:
     return f"{hub['endpoint']}/datasets/{quote(hub['repository'], safe='/')}/resolve/{revision}/{quote(filename, safe='/')}"
 
 
-def verify_download(url: str, sha256: str, size: int, timeout: float, *, deadline=None) -> None:
+def verify_download(url: str, sha256: str, size: int, timeout: float | None) -> None:
     digest = hashlib.sha256()
     length = 0
     with urllib.request.urlopen(url, timeout=timeout) as response:
         if response.status != 200:
             raise RuntimeError(f"published download returned HTTP {response.status}")
         while block := response.read(1024 * 1024):
-            if deadline is not None and time.monotonic() >= deadline:
-                raise TimeoutError("published readback exceeded the update run deadline")
             digest.update(block)
             length += len(block)
             if length > size:
@@ -85,13 +82,13 @@ def upload_files(directory: Path, config: dict, files, archive: str, report: dic
     ]
     for filename in files:
         arguments.extend(("--include", filename))
-    completed = subprocess.run(
+    completed = run_command(
         arguments,
+        stop_grace=config["deployment"]["stop_grace_seconds"],
         env={**os.environ, "HF_ENDPOINT": hub["endpoint"]},
         stdout=subprocess.PIPE,
         text=True,
         check=True,
-        timeout=remaining(config),
     )
     (directory / "upload-result.txt").write_text(completed.stdout, encoding="utf-8")
     revision = revision_from_result(completed.stdout, hub)
@@ -112,8 +109,7 @@ def upload_files(directory: Path, config: dict, files, archive: str, report: dic
             file_url(hub, revision, filename),
             digest,
             path.stat().st_size,
-            remaining(config, hub["timeout_seconds"]),
-            deadline=config.get("run_deadline"),
+            hub["timeout_seconds"],
         )
     publication["verified"] = True
     (directory / "publication.json").write_text(

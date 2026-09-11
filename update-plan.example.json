@@ -1,9 +1,9 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "state": "update-state.local.json",
   "cadence": {
     "interval_seconds": 43200,
-    "maximum_run_seconds": 32400,
+    "expected_run_seconds": 32400,
     "minimum_remaining_seconds": 3600
   },
   "discovery": {"action": "retain"},

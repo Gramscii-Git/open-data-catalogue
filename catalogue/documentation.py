@@ -14,7 +14,6 @@ from .documentation_evidence import current_status, status_path
 from .documentation_evidence import read as read_evidence
 from .documentation_releases import load as load_releases
 from .publish import file_url, upload_files, verify_download
-from .runtime import remaining
 
 
 def prepare(directory, config, catalogue_path, catalogue_revision, releases_path, template_path, viewer_path):
@@ -68,8 +67,7 @@ def _prepare(directory, config, catalogue_path, catalogue_revision, releases_pat
         )
         coverage.append(coverage_rows(release["archive"], name, url))
     for url, report in downloads:
-        verify_download(url, report["sha256"], report["bytes"], remaining(config, hub["timeout_seconds"]),
-                        deadline=config.get("run_deadline"))
+        verify_download(url, report["sha256"], report["bytes"], config["hub"]["timeout_seconds"])
     values = {
         "catalogue_taken_at": catalogue["manifest"]["taken_at"],
         "catalogue_datasets": str(catalogue["tables"]["opendata_catalog"]),

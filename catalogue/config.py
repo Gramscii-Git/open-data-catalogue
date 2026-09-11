@@ -29,25 +29,25 @@ def load(path: Path) -> dict:
     fields(
         data, {"schema", "deployment", "hub", "quality", "schedule"}, "configuration"
     )
-    if type(data["schema"]) is not int or data["schema"] != 1:
-        raise ValueError("configuration schema must be 1")
+    if type(data["schema"]) is not int or data["schema"] != 2:
+        raise ValueError("configuration schema must be 2")
     deployment = data["deployment"]
     fields(
         deployment,
-        {"harvester", "environment_file", "python", "hf", "build", "readme_template", "patience_seconds"},
+        {"harvester", "environment_file", "python", "hf", "build", "readme_template", "stop_grace_seconds"},
         "deployment",
     )
     for key in ("harvester", "environment_file", "python", "build", "readme_template"):
         raw = Path(text(deployment[key], f"deployment.{key}"))
         deployment[key] = Path(os.path.abspath(path.parent / raw)) if key == "python" else (path.parent / raw).resolve()
     deployment["hf"] = strings(deployment["hf"], "deployment.hf")
-    patience = deployment["patience_seconds"]
+    grace = deployment["stop_grace_seconds"]
     if (
-        type(patience) not in (int, float)
-        or not math.isfinite(patience)
-        or patience <= 0
+        type(grace) not in (int, float)
+        or not math.isfinite(grace)
+        or grace <= 0
     ):
-        raise ValueError("deployment.patience_seconds must be positive and finite")
+        raise ValueError("deployment.stop_grace_seconds must be positive and finite")
     hub = data["hub"]
     fields(
         hub,
@@ -83,8 +83,10 @@ def load(path: Path) -> dict:
     ):
         raise ValueError("hub.archive must be a .tar.gz filename")
     timeout = hub["timeout_seconds"]
-    if type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0:
-        raise ValueError("hub.timeout_seconds must be positive and finite")
+    if timeout == "unbounded":
+        hub["timeout_seconds"] = None
+    elif type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0:
+        raise ValueError("hub.timeout_seconds must be positive and finite or explicitly unbounded")
     policy = data["quality"]
     limits = {
         "minimum_datasets",

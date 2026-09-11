@@ -24,7 +24,6 @@ from catalogue.cli import schedule
 from catalogue.config import load as load_config
 from catalogue.publish import file_url
 from catalogue.receipts import read_verification, verify_catalogue, write_json
-from catalogue.runtime import remaining
 from catalogue.update_plan import load as load_plan
 from catalogue.update_plan import load_state
 from catalogue.update_run import (
@@ -78,7 +77,7 @@ class UpdateTests(unittest.TestCase):
         self.policy.write_text((ROOT / "availability-policy.example.toml").read_text().replace(
             'providers = ["dvns", "cruscotto"]', 'providers = ["source"]'))
         self.scope = self.root / "scope.json"
-        self.spec = {"schema_version": 2, "inventories": {}, "limits": {"operation_timeout_seconds": 5}, "datasets": [{
+        self.spec = {"schema_version": 3, "inventories": {}, "limits": json.loads((ROOT / "scopes/dvns-cofog.json").read_bytes())["limits"], "datasets": [{
             "provider": "source", "dataset_id": "observations", "arguments": {"territory": "A"},
             "varying": {"year": [2020]}, "when": "always", "valid_for_seconds": 86400,
         }]}
@@ -107,8 +106,8 @@ class UpdateTests(unittest.TestCase):
             "archive": str(self.archive), "publication": availability_pub["path"], "activation": str(self.activation),
             "policy": str(self.policy), "destination": "availability",
         }}}))
-        self.plan = {"schema_version": 2, "state": str(self.state), "cadence": {
-            "interval_seconds": 3600, "maximum_run_seconds": 300, "minimum_remaining_seconds": 60,
+        self.plan = {"schema_version": 3, "state": str(self.state), "cadence": {
+            "interval_seconds": 3600, "expected_run_seconds": 300, "minimum_remaining_seconds": 60,
         }, "discovery": {"action": "retain"}, "indexes": {"national": {
             "scope": str(self.scope), "policy": str(self.policy), "destination": "availability",
             "readme_template": str(ROOT / "README.availability.md"), "snapshots": None,
@@ -280,9 +279,9 @@ class UpdateTests(unittest.TestCase):
 
     def test_update_plan_requires_explicit_documentation_mode_without_schema_fallback(self):
         self.plan["schema_version"] = 1
-        with self.assertRaisesRegex(ValueError, "schema must be 2"):
+        with self.assertRaisesRegex(ValueError, "schema must be 3"):
             self.configured()
-        self.plan["schema_version"] = 2
+        self.plan["schema_version"] = 3
         del self.plan["documentation"]["catalogue"]
         with self.assertRaisesRegex(ValueError, "update documentation must contain exactly"):
             self.configured()
@@ -436,7 +435,7 @@ class UpdateTests(unittest.TestCase):
 
     def test_freshness_rejects_a_build_too_old_for_the_next_declared_run(self):
         self.source_age = timedelta(hours=23)
-        with self.assertRaisesRegex(ValueError, "next declared run budget"):
+        with self.assertRaisesRegex(ValueError, "declared execution forecast"):
             self.execute()
         self.assertFalse((self.hub / "uploads.jsonl").exists())
 
@@ -445,11 +444,11 @@ class UpdateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "evidence lifetime"):
             self.configured()
 
-    def test_plan_requires_run_duration_between_source_and_interval_budgets(self):
-        for maximum in (5, 3600):
-            with self.subTest(maximum=maximum):
-                self.plan["cadence"]["maximum_run_seconds"] = maximum
-                with self.assertRaisesRegex(ValueError, "run budget"):
+    def test_plan_requires_positive_forecast_shorter_than_interval(self):
+        for expected in (0, 3600):
+            with self.subTest(expected=expected):
+                self.plan["cadence"]["expected_run_seconds"] = expected
+                with self.assertRaisesRegex(ValueError, "positive integer|shorter than"):
                     self.configured()
 
     def test_plan_requires_confirmed_activation_and_preserves_all_documented_indexes(self):
@@ -495,12 +494,12 @@ class UpdateTests(unittest.TestCase):
 
     def test_initial_schedule_checks_evidence_age_and_first_run_delay(self):
         self.plan["cadence"] = {
-            "interval_seconds": 43200, "maximum_run_seconds": 32400, "minimum_remaining_seconds": 3600,
+            "interval_seconds": 43200, "expected_run_seconds": 32400, "minimum_remaining_seconds": 3600,
         }
         plan = self.configured()
         now = datetime(2026, 9, 8, 17, tzinfo=UTC)
         require_initial_coverage(plan, self.config, now=now, run_at_load=True)
-        with self.assertRaisesRegex(ValueError, "next declared run budget"):
+        with self.assertRaisesRegex(ValueError, "declared execution forecast"):
             require_initial_coverage(plan, self.config, now=now, run_at_load=False)
         with self.assertRaisesRegex(ValueError, "expired"):
             require_initial_coverage(plan, self.config, now=now + timedelta(days=1), run_at_load=True)
@@ -509,11 +508,23 @@ class UpdateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "differs from its verified artifact"):
             require_initial_coverage(plan, self.config, now=now, run_at_load=True)
 
-    def test_runtime_deadline_is_explicit_and_never_extends_a_request_timeout(self):
-        self.assertEqual(remaining({}, 12), 12)
-        self.assertLess(remaining({"run_deadline": time.monotonic() + 1}, 12), 1)
-        with self.assertRaisesRegex(TimeoutError, "maximum run"):
-            remaining({"run_deadline": time.monotonic() - 1})
+    def test_update_finishes_after_execution_forecast(self):
+        self.plan["cadence"]["expected_run_seconds"] = 1
+        plan = self.configured()
+        directory = self.root / "long-phase"
+        directory.mkdir()
+
+        def slow_harvester(config, *arguments, capture=False):
+            if arguments[0] == "index-availability":
+                time.sleep(1.05)
+            return self.harvester(config, *arguments, capture=capture)
+
+        started = time.monotonic()
+        result = run(directory, self.config, plan, slow_harvester, prepare_catalogue)
+        self.assertGreater(time.monotonic() - started, plan["cadence"]["expected_run_seconds"])
+        self.assertTrue(result["complete"])
+        self.assertTrue((directory / "complete.json").is_file())
+        self.assertTrue(json.loads((directory / "documentation/publication.json").read_bytes())["verified"])
 
     def test_schedule_configuration_requires_plan_interval_instead_of_calendar_fields(self):
         self.configured()

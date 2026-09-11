@@ -10,7 +10,6 @@ from pathlib import Path
 
 from .config import fields
 from .publish import file_url, verify_download
-from .runtime import remaining
 
 
 def write_json(path, value, *, expected=None):
@@ -61,8 +60,7 @@ def verify_catalogue(config, archive, revision, digest, size, output):
     original = write_json(output, record)
     try:
         verify_local_archive(archive, pin)
-        verify_download(pin["url"], digest, size, remaining(config, hub["timeout_seconds"]),
-                        deadline=config.get("run_deadline"))
+        verify_download(pin["url"], digest, size, hub["timeout_seconds"])
     except BaseException as error:
         record.update(completed_at=datetime.now(UTC).isoformat(),
                       error={"type": type(error).__name__, "message": str(error)})

@@ -37,7 +37,7 @@ class OfflineProvenanceTests(unittest.TestCase):
         self.receipt = {"case": "native-graph", "method": "GET", "url": "https://example.org/dataflow/source/observations/1.0?references=descendants",
                         "observed_at": "2026-09-08T12:30:00Z", "status": 200,
                         "content_type": "application/vnd.sdmx.structure+xml;version=2.1", "bytes": len(self.native), "sha256": hashlib.sha256(self.native).hexdigest()}
-        self.plan = {"schema_version": 1, "kind": "sdmx-native-graph-reprojection", "timeout_seconds": 30,
+        self.plan = {"schema_version": 2, "kind": "sdmx-native-graph-reprojection",
                      "scope": self.asset("scope.json", json.dumps(self.scope).encode()),
                      "inventories": self.asset("inventories.json", b'{"schema_version":1,"inventories":{},"bindings":[]}'),
                      "configuration": {}, "capture": {}, "core": {},
@@ -69,6 +69,15 @@ class OfflineProvenanceTests(unittest.TestCase):
         self.assertEqual(state["report"]["tables"]["combinations.jsonl"], 1)
         self.assertEqual(state["graphs"]["source", "observations"]["receipt"], self.receipt)
         self.assertEqual(state["datasets"]["source", "observations"]["valid_until"], "2026-09-09T12:00:00Z")
+
+    def test_obsolete_manifest_and_elapsed_cutoff_are_rejected(self):
+        self.plan["schema_version"] = 1
+        with self.assertRaisesRegex(ValueError, "unsupported offline provenance"):
+            load_manifest(*self.seal(), self.policy)
+        self.plan["schema_version"] = 2
+        self.plan["timeout_seconds"] = 30
+        with self.assertRaisesRegex(ValueError, "offline provenance manifest must contain exactly"):
+            load_manifest(*self.seal(), self.policy)
 
     def test_graph_body_tampering_is_rejected_before_projection(self):
         (self.root / "graph.xml").write_bytes(self.native.replace(b"Structure", b"Strukture"))

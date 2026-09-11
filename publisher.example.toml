@@ -1,4 +1,4 @@
-schema = 1
+schema = 2
 
 [deployment]
 harvester = "../semantic-deterministic-graph"
@@ -7,7 +7,7 @@ python = "../semantic-deterministic-graph/server/.venv/bin/python"
 hf = ["hf"]
 build = "build"
 readme_template = "README.dataset.md"
-patience_seconds = 90
+stop_grace_seconds = 10
 
 [hub]
 endpoint = "https://huggingface.co"
@@ -15,7 +15,7 @@ repository = "Gramscii-IT/open-data-catalogue"
 branch = "main"
 archive = "open-data-catalogue.tar.gz"
 commit_message = "Publish verified Open Data catalogue"
-timeout_seconds = 60
+timeout_seconds = "unbounded"
 
 [quality]
 document_contract_sha256 = "1987fdcad638bc5e73a667c48bbad4542d941e7d55edf5189609cacce172e1d5"

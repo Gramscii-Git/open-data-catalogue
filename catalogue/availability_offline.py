@@ -17,7 +17,7 @@ from .availability import MEMBERS, _sha, _time, inspect_availability, policy_fro
 from .availability_build import verify_build
 from .availability_scope import verify_inventory_scope
 from .config import fields, text
-from .runtime import remaining
+from .runtime import run_command
 
 
 def relative(value):
@@ -65,11 +65,9 @@ def load_manifest(path, expected, policy):
     if hashlib.sha256(body).hexdigest() != expected:
         raise ValueError("offline provenance manifest differs from its explicit digest pin")
     value = json.loads(body)
-    fields(value, {"schema_version", "kind", "original", "candidate", "scope", "inventories", "configuration", "capture", "graphs", "definitions", "core", "timeout_seconds"}, "offline provenance manifest")
-    if type(value["schema_version"]) is not int or value["schema_version"] != 1 or value["kind"] != "sdmx-native-graph-reprojection":
+    fields(value, {"schema_version", "kind", "original", "candidate", "scope", "inventories", "configuration", "capture", "graphs", "definitions", "core"}, "offline provenance manifest")
+    if type(value["schema_version"]) is not int or value["schema_version"] != 2 or value["kind"] != "sdmx-native-graph-reprojection":
         raise ValueError("unsupported offline provenance contract")
-    if type(value["timeout_seconds"]) is not int or value["timeout_seconds"] <= 0:
-        raise ValueError("offline validation requires a positive explicit deadline")
     return value
 
 
@@ -252,8 +250,9 @@ def validate(config, path, expected, policy_path):
     deployment = config["deployment"]
     command = [str(deployment["python"]), "-B", "-m", "catalogue.availability_offline", "--manifest", str(path.resolve()),
                "--sha256", expected, "--policy", str(policy_path.resolve()), "--core", str(deployment["harvester"])]
-    result = subprocess.run(command, cwd=root, env={**os.environ, "PYTHONPATH": os.pathsep.join((str(root), str(deployment["harvester"] / "server")))},
-                            check=True, capture_output=True, text=True, timeout=remaining(config, manifest["timeout_seconds"]))
+    result = run_command(command, stop_grace=deployment["stop_grace_seconds"], cwd=root,
+                         env={**os.environ, "PYTHONPATH": os.pathsep.join((str(root), str(deployment["harvester"] / "server")))},
+                         check=True, capture_output=True, text=True)
     proof = json.loads(result.stdout)
     if proof["provenance_sha256"] != expected or proof["archive"] != manifest["candidate"] or proof["core"] != manifest["core"]:
         raise ValueError("offline validator returned evidence for different inputs or core")

@@ -17,7 +17,7 @@ from .availability import inspect_availability, policy_from
 from .config import load
 from .discovery import prepare
 from .publish import upload
-from .runtime import remaining
+from .runtime import run_command
 
 
 def harvester(config, *arguments, capture=False):
@@ -26,14 +26,14 @@ def harvester(config, *arguments, capture=False):
     environment = deployment["environment_file"]
     if not environment.is_file():
         raise ValueError(f"harvester configuration is missing: {environment}")
-    result = subprocess.run(
+    result = run_command(
         [str(deployment["python"]), "-B", "-m", "sdg.plugins.opendata", "--env-file", str(environment), *arguments],
+        stop_grace=deployment["stop_grace_seconds"],
         cwd=server,
         env={**os.environ, "PYTHONPATH": str(server)},
         stdout=subprocess.PIPE if capture else None,
         text=True,
         check=True,
-        timeout=remaining(config),
     )
     return result.stdout
 
@@ -302,12 +302,7 @@ def main(argv=None) -> int:
                 )
             if args.command in ("refresh", "release"):
                 harvester(config, "sync")
-                harvester(
-                    config,
-                    "structure",
-                    "--patience",
-                    str(config["deployment"]["patience_seconds"]),
-                )
+                harvester(config, "structure")
                 harvester(config, "enrich")
                 harvester(config, "verify")
             directory = Path(

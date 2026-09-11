@@ -7,9 +7,8 @@ from .config import fields
 
 
 def project(state, core_root):
-    from lxml import etree
-
     import sdg
+    from lxml import etree
     from sdg.plugins.opendata.acquisition_contract import ReadReceipt
     from sdg.plugins.opendata.availability.build import combination
     from sdg.plugins.opendata.availability.capture import Capture

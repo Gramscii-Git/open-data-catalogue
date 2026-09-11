@@ -8,6 +8,16 @@ import urllib.request
 from datetime import UTC, datetime
 from urllib.parse import urlsplit
 
+from .config import fields
+
+
+def validate_limits(value):
+    fields(value, {"max_partitions", "max_pages_per_partition", "max_response_bytes",
+                   "max_total_response_bytes", "max_unpacked_bytes", "max_line_bytes", "max_records",
+                   "max_database_bytes", "chunk_bytes", "min_free_disk_bytes"}, "scope limits")
+    if any(type(limit) is not int or limit <= 0 for limit in value.values()):
+        raise ValueError("scope limits must be positive integers")
+
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -18,9 +28,12 @@ def inventory_spec(spec):
     fields = {"url", "code_field", "code_pattern", "max_bytes", "max_records", "timeout_seconds"}
     if not isinstance(spec, dict) or set(spec) != fields:
         raise ValueError("scope inventory requires its exact source and resource fields")
-    for name in ("max_bytes", "max_records", "timeout_seconds"):
+    for name in ("max_bytes", "max_records"):
         if type(spec[name]) is not int or spec[name] <= 0:
             raise ValueError(f"scope inventory {name} must be a positive integer")
+    timeout = spec["timeout_seconds"]
+    if timeout is not None and (type(timeout) is not int or timeout <= 0):
+        raise ValueError("scope inventory timeout_seconds must be null or a positive integer")
     for name in ("url", "code_field", "code_pattern"):
         if not isinstance(spec[name], str) or not spec[name] or spec[name] != spec[name].strip():
             raise ValueError(f"scope inventory {name} requires trimmed text")
@@ -58,11 +71,12 @@ def inventory(spec):
 
 def resolve(specification):
     if (set(specification) != {"schema_version", "limits", "datasets", "inventories"}
-            or specification["schema_version"] != 2 or not isinstance(specification["inventories"], dict)):
-        raise ValueError("publisher scope requires schema version 2 and explicit inventories")
+            or specification["schema_version"] != 3 or not isinstance(specification["inventories"], dict)):
+        raise ValueError("publisher scope requires schema version 3 and explicit inventories")
+    validate_limits(specification["limits"])
     resolved = copy.deepcopy(specification)
     declarations = resolved.pop("inventories")
-    resolved["schema_version"] = 1
+    resolved["schema_version"] = 2
     references = []
     for dataset in resolved["datasets"]:
         for argument, values in dataset["varying"].items():

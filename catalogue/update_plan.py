@@ -6,6 +6,7 @@ import re
 from pathlib import Path, PurePosixPath
 
 from .availability import policy_from
+from .availability_scope import validate_limits
 from .config import fields, text
 from .documentation_evidence import read as read_evidence
 from .documentation_evidence import status_path
@@ -83,15 +84,15 @@ def load_state(path, config):
 def load(path, config):
     plan = json.loads(path.read_bytes())
     fields(plan, {"schema_version", "state", "cadence", "discovery", "indexes", "documentation"}, "update plan")
-    if type(plan["schema_version"]) is not int or plan["schema_version"] != 2:
-        raise ValueError("update plan schema must be 2 with an explicit catalogue documentation mode")
+    if type(plan["schema_version"]) is not int or plan["schema_version"] != 3:
+        raise ValueError("update plan schema must be 3 with an explicit execution forecast")
     paths(plan, ("state",), path.parent)
     cadence = plan["cadence"]
-    fields(cadence, {"interval_seconds", "maximum_run_seconds", "minimum_remaining_seconds"}, "update cadence")
+    fields(cadence, {"interval_seconds", "expected_run_seconds", "minimum_remaining_seconds"}, "update cadence")
     for key, value in cadence.items():
         positive(value, f"cadence.{key}")
-    if cadence["maximum_run_seconds"] >= cadence["interval_seconds"]:
-        raise ValueError("update run budget must be shorter than the scheduling interval")
+    if cadence["expected_run_seconds"] >= cadence["interval_seconds"]:
+        raise ValueError("expected update duration must be shorter than the scheduling interval")
     fields(plan["discovery"], {"action"}, "discovery update")
     if plan["discovery"]["action"] not in {"retain", "publish", "release"}:
         raise ValueError("discovery action must be retain, publish or release")
@@ -121,7 +122,6 @@ def load(path, config):
         raise ValueError("update plan requires explicit indexes to rebuild")
     if not plan["indexes"].keys() <= state["indexes"].keys():
         raise ValueError("update indexes must already have explicit publication and activation state")
-    source_budget = 0
     snapshot_destinations = set()
     for index, definition in plan["indexes"].items():
         name(index)
@@ -131,17 +131,17 @@ def load(path, config):
             raise ValueError("update cannot change a consumer's publication destination")
         scope = json.loads(Path(definition["scope"]).read_bytes())
         fields(scope, {"schema_version", "limits", "datasets", "inventories"}, "scheduled scope")
-        if (type(scope["schema_version"]) is not int or scope["schema_version"] != 2
+        if (type(scope["schema_version"]) is not int or scope["schema_version"] != 3
                 or not isinstance(scope["datasets"], list) or not scope["datasets"]):
-            raise ValueError("scheduled builds require an explicit version-2 publisher scope")
-        source_budget += positive(scope["limits"]["operation_timeout_seconds"], "source operation timeout")
+            raise ValueError("scheduled builds require an explicit version-3 publisher scope")
+        validate_limits(scope["limits"])
         providers = {row["provider"] for row in scope["datasets"]}
         if providers != set(policy_from(Path(definition["policy"]))["providers"]):
             raise ValueError("update scope and validation policy require different providers")
         freshness_budget = sum(cadence.values())
         for dataset in scope["datasets"]:
             if positive(dataset["valid_for_seconds"], "source evidence lifetime") < freshness_budget:
-                raise ValueError(f"update cadence and run budget exceed evidence lifetime for {index}:{dataset['dataset_id']}")
+                raise ValueError(f"update cadence and execution forecast exceed evidence lifetime for {index}:{dataset['dataset_id']}")
         snapshot = definition["snapshots"]
         activated = json.loads(Path(state["indexes"][index]["activation"]).read_bytes())
         if snapshot is None:
@@ -161,6 +161,4 @@ def load(path, config):
         if prefix in snapshot_destinations or prefix in {release["destination"] for release in state["indexes"].values()}:
             raise ValueError("snapshot and availability destinations must be distinct")
         snapshot_destinations.add(prefix)
-    if source_budget >= cadence["maximum_run_seconds"]:
-        raise ValueError("update run budget must include time beyond all source operation deadlines")
     return plan

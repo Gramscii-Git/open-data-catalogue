@@ -9,7 +9,6 @@ from pathlib import PurePosixPath
 from .archive import SCHEMA_VERSION, TABLE_KEYS, digest
 from .config import fields, text
 from .publish import file_url, verify_download
-from .runtime import remaining
 
 
 def status_path(value):
@@ -82,7 +81,7 @@ def read(path, config, *, verify_remote):
     if verify_remote:
         for artifact in (archive, quality):
             verify_download(artifact["url"], artifact["sha256"], artifact["bytes"],
-                            remaining(config, config["hub"]["timeout_seconds"]), deadline=config.get("run_deadline"))
+                            config["hub"]["timeout_seconds"])
     return {"archive": archive, "quality_report": quality, "quality_bytes": raw, "evidence": evidence}
 
 

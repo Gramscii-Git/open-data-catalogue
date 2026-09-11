@@ -4,7 +4,6 @@ import json
 import os
 import sys
 import tarfile
-import time
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -18,7 +17,6 @@ from .receipts import (
     verify_local_archive,
     write_json,
 )
-from .runtime import remaining
 from .update_plan import load_state, receipt
 
 
@@ -54,7 +52,7 @@ def require_fresh(archive, *, now, required_until):
             if not datetime.fromisoformat(dataset["verified_at"]) <= now < datetime.fromisoformat(dataset["valid_until"]):
                 raise ValueError("update evidence is expired or not yet valid; no freshness extension is permitted")
             if datetime.fromisoformat(dataset["valid_until"]) < required_until:
-                raise ValueError(f"update evidence cannot cover its next declared run budget: {dataset['provider']}:{dataset['dataset_id']}")
+                raise ValueError(f"update evidence cannot cover its declared execution forecast: {dataset['provider']}:{dataset['dataset_id']}")
 
 
 def require_initial_coverage(plan, config, *, now, run_at_load):
@@ -62,7 +60,7 @@ def require_initial_coverage(plan, config, *, now, run_at_load):
         raise ValueError("schedule.run_at_load must be boolean")
     cadence = plan["cadence"]
     wait = 0 if run_at_load else cadence["interval_seconds"]
-    required_until = now + timedelta(seconds=wait + cadence["maximum_run_seconds"] + cadence["minimum_remaining_seconds"])
+    required_until = now + timedelta(seconds=wait + cadence["expected_run_seconds"] + cadence["minimum_remaining_seconds"])
     state, _ = load_state(Path(plan["state"]), config)
     for name in plan["indexes"]:
         release = state["indexes"][name]
@@ -100,10 +98,8 @@ class Run:
         directory.mkdir()
         self.event(name, "started", directory=str(directory))
         try:
-            remaining(self.config)
             result = operation(directory)
             write_json(directory / "result.json", result)
-            remaining(self.config)
         except BaseException as error:
             self.event(name, "failed", error_type=type(error).__name__, error=str(error))
             raise
@@ -114,7 +110,6 @@ class Run:
 def run(directory, config, plan, harvester, prepare_catalogue):
     started = datetime.now(UTC)
     cadence = plan["cadence"]
-    config = {**config, "run_deadline": time.monotonic() + cadence["maximum_run_seconds"]}
     execution = Run(directory, config)
     write_json(directory / "plan.json", plan)
     state_path = Path(plan["state"])
@@ -134,7 +129,8 @@ def run(directory, config, plan, harvester, prepare_catalogue):
             original = write_json(state_path, state, expected=original)
         required_until = started + timedelta(seconds=sum(cadence.values()))
         for name, definition in plan["indexes"].items():
-            state["indexes"][name] = update_index(execution, name, definition, state["indexes"][name], required_until, harvester)
+            state["indexes"][name] = update_index(execution, name, definition, state["indexes"][name],
+                                                  required_until, cadence["minimum_remaining_seconds"], harvester)
             original = write_json(state_path, state, expected=original)
         execution.phase("consumer-after", lambda _: preflight(state, config, harvester))
         releases = {"schema_version": 1, "indexes": {}}
@@ -176,7 +172,7 @@ def discovery_release(directory, config, action, harvester, prepare_catalogue):
         raise ValueError("harvester release contract must be 2 with document provenance")
     if action == "release":
         harvester(config, "sync")
-        harvester(config, "structure", "--patience", str(config["deployment"]["patience_seconds"]))
+        harvester(config, "structure")
         harvester(config, "enrich")
         harvester(config, "verify")
     report = prepare_catalogue(directory, config, harvester)
@@ -215,7 +211,7 @@ def document_release(directory, config, archive, revision, releases, template, v
     return documentation.publish(directory, config, status_artifact=status_artifact)
 
 
-def update_index(execution, name, definition, previous_release, required_until, harvester):
+def update_index(execution, name, definition, previous_release, required_until, reserve, harvester):
     directory, config = execution.directory, execution.config
     source = directory / f"{name}-build"
     snapshot = definition["snapshots"]
@@ -225,7 +221,8 @@ def update_index(execution, name, definition, previous_release, required_until, 
         snapshot_shard_prefix_length=None if snapshot is None else snapshot["shard_prefix_length"],
     ))
     archive = source / "availability.tar.gz"
-    require_fresh(archive, now=datetime.now(UTC), required_until=required_until)
+    now = datetime.now(UTC)
+    require_fresh(archive, now=now, required_until=max(required_until, now + timedelta(seconds=reserve)))
     snapshot_paths = None
     if snapshot is not None:
         snapshot_dir = directory / f"{name}-snapshots"
@@ -238,7 +235,8 @@ def update_index(execution, name, definition, previous_release, required_until, 
     execution.phase(f"{name}-publication", lambda target: availability_publish.publish(
         source, target, definition["destination"], config, Path(definition["policy"]), Path(definition["readme_template"]),
     ))
-    require_fresh(archive, now=datetime.now(UTC), required_until=required_until)
+    now = datetime.now(UTC)
+    require_fresh(archive, now=now, required_until=max(required_until, now + timedelta(seconds=reserve)))
     previous = receipt(Path(previous_release["publication"]), config["hub"], f"{definition['destination']}/availability.tar.gz")
     publication_path = publication_dir / "publication.json"
     activation_dir = directory / f"{name}-activation"
