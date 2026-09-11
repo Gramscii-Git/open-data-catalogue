@@ -92,3 +92,30 @@ the source receipt is
 The combined integration suite, actual reconciliation of the 81 records and
 release-wide document admission remain separate gates. This checkpoint changes
 no production prompt, model, source licence, publication database or remote data.
+
+## Combined publisher qualification
+
+The source-role verifier is integrated with reported-documentation publication
+and its update-plan schema in `f965fbb`. The complete combined suite passes
+152 tests in 30.668 seconds. A full lint check found three import-order issues;
+isolated correction `7b0c602`, integrated as `92d6ce9`, changes only import order.
+The final code and tests match that isolated commit exactly. The complete suite
+passes again: **152 tests in 30.770 seconds** on macOS 26.6.2 arm64, Python
+3.13.12. Full publisher Ruff, Python compilation and whitespace checks pass.
+
+Commands from the detached publisher checkout:
+
+```sh
+python -m unittest discover -s tests -v
+ruff check --config <core>/server/pyproject.toml catalogue tests
+python -m compileall -q catalogue tests
+git diff --check
+```
+
+The final test log is
+`/private/tmp/opendata-publisher-combined-imports-20260911.log`.
+An initial sandbox invocation could not bind its loopback test services; its
+separate failure log is preserved. The authorized checks use isolated local
+services and temporary archives, perform no provider requests or Hub writes,
+and do not install an updater. GitHub Actions remains disabled. No other
+platform is qualified by these checks.
