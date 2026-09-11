@@ -1,9 +1,9 @@
 # Open Data catalogue publisher
 
 Produces verified releases of the [catalogue on Hugging Face](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue).
-The [SDG harvester](https://github.com/Gramscii-Git/semantic-deterministic-graph)
-owns provider access, database tables and document indexing. This repository owns
-release policy, archive validation, publication and publication receipts.
+The SDG harvester owns provider access, database tables and document indexing.
+This repository owns release policy, archive validation, publication and
+publication receipts.
 [Boundaries](https://github.com/Gramscii-Git/boundaries) is the separate geographic
 asset repository; matching territorial codes and vintages must be checked.
 
