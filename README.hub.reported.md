@@ -42,10 +42,13 @@ is retained as JSON text so differing provider fields do not change the table
 schema. Catalogue entries also retain their complete original row in `record_json`.
 See [viewer integrity and source hashes](viewer-manifest.json).
 
-## Verified availability
+## Availability evidence
 
 Each download identifies a full immutable publication commit. Counts and hashes
 are verified against that index's archive independently.
+Archive verification does not renew source freshness. The evidence expiry
+timestamps below determine whether a consumer may use an index for a new
+selection; expired artifacts remain historical evidence.
 
 | Index / pinned download | Built (UTC) | Datasets | Partitions | Combinations | Bytes | SHA-256 |
 | --- | --- | ---: | ---: | ---: | ---: | --- |

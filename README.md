@@ -7,7 +7,17 @@ release policy, archive validation, publication and publication receipts.
 [Boundaries](https://github.com/Gramscii-Git/boundaries) is the separate geographic
 asset repository; matching territorial codes and vintages must be checked.
 
-The [published availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/fc82d7bd8154da355a45a81d772615306413fdc9/availability)
+The [Hub publication reviewed on September 12, 2026](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/6c7fa70bbe1e3dd7a7f456e62aad346742866816)
+retains a September 7 discovery snapshot and three historical availability
+indexes. All 35 indexed datasets' selection evidence expired on September 11;
+none is current evidence for a new selection. The discovery archive remains
+schema 1 with recorded quality defects and no admission under the current
+schema-2 contract. These artifacts remain reproducible; updating their card
+does not refresh their source evidence or qualify a new dataset release. The
+[publication review](docs/audits/2026-09-12-hub-release-state.md) records the exact
+archive pins and the publisher, updater and boundary responsibilities.
+
+The [historical national availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/fc82d7bd8154da355a45a81d772615306413fdc9/availability)
 contains 911,670 joint combinations for five DVNS datasets and 25 Cruscotto domains
 across 197,471 completed partitions. COFOG covers 34 geographies for 2014–2024;
 four OpenCivitas annual datasets cover all 15 ordinary-statute regions. Cruscotto
@@ -100,8 +110,9 @@ subsequent publication. Provider timeouts are configured, not inferred. A failed
 run is not retried automatically by this publisher.
 
 Preparation writes to a unique directory under the configured build directory.
-A local lock refuses overlapping publisher runs; SDG also owns its database job
-guard. A lock left after a process crash requires inspection before removal.
+A kernel-held lock refuses overlapping publisher runs; SDG also owns its database
+job guard. The persistent lock file is not proof of a live owner and must not be
+unlinked. Inspect the recorded owner and phase receipts after an interrupted run.
 
 ## Release checks
 
@@ -589,8 +600,9 @@ earlier independent index. There is no automatic retry or resume. Inspect the
 phase receipts and actual consumer status before starting a new run. A crash
 between consumer activation and saving its state requires explicit receipt
 reconciliation; the next preflight refuses the mismatched pin. A process killed
-without cleanup can leave a lock and a last `started` phase: inspect its owner
-before removing the lock. Keep these runtime files outside version control.
+without cleanup can leave a last `started` phase: inspect its owner and supervised
+commands before starting another run. Keep the persistent lock file and these
+runtime records outside version control.
 
 To schedule this explicit pipeline, replace the calendar fields in `[schedule]`
 with its plan and matching interval:
@@ -610,7 +622,7 @@ run_at_load = true
 `run_at_load` is required for `run-update`. A true value starts the first run
 when launchd loads the job; a false value waits for the declared interval.
 Schedule generation checks the verified initial archives against that wait,
-the maximum run duration and the reserve, measured from generation time.
+the expected run duration and the reserve, measured from generation time.
 An index that is already five hours old cannot cover a twelve-hour wait plus
 a nine-hour run and a one-hour reserve with a twenty-four-hour lifetime.
 It can cover an immediate first run with the same duration and reserve.
