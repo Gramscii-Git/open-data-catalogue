@@ -63,5 +63,3 @@ def prepare(directory: Path, config: dict, harvester) -> dict:
         encoding="utf-8",
     )
     return report
-
-
