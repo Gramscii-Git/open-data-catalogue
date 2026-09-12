@@ -6,6 +6,10 @@ import tarfile
 from collections import Counter
 from pathlib import Path
 
+from .documents import inspect_contract, inspect_membership
+
+SCHEMA_VERSION = 2
+
 TABLE_KEYS = {
     "opendata_catalog": ("provider", "dataset_id"),
     "opendata_structures": ("provider", "dataset_id"),
@@ -33,13 +37,14 @@ def inspect_archive(path: Path, policy: dict) -> dict:
     metrics = Counter()
     catalog = {}
     structures = set()
-    documents = set()
+    documents = {}
     terms = set()
     dimensions = set()
     references = set()
     related_datasets = set()
     providers = Counter()
     issues = []
+    source_tables = {name: [] for name in ("opendata_structures", "opendata_terms", "opendata_structure_dims", "opendata_meta_reports")}
     with tarfile.open(path, "r:gz") as archive:
         members = archive.getmembers()
         expected = {f"{table}.jsonl" for table in TABLE_KEYS} | {"manifest.json"}
@@ -55,9 +60,10 @@ def inspect_archive(path: Path, policy: dict) -> dict:
         if (
             not isinstance(manifest, dict)
             or type(manifest.get("schema_version")) is not int
-            or manifest["schema_version"] != 1
+            or manifest["schema_version"] != SCHEMA_VERSION
         ):
-            raise ValueError("snapshot schema_version must be 1")
+            raise ValueError("snapshot schema_version must be 2 with explicit document provenance")
+        document_contract = inspect_contract(manifest, policy)
         if not isinstance(manifest.get("taken_at"), str) or not manifest["taken_at"]:
             raise ValueError("snapshot taken_at is required")
         if not isinstance(manifest.get("tables"), dict) or set(
@@ -83,6 +89,8 @@ def inspect_archive(path: Path, policy: dict) -> dict:
                     raise ValueError(
                         f"{table}: provider {provider!r} has no release policy"
                     )
+                if table in source_tables and (table != "opendata_terms" or row["language"] in document_contract["localization_languages"][provider]):
+                    source_tables[table].append(row)
                 if "dataset_id" in row:
                     related_datasets.add((provider, row["dataset_id"]))
                 if table == "opendata_catalog":
@@ -113,7 +121,7 @@ def inspect_archive(path: Path, policy: dict) -> dict:
                 elif table == "opendata_documents":
                     if not isinstance(row.get("text"), str) or not row["text"].strip():
                         raise ValueError(f"document {identity!r} has no text")
-                    documents.add(identity)
+                    documents[identity] = row
                 elif table == "opendata_terms":
                     prefix, separator, code = row["scope"].partition(":")
                     metrics["unscoped_terms"] += (
@@ -155,13 +163,9 @@ def inspect_archive(path: Path, policy: dict) -> dict:
     for (provider, dataset), row in catalog.items():
         if all(row[field] is True for field in policy["structure_fields"]):
             metrics["missing_structures"] += (provider, dataset) not in structures
-        if all(row[field] is True for field in policy["document_fields"]):
-            for language in policy["providers"][provider]["languages"]:
-                metrics["missing_documents"] += (
-                    provider,
-                    dataset,
-                    language,
-                ) not in documents
+    document_metrics, document_issues = inspect_membership(catalog, documents, document_contract, manifest, source_tables)
+    metrics.update(document_metrics)
+    issues.extend(document_issues)
     if len(catalog) < policy["minimum_datasets"]:
         issues.append(
             f"dataset count {len(catalog)} is below {policy['minimum_datasets']}"

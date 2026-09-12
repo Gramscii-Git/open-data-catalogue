@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import os
 import plistlib
 import sqlite3
 import subprocess
@@ -11,12 +10,13 @@ import tarfile
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from string import Template
 
 from .archive import QualityError, inspect_archive
 from .availability import inspect_availability, policy_from
-from .config import load
+from .config import child_environment, load
+from .discovery import prepare
 from .publish import upload
+from .runtime import process_lock, run_command
 
 
 def harvester(config, *arguments, capture=False):
@@ -25,10 +25,11 @@ def harvester(config, *arguments, capture=False):
     environment = deployment["environment_file"]
     if not environment.is_file():
         raise ValueError(f"harvester configuration is missing: {environment}")
-    result = subprocess.run(
+    result = run_command(
         [str(deployment["python"]), "-B", "-m", "sdg.plugins.opendata", "--env-file", str(environment), *arguments],
+        stop_grace=deployment["stop_grace_seconds"],
         cwd=server,
-        env={**os.environ, "PYTHONPATH": str(server)},
+        env=child_environment(config, server),
         stdout=subprocess.PIPE if capture else None,
         text=True,
         check=True,
@@ -39,75 +40,8 @@ def harvester(config, *arguments, capture=False):
 @contextmanager
 def publication_lock(build: Path):
     build.mkdir(parents=True, exist_ok=True)
-    lock = build / ".publisher.lock"
-    try:
-        lock.mkdir()
-    except FileExistsError as error:
-        raise RuntimeError(
-            f"publisher lock exists: {lock}; inspect the owning process before removing a stale lock"
-        ) from error
-    try:
+    with process_lock(build / ".publisher.lock", label="publisher"):
         yield
-    finally:
-        lock.rmdir()
-
-
-def dataset_readme(template_path: Path, config: dict, report: dict) -> str:
-    template = Template(template_path.read_text(encoding="utf-8"))
-    values = {
-        "taken_at": report["manifest"]["taken_at"],
-        "table_rows": "\n".join(
-            f"| {key} | {value} |" for key, value in report["tables"].items()
-        ),
-        "provider_rows": "\n".join(
-            f"| {key} | {value} |" for key, value in report["providers"].items()
-        ),
-        "quality_rows": "\n".join(
-            f"| {key} | {value} |" for key, value in report["metrics"].items()
-        ),
-        "archive": config["hub"]["archive"],
-        "sha256": report["sha256"],
-        "bytes": str(report["bytes"]),
-    }
-    if not template.is_valid() or set(template.get_identifiers()) != set(values):
-        raise ValueError(
-            "dataset README template must declare every release placeholder exactly by name"
-        )
-    return template.substitute(values)
-
-
-def prepare(directory: Path, config: dict) -> dict:
-    archive = directory / config["hub"]["archive"]
-    exported = json.loads(
-        harvester(config, "export", "--to", str(archive), capture=True)
-    )
-    try:
-        report = inspect_archive(archive, config["quality"])
-    except QualityError as error:
-        (directory / "quality.json").write_text(
-            json.dumps(error.report, indent=2), encoding="utf-8"
-        )
-        raise
-    if (
-        exported["sha256"] != report["sha256"]
-        or exported["bytes"] != report["bytes"]
-        or exported["tables"] != report["tables"]
-    ):
-        raise ValueError("export report does not match the validated archive")
-    (directory / "manifest.json").write_text(
-        json.dumps(report["manifest"], indent=2), encoding="utf-8"
-    )
-    (directory / "quality.json").write_text(
-        json.dumps(report, indent=2), encoding="utf-8"
-    )
-    (directory / "SHA256SUMS").write_text(
-        f"{report['sha256']}  {archive.name}\n", encoding="utf-8"
-    )
-    (directory / "README.md").write_text(
-        dataset_readme(config["deployment"]["readme_template"], config, report),
-        encoding="utf-8",
-    )
-    return report
 
 
 def schedule(config_path: Path, config: dict, output: Path) -> None:
@@ -123,14 +57,26 @@ def schedule(config_path: Path, config: dict, output: Path) -> None:
         ],
         "WorkingDirectory": str(config_path.parent),
         "EnvironmentVariables": {"PATH": settings["path"]},
-        "StartCalendarInterval": {
-            "Weekday": settings["weekday"],
-            "Hour": settings["hour"],
-            "Minute": settings["minute"],
-        },
         "StandardOutPath": str(settings["log"]),
         "StandardErrorPath": str(settings["log"]),
     }
+    if settings["action"] == "run-update":
+        from datetime import UTC, datetime
+
+        from .update_plan import load as load_plan
+        from .update_run import require_initial_coverage
+
+        plan = load_plan(settings["plan"], config)
+        if settings["interval_seconds"] != plan["cadence"]["interval_seconds"]:
+            raise ValueError("schedule interval must match the update plan's freshness budget")
+        require_initial_coverage(plan, config, now=datetime.now(UTC), run_at_load=settings["run_at_load"])
+        payload["ProgramArguments"].extend(("--plan", str(settings["plan"])))
+        payload["StartInterval"] = settings["interval_seconds"]
+        payload["RunAtLoad"] = settings["run_at_load"]
+    else:
+        payload["StartCalendarInterval"] = {
+            "Weekday": settings["weekday"], "Hour": settings["hour"], "Minute": settings["minute"],
+        }
     settings["log"].parent.mkdir(parents=True, exist_ok=True)
     with output.open("xb") as stream:
         plistlib.dump(payload, stream)
@@ -144,12 +90,28 @@ def main(argv=None) -> int:
         "check", help="validate an existing archive; no harvest or upload"
     )
     check.add_argument("--archive", type=Path, required=True)
+    verify_catalogue_command = commands.add_parser(
+        "verify-catalogue", help="record a new immutable discovery readback; no upload or quality waiver"
+    )
+    verify_catalogue_command.add_argument("--archive", type=Path, required=True)
+    verify_catalogue_command.add_argument("--revision", required=True)
+    verify_catalogue_command.add_argument("--expect-sha256", required=True)
+    verify_catalogue_command.add_argument("--expect-bytes", type=int, required=True)
+    verify_catalogue_command.add_argument("--output", type=Path, required=True)
     availability = commands.add_parser(
         "check-availability",
         help="validate a joint-availability artifact; no source reads or upload",
     )
     availability.add_argument("--archive", type=Path, required=True)
     availability.add_argument("--policy", type=Path, required=True)
+    for name in ("check-offline-availability", "publish-offline-availability"):
+        command = commands.add_parser(name, help="verify an explicit pinned offline SDMX provenance bundle before any publication")
+        command.add_argument("--provenance", type=Path, required=True)
+        command.add_argument("--provenance-sha256", required=True)
+        command.add_argument("--policy", type=Path, required=True)
+        if name == "publish-offline-availability":
+            command.add_argument("--destination", required=True)
+            command.add_argument("--readme-template", type=Path, required=True)
     build_availability = commands.add_parser(
         "build-availability", help="construct and verify a declared shared availability scope; no upload"
     )
@@ -181,14 +143,25 @@ def main(argv=None) -> int:
     activate_availability.add_argument("--index", required=True)
     activate_availability.add_argument("--expect-sha256", required=True)
     activate_availability.add_argument("--snapshot-publications", type=Path)
-    documentation = commands.add_parser("publish-documentation", help="verify published bytes and update the Hub card without replacing archives")
-    documentation.add_argument("--catalogue-archive", type=Path, required=True)
-    documentation.add_argument("--catalogue-revision", required=True)
-    documentation.add_argument("--availability-releases", type=Path, required=True)
-    documentation.add_argument("--readme-template", type=Path, required=True)
-    documentation.add_argument("--viewer-config", type=Path, required=True)
+    for name in ("publish-documentation", "publish-reported-documentation"):
+        documentation = commands.add_parser(name, help="verify explicit catalogue evidence and update the Hub card without replacing archives")
+        if name == "publish-documentation":
+            documentation.add_argument("--catalogue-archive", type=Path, required=True)
+            documentation.add_argument("--catalogue-revision", required=True)
+        else:
+            documentation.add_argument("--catalogue-evidence", type=Path, required=True)
+            documentation.add_argument("--catalogue-status-artifact", required=True)
+        documentation.add_argument("--availability-releases", type=Path, required=True)
+        documentation.add_argument("--readme-template", type=Path, required=True)
+        documentation.add_argument("--viewer-config", type=Path, required=True)
     for name in ("prepare", "refresh", "publish", "release"):
         commands.add_parser(name)
+    for name, help_text in (
+        ("check-update", "validate an explicit update plan and its current deployment state; no source reads or uploads"),
+        ("run-update", "build, publish, activate and document an explicit update plan"),
+    ):
+        command = commands.add_parser(name, help=help_text)
+        command.add_argument("--plan", type=Path, required=True)
     scheduled = commands.add_parser(
         "schedule", help="write a launchd plist without installing or starting it"
     )
@@ -197,6 +170,29 @@ def main(argv=None) -> int:
     try:
         config_path = args.config.resolve()
         config = load(config_path)
+        if args.command == "verify-catalogue":
+            from .receipts import verify_catalogue
+
+            print(json.dumps(verify_catalogue(config, args.archive, args.revision, args.expect_sha256,
+                                             args.expect_bytes, args.output), indent=2))
+            return 0
+        if args.command in {"check-update", "run-update"}:
+            from .update_plan import load as load_plan
+            from .update_plan import load_state
+            from .update_run import preflight, run
+
+            plan = load_plan(args.plan.resolve(), config)
+            with publication_lock(config["deployment"]["build"]):
+                if args.command == "check-update":
+                    state, _ = load_state(Path(plan["state"]), config)
+                    preflight(state, config, harvester)
+                    result = {"valid": True, "updated_indexes": list(plan["indexes"]), "cadence": plan["cadence"], "uploaded": False}
+                else:
+                    directory = Path(tempfile.mkdtemp(prefix="update-", dir=config["deployment"]["build"]))
+                    print(f"update directory: {directory}", file=sys.stderr, flush=True)
+                    result = run(directory, config, plan, harvester, prepare)
+                print(json.dumps(result, indent=2))
+            return 0
         if args.command == "activate-availability":
             source_arguments = ["--snapshot-publications", str(args.snapshot_publications.resolve())] if args.snapshot_publications is not None else []
             with publication_lock(config["deployment"]["build"]):
@@ -210,16 +206,22 @@ def main(argv=None) -> int:
                 (directory / "activation.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
                 print(json.dumps({"directory": str(directory), **result}, indent=2))
             return 0
-        if args.command == "publish-documentation":
+        if args.command in {"publish-documentation", "publish-reported-documentation"}:
             from .documentation import prepare as prepare_documentation
+            from .documentation import prepare_reported
             from .documentation import publish as publish_documentation
             with publication_lock(config["deployment"]["build"]):
                 directory = Path(tempfile.mkdtemp(prefix="documentation-", dir=config["deployment"]["build"]))
                 print(f"documentation directory: {directory}", file=sys.stderr, flush=True)
-                prepare_documentation(directory, config, args.catalogue_archive, args.catalogue_revision,
-                                      args.availability_releases, args.readme_template,
-                                      args.viewer_config)
-                print(json.dumps(publish_documentation(directory, config), indent=2))
+                if args.command == "publish-documentation":
+                    status_artifact = None
+                    prepare_documentation(directory, config, args.catalogue_archive, args.catalogue_revision,
+                                          args.availability_releases, args.readme_template, args.viewer_config)
+                else:
+                    status_artifact = args.catalogue_status_artifact
+                    prepare_reported(directory, config, args.catalogue_evidence, status_artifact,
+                                     args.availability_releases, args.readme_template, args.viewer_config)
+                print(json.dumps(publish_documentation(directory, config, status_artifact=status_artifact), indent=2))
             return 0
         if args.command == "publish-snapshots":
             from .snapshots import publish
@@ -236,6 +238,20 @@ def main(argv=None) -> int:
                 print(json.dumps(publish(
                     args.directory, directory, args.destination, config, args.policy, args.readme_template,
                 ), indent=2))
+            return 0
+        if args.command == "check-offline-availability":
+            from .availability_offline import validate
+
+            print(json.dumps(validate(config, args.provenance, args.provenance_sha256, args.policy), indent=2))
+            return 0
+        if args.command == "publish-offline-availability":
+            from .availability_offline import publish as publish_offline
+
+            with publication_lock(config["deployment"]["build"]):
+                directory = Path(tempfile.mkdtemp(prefix="offline-publication-", dir=config["deployment"]["build"]))
+                print(f"publication directory: {directory}", file=sys.stderr, flush=True)
+                print(json.dumps(publish_offline(config, args.provenance, args.provenance_sha256, args.policy,
+                                               directory, args.destination, args.readme_template), indent=2))
             return 0
         if args.command == "check-availability":
             print(
@@ -270,25 +286,20 @@ def main(argv=None) -> int:
             return 0
         with publication_lock(config["deployment"]["build"]):
             contract = harvester(config, "--release-contract", capture=True).strip()
-            if contract != "1":
+            if contract != "2":
                 raise ValueError(
-                    "harvester release contract must be 1; update the harvester checkout"
+                    "harvester release contract must be 2 with document provenance; update the harvester checkout"
                 )
             if args.command in ("refresh", "release"):
                 harvester(config, "sync")
-                harvester(
-                    config,
-                    "structure",
-                    "--patience",
-                    str(config["deployment"]["patience_seconds"]),
-                )
+                harvester(config, "structure")
                 harvester(config, "enrich")
                 harvester(config, "verify")
             directory = Path(
                 tempfile.mkdtemp(prefix="release-", dir=config["deployment"]["build"])
             )
             print(f"release directory: {directory}", file=sys.stderr, flush=True)
-            report = prepare(directory, config)
+            report = prepare(directory, config, harvester)
             if args.command in ("publish", "release"):
                 print(json.dumps(upload(directory, config, report), indent=2))
             else:

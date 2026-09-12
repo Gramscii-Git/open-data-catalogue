@@ -49,7 +49,7 @@ class ScopeTests(unittest.TestCase):
         self.environment.start()
         self.addCleanup(self.environment.stop)
         self.spec = {
-            "schema_version": 2, "limits": {},
+            "schema_version": 3, "limits": json.loads((Path(__file__).resolve().parents[1] / "scopes/dvns-cofog.json").read_bytes())["limits"],
             "inventories": {"municipalities": {
                 "url": f"https://127.0.0.1:{self.server.server_port}/inventory.json",
                 "code_field": "code", "code_pattern": "[0-9]{6}",
@@ -70,11 +70,23 @@ class ScopeTests(unittest.TestCase):
         resolved, evidence = resolve(self.spec)
         self.assertEqual(self.spec, original)
         self.assertEqual(self.calls, ["/inventory.json"])
-        self.assertEqual(resolved["schema_version"], 1)
+        self.assertEqual(resolved["schema_version"], 2)
         self.assertEqual(len(evidence["bindings"]), 2)
         for dataset in resolved["datasets"]:
             self.assertEqual(dataset["varying"]["istat_code"], ["000001", "000002"])
         self.assertEqual(evidence["inventories"]["municipalities"]["receipt"]["status"], 200)
+
+    def test_obsolete_scope_and_deadlines_fail_before_inventory_requests(self):
+        original = copy.deepcopy(self.spec)
+        self.spec["schema_version"] = 2
+        with self.assertRaisesRegex(ValueError, "schema version 3"):
+            resolve(self.spec)
+        for field in ("request_timeout_seconds", "operation_timeout_seconds"):
+            self.spec = copy.deepcopy(original)
+            self.spec["limits"][field] = 10
+            with self.assertRaisesRegex(ValueError, "scope limits must contain exactly"):
+                resolve(self.spec)
+        self.assertEqual(self.calls, [])
 
     def test_invalid_and_duplicate_codes_cannot_be_omitted(self):
         for rows in ([], [{"code": 1}], [{"code": "1"}], [{"code": "000001"}] * 2):

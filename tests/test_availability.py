@@ -79,10 +79,10 @@ def tables():
     }
 
 
-def archive_at(path, content, *, declared=None, extra=None):
+def archive_at(path, content, *, declared=None, extra=None, taken_at="2026-09-08T12:01:00Z"):
     manifest = {
         "schema_version": 1,
-        "taken_at": "2026-09-08T12:01:00Z",
+        "taken_at": taken_at,
         "tables": {name: len(content[name]) for name in MEMBERS}
         if declared is None
         else declared,

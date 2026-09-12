@@ -7,7 +7,7 @@ from itertools import product
 from pathlib import Path
 
 from .availability import inspect_availability, policy_from
-from .availability_scope import resolve, verify_inventory_scope
+from .availability_scope import resolve, validate_limits, verify_inventory_scope
 
 
 def verify_build(archive, exported, specification, policy):
@@ -45,8 +45,9 @@ def verify_build(archive, exported, specification, policy):
 
 def captured_scope(scope_path, inventory_path, inventory_sha256):
     specification = json.loads(scope_path.read_bytes())
-    if set(specification) != {"schema_version", "limits", "datasets"} or specification["schema_version"] != 1:
-        raise ValueError("captured-source reconstruction requires an explicitly resolved version-1 scope")
+    if set(specification) != {"schema_version", "limits", "datasets"} or specification["schema_version"] != 2:
+        raise ValueError("captured-source reconstruction requires an explicitly resolved version-2 scope")
+    validate_limits(specification["limits"])
     evidence = inventory_path.read_bytes()
     if hashlib.sha256(evidence).hexdigest() != inventory_sha256:
         raise ValueError("captured inventory evidence differs from its explicit digest pin")

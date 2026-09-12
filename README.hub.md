@@ -42,18 +42,28 @@ is retained as JSON text so differing provider fields do not change the table
 schema. Catalogue entries also retain their complete original row in `record_json`.
 See [viewer integrity and source hashes](viewer-manifest.json).
 
-## Verified availability
+## Availability evidence
 
 Each download identifies a full immutable publication commit. Counts and hashes
 are verified against that index's archive independently.
+Archive verification does not renew source freshness. The evidence expiry
+timestamps below determine whether a consumer may use an index for a new
+selection; expired artifacts remain historical evidence.
 
 | Index / pinned download | Built (UTC) | Datasets | Partitions | Combinations | Bytes | SHA-256 |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 $availability_releases
 
-| Index | Provider | Dataset | Source periods | Distinct territories | Combinations | Evidence expires (UTC) |
-| --- | --- | --- | --- | ---: | ---: | --- |
+| Index / full metadata | Provider | Dataset | Period kind | Distinct source periods | First / last identifier (lexical order) | Distinct territories | Combinations | Evidence verified (UTC) | Evidence expires (UTC) |
+| --- | --- | --- | --- | ---: | --- | ---: | ---: | --- | --- |
 $availability_rows
+
+The period columns summarize the exact distinct identifiers, without enumerating
+every source timestamp on this page. The first and last identifiers use lexical
+order, not inferred calendar order. They do not imply continuous coverage or
+fill gaps. Download each index's full metadata, or inspect its combination table
+in the viewer, for every identifier and its original calendar bounds. Snapshot
+timestamps and opaque source labels remain distinct from observation periods.
 
 COFOG covers the geographies returned by DVNS for each indexed year, including
 countries and European aggregates. Aggregates must not be added to their members.
@@ -64,12 +74,17 @@ reports actual source coverage for each dataset. These scopes do not cover every
 dataset or year in the separate discovery catalogue.
 
 The national Cruscotto scope indexes mapped domains with verified licences,
-using the complete official municipality inventory. The exact codes and original
-HTTP inventory receipt are published in [inventories.json](availability/inventories.json);
+using the complete municipality-code universe returned by the Cruscotto source.
+The exact codes, retrieval time, HTTP Last-Modified and content digest are
+published in [inventories.json](availability/inventories.json);
 every domain's request grid is verified against that full list. A completed
 municipality request does not imply that every domain contains measurements
 there. Domain inclusion is recorded in the table and the published scope; a
-licence alone does not certify availability. Air quality, weather and morphology retain their
+licence alone does not certify availability. Source inventory counts and HTTP
+dates do not establish the current administrative population or its vintage.
+Territorial identity and map geometry require their own dated code mappings;
+adding a source domain does not update boundary assets.
+Air quality, weather and morphology retain their
 physical units; weather periods identify forecast validity instants.
 Annual observations retain calendar bounds. School years and other source
 labels retain their native meaning without invented calendar bounds. Source

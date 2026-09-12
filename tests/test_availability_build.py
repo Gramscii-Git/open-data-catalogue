@@ -78,6 +78,12 @@ class AvailabilityBuildTests(unittest.TestCase):
             self.publication(datetime(2026, 9, 10, tzinfo=UTC))
         self.assertFalse((self.root / "publication").exists())
 
+    def test_ordinary_publication_cannot_bypass_an_offline_provenance_marker(self):
+        (self.root / "offline-provenance.json").write_text("{}")
+        with self.assertRaisesRegex(ValueError, "explicit verified provenance"):
+            self.publication(datetime(2026, 9, 8, 13, tzinfo=UTC))
+        self.assertFalse((self.root / "publication").exists())
+
     def test_publication_cannot_escape_its_repository_directory(self):
         with self.assertRaisesRegex(ValueError, "relative repository"):
             self.publication(datetime(2026, 9, 8, 13, tzinfo=UTC), "../outside")

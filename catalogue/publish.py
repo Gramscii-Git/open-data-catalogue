@@ -9,6 +9,8 @@ import urllib.request
 from pathlib import Path
 from urllib.parse import quote, urlsplit
 
+from .runtime import run_command
+
 
 def revision_from_result(result: str, hub: dict) -> str:
     payload = json.loads(result)
@@ -39,7 +41,7 @@ def file_url(hub: dict, revision: str, filename: str) -> str:
     return f"{hub['endpoint']}/datasets/{quote(hub['repository'], safe='/')}/resolve/{revision}/{quote(filename, safe='/')}"
 
 
-def verify_download(url: str, sha256: str, size: int, timeout: float) -> None:
+def verify_download(url: str, sha256: str, size: int, timeout: float | None) -> None:
     digest = hashlib.sha256()
     length = 0
     with urllib.request.urlopen(url, timeout=timeout) as response:
@@ -80,8 +82,9 @@ def upload_files(directory: Path, config: dict, files, archive: str, report: dic
     ]
     for filename in files:
         arguments.extend(("--include", filename))
-    completed = subprocess.run(
+    completed = run_command(
         arguments,
+        stop_grace=config["deployment"]["stop_grace_seconds"],
         env={**os.environ, "HF_ENDPOINT": hub["endpoint"]},
         stdout=subprocess.PIPE,
         text=True,

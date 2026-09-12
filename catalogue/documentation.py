@@ -1,6 +1,7 @@
 """Document independently pinned catalogue and availability releases truthfully."""
 
 import hashlib
+import html
 import json
 import tarfile
 from collections import Counter, defaultdict
@@ -9,22 +10,50 @@ from string import Template
 from . import viewer
 from .archive import QualityError, inspect_archive
 from .availability import inspect_availability, policy_from
+from .documentation_evidence import current_status, status_path
+from .documentation_evidence import read as read_evidence
 from .documentation_releases import load as load_releases
 from .publish import file_url, upload_files, verify_download
 
 
 def prepare(directory, config, catalogue_path, catalogue_revision, releases_path, template_path, viewer_path):
-    tables = viewer.load(viewer_path)
-    releases = load_releases(releases_path)
     try:
         catalogue = inspect_archive(catalogue_path, config["quality"])
         accepted = True
     except QualityError as error:
         catalogue, accepted = error.report, False
+    quality = json.dumps({"accepted": accepted, "policy": config["quality"], "report": catalogue}, indent=2).encode()
+    return _prepare(directory, config, catalogue_path, catalogue_revision, releases_path, template_path,
+                    viewer_path, catalogue, accepted, quality, {}, None)
+
+
+def prepare_reported(directory, config, evidence_path, status_artifact, releases_path, template_path, viewer_path):
+    status_path(status_artifact)
+    evidence = read_evidence(evidence_path, config, verify_remote=True)
+    status = current_status(evidence, config["quality"])
+    extra = {
+        "catalogue_quality_url": evidence["quality_report"]["url"],
+        "catalogue_report_revision": evidence["quality_report"]["revision"],
+        "catalogue_report_sha256": evidence["quality_report"]["sha256"],
+        "catalogue_status_url": status_artifact,
+        "catalogue_observed_schema": str(status["observed_snapshot_schema"]),
+        "catalogue_required_schema": str(status["required_snapshot_schema"]),
+        "catalogue_policy_sha256": status["current_policy_sha256"],
+    }
+    return _prepare(directory, config, evidence["archive"]["path"], evidence["archive"]["revision"],
+                    releases_path, template_path, viewer_path, evidence["evidence"]["report"],
+                    evidence["evidence"]["accepted"], evidence["quality_bytes"], extra,
+                    (status_artifact, status))
+
+
+def _prepare(directory, config, catalogue_path, catalogue_revision, releases_path, template_path,
+             viewer_path, catalogue, accepted, quality_bytes, extra, status):
+    tables = viewer.load(viewer_path)
+    releases = load_releases(releases_path)
     hub = config["hub"]
     catalogue_url = file_url(hub, catalogue_revision, hub["archive"])
     archives, reports = {"catalogue": catalogue_path}, {"catalogue": catalogue}
-    downloads = [(catalogue_url, catalogue)]
+    downloads = [(catalogue_url, catalogue)] if status is None else []
     index_rows, coverage = [], []
     for name, release in releases.items():
         report = inspect_availability(release["archive"], policy_from(release["policy"]))
@@ -36,14 +65,10 @@ def prepare(directory, config, catalogue_path, catalogue_revision, releases_path
             f"| {report['tables']['partitions.jsonl']:,} | {report['tables']['combinations.jsonl']:,} "
             f"| {report['bytes']:,} | `{report['sha256']}` |"
         )
-        coverage.append(coverage_rows(release["archive"], name))
+        coverage.append(coverage_rows(release["archive"], name, url))
     for url, report in downloads:
-        verify_download(url, report["sha256"], report["bytes"], hub["timeout_seconds"])
-    (directory / "catalogue-quality.json").write_text(json.dumps({
-        "accepted": accepted, "policy": config["quality"], "report": catalogue,
-    }, indent=2), encoding="utf-8")
+        verify_download(url, report["sha256"], report["bytes"], config["hub"]["timeout_seconds"])
     values = {
-        "viewer_metadata": viewer.prepare(directory, tables, archives, reports),
         "catalogue_taken_at": catalogue["manifest"]["taken_at"],
         "catalogue_datasets": str(catalogue["tables"]["opendata_catalog"]),
         "catalogue_url": catalogue_url, "catalogue_sha256": catalogue["sha256"],
@@ -57,15 +82,22 @@ def prepare(directory, config, catalogue_path, catalogue_revision, releases_path
         "availability_combinations": f"{sum(reports[name]['tables']['combinations.jsonl'] for name in releases):,}",
         "availability_releases": "\n".join(index_rows),
         "availability_rows": "\n".join(coverage),
+        **extra,
     }
     template = Template(template_path.read_text(encoding="utf-8"))
-    if not template.is_valid() or set(template.get_identifiers()) != set(values):
+    if not template.is_valid() or set(template.get_identifiers()) != set(values) | {"viewer_metadata"}:
         raise ValueError("Hub documentation must declare every artifact placeholder")
+    if status is not None and status[0] in {table["path"] for table in tables}:
+        raise ValueError("catalogue status artifact collides with a viewer table")
+    values["viewer_metadata"] = viewer.prepare(directory, tables, archives, reports)
+    (directory / "catalogue-quality.json").write_bytes(quality_bytes)
+    if status is not None:
+        (directory / status[0]).write_text(json.dumps(status[1], indent=2), encoding="utf-8")
     (directory / "README.md").write_text(template.substitute(values), encoding="utf-8")
     return values
 
 
-def coverage_rows(path, index):
+def coverage_rows(path, index, url):
     counts, periods, territories = Counter(), defaultdict(set), defaultdict(set)
     with tarfile.open(path, "r:gz") as archive:
         for line in archive.extractfile("combinations.jsonl"):
@@ -79,13 +111,20 @@ def coverage_rows(path, index):
         for line in archive.extractfile("datasets.jsonl"):
             row = json.loads(line)
             key = row["provider"], row["dataset_id"]
-            rows.append(f"| {index} | {row['provider']} | `{row['dataset_id']}` | {', '.join(sorted(periods[key]))} | {len(territories[key]):,} | {counts[key]:,} | {row['valid_until']} |")
+            identifiers = sorted(periods[key])
+            endpoints = [identifiers[0], identifiers[-1]] if len(identifiers) > 1 else identifiers
+            bounds = " / ".join(
+                f"<code>{html.escape(value).replace('|', '&#124;')}</code>"
+                for value in endpoints
+            )
+            rows.append(f"| [{index}]({url}) | {row['provider']} | `{row['dataset_id']}` | {row['period_kind']} | {len(identifiers):,} | {bounds} | {len(territories[key]):,} | {counts[key]:,} | {row['verified_at']} | {row['valid_until']} |")
     return "\n".join(rows)
 
 
-def publish(directory, config):
+def publish(directory, config, *, status_artifact):
     path = directory / "README.md"
     report = {"sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "bytes": path.stat().st_size}
     manifest = json.loads((directory / "viewer-manifest.json").read_bytes())
-    files = ("README.md", "catalogue-quality.json", "viewer-manifest.json", *(row["path"] for row in manifest["files"]))
+    extra = () if status_artifact is None else (status_path(status_artifact),)
+    files = ("README.md", "catalogue-quality.json", "viewer-manifest.json", *extra, *(row["path"] for row in manifest["files"]))
     return upload_files(directory, config, files, "README.md", report)

@@ -1,13 +1,14 @@
-schema = 1
+schema = 3
 
 [deployment]
 harvester = "../semantic-deterministic-graph"
 environment_file = "../semantic-deterministic-graph/server/.env"
+process_environment = {PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"}
 python = "../semantic-deterministic-graph/server/.venv/bin/python"
 hf = ["hf"]
 build = "build"
 readme_template = "README.dataset.md"
-patience_seconds = 90
+stop_grace_seconds = 10
 
 [hub]
 endpoint = "https://huggingface.co"
@@ -15,9 +16,11 @@ repository = "Gramscii-IT/open-data-catalogue"
 branch = "main"
 archive = "open-data-catalogue.tar.gz"
 commit_message = "Publish verified Open Data catalogue"
-timeout_seconds = 60
+timeout_seconds = "unbounded"
 
 [quality]
+document_contract_sha256 = "1987fdcad638bc5e73a667c48bbad4542d941e7d55edf5189609cacce172e1d5"
+query_languages = ["it", "en"]
 minimum_datasets = 15990
 maximum_structure_errors = 0
 maximum_missing_structures = 0
@@ -32,13 +35,13 @@ term_scopes = ["codelist", "conceptscheme"]
 languages = ["it", "en"]
 vocabulary = true
 [quality.providers.eurostat]
-languages = ["it", "en"]
+languages = ["en"]
 vocabulary = true
 [quality.providers.oecd]
-languages = ["it", "en"]
+languages = ["en"]
 vocabulary = true
 [quality.providers.ilo]
-languages = ["it", "en"]
+languages = ["en"]
 vocabulary = true
 [quality.providers.dvns]
 languages = ["it", "en"]

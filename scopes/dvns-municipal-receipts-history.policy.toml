@@ -1,0 +1,7 @@
+schema = 1
+providers = ["dvns"]
+staging_directory = "../build/availability-validation"
+max_unpacked_bytes = 2147483648
+max_line_bytes = 16777216
+max_rows = 2000000
+max_database_bytes = 1073741824

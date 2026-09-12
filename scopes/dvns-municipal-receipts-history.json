@@ -1,0 +1,58 @@
+{
+  "schema_version": 3,
+  "limits": {
+    "max_partitions": 3,
+    "max_pages_per_partition": 100,
+    "max_response_bytes": 8388608,
+    "max_total_response_bytes": 536870912,
+    "max_unpacked_bytes": 2147483648,
+    "max_line_bytes": 16777216,
+    "max_records": 2000000,
+    "max_database_bytes": 1073741824,
+    "chunk_bytes": 65536,
+    "min_free_disk_bytes": 536870912
+  },
+  "datasets": [
+    {
+      "provider": "dvns",
+      "dataset_id": "siope_entrate_comuni",
+      "arguments": {},
+      "varying": {
+        "year": [
+          2024,
+          2025,
+          2026
+        ]
+      },
+      "when": "always",
+      "period_representation": "calendar",
+      "argument_axes": {
+        "year": "reference_year"
+      },
+      "measure_labels": {
+        "siope_receipts_cumulative": "SIOPE cash receipts accumulated since January",
+        "siope_receipts_monthly": "SIOPE cash receipts in the month",
+        "siope_receipts_per_capita": "SIOPE receipts per resident",
+        "siope_receipts_per_square_kilometre": "SIOPE receipts per square kilometre",
+        "siope_receipts_population_numerator": "Receipts of municipalities with a population denominator",
+        "siope_receipts_title_0": "Receipts to regularise",
+        "siope_receipts_title_1": "Current tax, contribution and equalisation receipts",
+        "siope_receipts_title_2": "Current transfers",
+        "siope_receipts_title_3": "Extra-tax receipts",
+        "siope_receipts_title_4": "Capital receipts",
+        "siope_receipts_title_5": "Receipts from financial asset reductions",
+        "siope_receipts_title_6": "Borrowing",
+        "siope_receipts_title_7": "Treasury advances",
+        "siope_receipts_title_9": "Receipts on behalf of third parties and clearing accounts",
+        "siope_receipts_total": "SIOPE cash receipts over the source period"
+      },
+      "unit_labels": {
+        "euro": "Euro",
+        "euro_per_person": "Euro per resident",
+        "euro_per_square_kilometre": "Euro per square kilometre"
+      },
+      "valid_for_seconds": 86400
+    }
+  ],
+  "inventories": {}
+}

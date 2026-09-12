@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "limits": {
     "max_partitions": 20,
     "max_pages_per_partition": 100,
@@ -10,9 +10,7 @@
     "max_records": 100000,
     "max_database_bytes": 67108864,
     "chunk_bytes": 65536,
-    "min_free_disk_bytes": 536870912,
-    "request_timeout_seconds": 45,
-    "operation_timeout_seconds": 240
+    "min_free_disk_bytes": 536870912
   },
   "datasets": [
     {

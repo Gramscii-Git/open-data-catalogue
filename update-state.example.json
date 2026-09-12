@@ -1,0 +1,30 @@
+{
+  "schema_version": 2,
+  "catalogue": {
+    "archive": "build/CATALOGUE_BUILD/open-data-catalogue.tar.gz",
+    "verification": "build/CATALOGUE_VERIFICATION/verification.json"
+  },
+  "indexes": {
+    "national": {
+      "archive": "build/NATIONAL_BUILD/availability.tar.gz",
+      "policy": "scopes/verified-selection.policy.toml",
+      "destination": "availability",
+      "publication": "build/NATIONAL_PUBLICATION/publication.json",
+      "activation": "build/NATIONAL_ACTIVATION/activation.json"
+    },
+    "ssn-history": {
+      "archive": "build/SSN_BUILD/availability.tar.gz",
+      "policy": "scopes/ssn-history.policy.toml",
+      "destination": "availability/ssn-history",
+      "publication": "build/SSN_PUBLICATION/publication.json",
+      "activation": "build/SSN_ACTIVATION/activation.json"
+    },
+    "eurostat-series": {
+      "archive": "build/EUROSTAT_BUILD/availability.tar.gz",
+      "policy": "scopes/eurostat-qualified-series.policy.toml",
+      "destination": "availability/eurostat-series",
+      "publication": "build/EUROSTAT_PUBLICATION/publication.json",
+      "activation": "build/EUROSTAT_ACTIVATION/activation.json"
+    }
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "schema_version": 2,
+  "eligibility_fields": [
+    "active",
+    "searchable"
+  ],
+  "providers": {
+    "sample": {
+      "en": "native_metadata"
+    }
+  },
+  "searches": {
+    "it": [
+      "en"
+    ],
+    "en": [
+      "en"
+    ]
+  },
+  "definitions": {},
+  "rendering": {
+    "source_fields": {
+      "catalogue": [
+        "title_en",
+        "description",
+        "category_path",
+        "structure_id",
+        "territorial_level",
+        "agency",
+        "names",
+        "descriptions",
+        "category_paths",
+        "keywords",
+        "report_key",
+        "period_start",
+        "period_end",
+        "match_text",
+        "freshness",
+        "caveat",
+        "filters",
+        "sources",
+        "served",
+        "licence",
+        "attribution",
+        "document_role"
+      ],
+      "structure": [
+        "dimensions",
+        "time",
+        "key_order",
+        "obs_count",
+        "error",
+        "source_reference",
+        "source_constraint"
+      ],
+      "terms": [
+        "scope",
+        "code",
+        "name"
+      ],
+      "dimensions": [
+        "structure_id",
+        "dimension_id",
+        "concept_scope",
+        "concept_id",
+        "codelist_scope"
+      ]
+    },
+    "providers": {
+      "sample": {
+        "id": "sample"
+      }
+    },
+    "words": {
+      "en": {
+        "sections": {
+          "title": "Title",
+          "summary": "Summary"
+        }
+      }
+    },
+    "implementations": {
+      "sample": {
+        "entrypoint": "test_release:rows",
+        "files": {
+          "tests/test_release.py": "a4190961546ecc968dced71705169f885ef0445544ac46afc89aed22242f2ae9"
+        }
+      }
+    }
+  },
+  "localization_languages": {
+    "sample": []
+  },
+  "source_roles": {
+    "sample": {
+      "mode": "catalogue_fields"
+    }
+  }
+}
