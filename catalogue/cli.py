@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import os
 import plistlib
 import sqlite3
 import subprocess
@@ -14,7 +13,7 @@ from pathlib import Path
 
 from .archive import QualityError, inspect_archive
 from .availability import inspect_availability, policy_from
-from .config import load
+from .config import child_environment, load
 from .discovery import prepare
 from .publish import upload
 from .runtime import process_lock, run_command
@@ -30,7 +29,7 @@ def harvester(config, *arguments, capture=False):
         [str(deployment["python"]), "-B", "-m", "sdg.plugins.opendata", "--env-file", str(environment), *arguments],
         stop_grace=deployment["stop_grace_seconds"],
         cwd=server,
-        env={**os.environ, "PYTHONPATH": str(server)},
+        env=child_environment(config, server),
         stdout=subprocess.PIPE if capture else None,
         text=True,
         check=True,

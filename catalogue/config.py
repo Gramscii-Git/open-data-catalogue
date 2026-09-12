@@ -2,6 +2,7 @@
 
 import math
 import os
+import re
 import tomllib
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -24,23 +25,42 @@ def strings(value, name):
     return [text(item, name) for item in value]
 
 
+def process_environment(value):
+    if not isinstance(value, dict):
+        raise TypeError("deployment.process_environment must be an explicit string mapping")
+    for name, setting in value.items():
+        if not isinstance(name, str) or re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name) is None:
+            raise ValueError("deployment.process_environment contains an invalid variable name")
+        if not isinstance(setting, str) or "\0" in setting:
+            raise ValueError(f"deployment.process_environment.{name} must be a string without NUL")
+    if "PYTHONPATH" in value:
+        raise ValueError("deployment.process_environment cannot override the declared import roots with PYTHONPATH")
+    return dict(value)
+
+
+def child_environment(config, *import_roots):
+    return {**process_environment(config["deployment"]["process_environment"]),
+            "PYTHONPATH": os.pathsep.join(map(str, import_roots))}
+
+
 def load(path: Path) -> dict:
     data = tomllib.loads(path.read_text(encoding="utf-8"))
     fields(
         data, {"schema", "deployment", "hub", "quality", "schedule"}, "configuration"
     )
-    if type(data["schema"]) is not int or data["schema"] != 2:
-        raise ValueError("configuration schema must be 2")
+    if type(data["schema"]) is not int or data["schema"] != 3:
+        raise ValueError("configuration schema must be 3")
     deployment = data["deployment"]
     fields(
         deployment,
-        {"harvester", "environment_file", "python", "hf", "build", "readme_template", "stop_grace_seconds"},
+        {"harvester", "environment_file", "process_environment", "python", "hf", "build", "readme_template", "stop_grace_seconds"},
         "deployment",
     )
     for key in ("harvester", "environment_file", "python", "build", "readme_template"):
         raw = Path(text(deployment[key], f"deployment.{key}"))
         deployment[key] = Path(os.path.abspath(path.parent / raw)) if key == "python" else (path.parent / raw).resolve()
     deployment["hf"] = strings(deployment["hf"], "deployment.hf")
+    deployment["process_environment"] = process_environment(deployment["process_environment"])
     grace = deployment["stop_grace_seconds"]
     if (
         type(grace) not in (int, float)

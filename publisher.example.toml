@@ -1,8 +1,9 @@
-schema = 2
+schema = 3
 
 [deployment]
 harvester = "../semantic-deterministic-graph"
 environment_file = "../semantic-deterministic-graph/server/.env"
+process_environment = {PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"}
 python = "../semantic-deterministic-graph/server/.venv/bin/python"
 hf = ["hf"]
 build = "build"

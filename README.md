@@ -44,7 +44,8 @@ Python 3.11 or newer is required. The publisher itself uses only the standard
 library. Copy `publisher.example.toml` to `publisher.local.toml`, then configure:
 
 - The harvester checkout, its virtual-environment Python interpreter and the
-  explicit `deployment.environment_file` path. The environment file may belong
+  explicit `deployment.environment_file` path and `deployment.process_environment`
+  string mapping. The environment file may belong
   to a deployment separate from the source checkout. Interpreter paths retain
   their virtual-environment identity even when the executable is a symlink.
 - The Hugging Face CLI command, logged in with write access to the target dataset.
@@ -52,6 +53,32 @@ library. Copy `publisher.example.toml` to `publisher.local.toml`, then configure
 - The Hub endpoint, repository, branch, build directory and README template.
 - Required providers, document languages, vocabulary requirements and release limits.
 - The scheduler interpreter, executable search path, log path and calendar.
+
+Publisher configuration schema 3 requires the complete process environment for
+harvester and offline-projection children. They inherit no shell variables.
+Declare operating-system, certificate, proxy, temporary-directory and cache
+settings there when the deployment requires them. An explicitly empty mapping
+passes none of those values. `PYTHONPATH` is reserved for the declared source
+roots and cannot be supplied in the mapping.
+
+The native SDG CLI receives `--env-file` unchanged. SDG gives an explicitly
+declared process variable precedence over the same setting in that file; use
+one location for each setting unless an intentional override is required. Such
+an override must appear in `process_environment`, never just in the invoking
+shell. Values are literal strings: no shell expansion or environment merge is
+performed. Secrets belong in the private local configuration, outside Git.
+This child boundary also applies when the publisher is launched by its schedule;
+the separate authenticated Hugging Face CLI retains its own environment.
+
+The selected core validates `OPENDATA_PACING`. Its current contract requires
+`database_url`, `egress_id`, `dispatch`, `connect_timeout_seconds`,
+`statement_timeout_seconds`, `receipt_retention_seconds` and `tcp_keepalive`;
+the latter declares `idle_seconds`, `interval_seconds` and `probe_count`.
+An absent or invalid field is an error. These values must describe the same
+coordinated egress store as every participating caller. Loading publisher
+configuration does not admit provider traffic or attest that coordination.
+Archived configurations remain historical evidence and are not upgraded
+automatically.
 
 Discovery snapshots use schema 2 and carry the validated document-language
 contract and projection provenance. `quality.document_contract_sha256` pins that
@@ -565,7 +592,7 @@ parser, database transaction, upload or readback. Expired evidence still fails
 admission. Sleeping computers, source outages and missed jobs can leave expired
 evidence; the consumer must keep refusing it.
 
-Publisher configuration schema 2 requires `deployment.stop_grace_seconds` for
+Publisher configuration schema 3 requires `deployment.stop_grace_seconds` for
 command shutdown after cancellation, owner death or an unclosed child process.
 Each harvester, upload and offline-verification command has a supervisor with an
 owner-lifetime pipe and a separate process group. Owner shutdown closes the pipe;

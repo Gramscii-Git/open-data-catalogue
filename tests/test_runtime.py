@@ -111,7 +111,7 @@ class CommandTests(unittest.TestCase):
     def test_configuration_requires_current_schema_and_explicit_shutdown_policy(self):
         source = (ROOT / "publisher.example.toml").read_text()
         path = self.root / "publisher.toml"
-        for text in (source.replace("schema = 2", "schema = 1"),
+        for text in (source.replace("schema = 3", "schema = 2"),
                      source.replace("stop_grace_seconds = 10", "patience_seconds = 90"),
                      source.replace("stop_grace_seconds = 10", "stop_grace_seconds = 0")):
             with self.subTest(configuration=text[:16]), self.assertRaises(ValueError):

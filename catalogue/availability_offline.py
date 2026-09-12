@@ -5,7 +5,6 @@ import hashlib
 import importlib.metadata
 import io
 import json
-import os
 import subprocess
 import sys
 import tarfile
@@ -16,7 +15,7 @@ from .archive import digest
 from .availability import MEMBERS, _sha, _time, inspect_availability, policy_from
 from .availability_build import verify_build
 from .availability_scope import verify_inventory_scope
-from .config import fields, text
+from .config import child_environment, fields, text
 from .runtime import run_command
 
 
@@ -251,7 +250,7 @@ def validate(config, path, expected, policy_path):
     command = [str(deployment["python"]), "-B", "-m", "catalogue.availability_offline", "--manifest", str(path.resolve()),
                "--sha256", expected, "--policy", str(policy_path.resolve()), "--core", str(deployment["harvester"])]
     result = run_command(command, stop_grace=deployment["stop_grace_seconds"], cwd=root,
-                         env={**os.environ, "PYTHONPATH": os.pathsep.join((str(root), str(deployment["harvester"] / "server")))},
+                         env=child_environment(config, root, deployment["harvester"] / "server"),
                          check=True, capture_output=True, text=True)
     proof = json.loads(result.stdout)
     if proof["provenance_sha256"] != expected or proof["archive"] != manifest["candidate"] or proof["core"] != manifest["core"]:

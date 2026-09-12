@@ -312,7 +312,7 @@ class Releases(unittest.TestCase):
             original.replace(
                 "maximum_structure_errors = 0", "maximum_structure_errors = true"
             ),
-            original.replace("schema = 2", "schema = true"),
+            original.replace("schema = 3", "schema = true"),
             original.replace(
                 'archive = "open-data-catalogue.tar.gz"',
                 'archive = "../archive.tar.gz"',
