@@ -37,6 +37,10 @@ can describe historical artifacts without granting them current admission.
 The retained September 11 publication configuration is schema 1 and is not a
 current operational configuration. The separate deployment-adoption record is
 also incomplete. Neither is authority to start a new collection or timer.
+The historical adoption record is
+`open-data-catalogue-updater/build/update-deployment/runtime-adoption.json`,
+SHA-256 `74da63ce2d910a815a3c288c2ce65e30948a0f831d79b864728134f47c67be32`,
+with `adopted: false`; it is not a current runtime observation.
 An operational update still needs the current declared harvester environment,
 shared pacing authority, active consumer pins and real source results. No such
 adoption or fresh dataset release is claimed by this documentation change.
@@ -70,3 +74,25 @@ Verification for this documentation-only change consists of immutable byte/hash
 comparison, source/contract and reference review, unchanged template placeholder
 inventories and `git diff --check`. No unaffected runtime suite, provider read,
 database operation, model, service or archive copy is part of this review.
+
+## Completed README-only publication
+
+The owned publisher command completed normally on September 12 at
+14:41:14.955723 UTC. The resulting HF revision is
+[`f3930bb41012ae41d68902f171389ec09afec290`](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/f3930bb41012ae41d68902f171389ec09afec290).
+Its `README.md` is 30,173 bytes, SHA-256
+`c20d6043c2bb8ed22f957cbd6bd42103ac728adee3d8f7f0860ab5ba0abd0428`.
+The publisher read it back at the returned immutable commit and verified its
+bytes. Independent repository metadata comparison finds exactly one changed
+file, `README.md`, among 552 files. All 551 remaining blob/size/LFS identities
+match the prior publication. The archived reports, viewer tables, source
+snapshots, dataset hashes and original evidence timestamps are unchanged.
+
+The corrected card prominently states that all 35 availability evidence rows
+are expired and that discovery is not currently admitted. This is a completed
+documentation correction, not a fresh dataset release or consumer activation.
+No harvester command, schedule, database or Bandi runtime is invoked. The
+publisher uses its own small stdlib-only Python environment and the existing
+owned HF upload implementation. The original and successor metadata, exact
+input pins, README patch, upload result and final readback are retained under
+`build/hf-publication-review-20260912/`.

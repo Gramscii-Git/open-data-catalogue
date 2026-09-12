@@ -7,7 +7,7 @@ release policy, archive validation, publication and publication receipts.
 [Boundaries](https://github.com/Gramscii-Git/boundaries) is the separate geographic
 asset repository; matching territorial codes and vintages must be checked.
 
-The [Hub publication reviewed on September 12, 2026](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/6c7fa70bbe1e3dd7a7f456e62aad346742866816)
+The [Hub card corrected on September 12, 2026](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/f3930bb41012ae41d68902f171389ec09afec290)
 retains a September 7 discovery snapshot and three historical availability
 indexes. All 35 indexed datasets' selection evidence expired on September 11;
 none is current evidence for a new selection. The discovery archive remains
