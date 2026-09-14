@@ -34,6 +34,13 @@ policy is not a guarantee of complete provider coverage or source-data accuracy.
 | --- | ---: |
 $quality_rows
 
+Structure errors a provider's contract declares permanent are published with the
+provider's answer, not counted as release defects:
+
+| Provider | Dataset | Provider answer |
+| --- | --- | --- |
+$permanent_error_rows
+
 ## Reading
 
 The archive `$archive` contains seven JSONL tables and `manifest.json`.

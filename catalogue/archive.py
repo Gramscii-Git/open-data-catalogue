@@ -7,6 +7,7 @@ from collections import Counter
 from pathlib import Path
 
 from .documents import inspect_contract, inspect_membership
+from .structure_errors import declared_permanent
 
 SCHEMA_VERSION = 2
 
@@ -121,7 +122,11 @@ def inspect_archive(path: Path, policy: dict) -> dict:
                 elif table == "opendata_structures":
                     if "error" not in row or "harvested_at" not in row:
                         raise ValueError("structure must declare its harvest state")
-                    metrics["structure_errors"] += row["error"] is not None
+                    permanent = isinstance(row["error"], str) and declared_permanent(
+                        document_contract["rendering"]["providers"][provider], row["error"]
+                    )
+                    metrics["permanent_structure_errors"] += permanent
+                    metrics["structure_errors"] += row["error"] is not None and not permanent
                     if row["harvested_at"] is not None:
                         structures.add(identity)
                 elif table == "opendata_documents":

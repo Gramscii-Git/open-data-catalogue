@@ -1,13 +1,15 @@
 """Prepare and document a validated discovery snapshot from the harvester."""
 
+import html
 import json
 from pathlib import Path
 from string import Template
 
 from .archive import QualityError, inspect_archive
+from .structure_errors import permanent_structure_errors
 
 
-def dataset_readme(template_path: Path, config: dict, report: dict) -> str:
+def dataset_readme(template_path: Path, config: dict, report: dict, permanent_errors: list[dict]) -> str:
     template = Template(template_path.read_text(encoding="utf-8"))
     values = {
         "taken_at": report["manifest"]["taken_at"],
@@ -20,6 +22,10 @@ def dataset_readme(template_path: Path, config: dict, report: dict) -> str:
         "quality_rows": "\n".join(
             f"| {key} | {value} |" for key, value in report["metrics"].items()
         ),
+        "permanent_error_rows": "\n".join(
+            f"| {row['provider']} | `{row['dataset_id']}` | {html.escape(row['error']).replace('|', '&#124;').replace(chr(10), ' ')} |"
+            for row in permanent_errors
+        ) or "| none | | |",
         "archive": config["hub"]["archive"],
         "sha256": report["sha256"],
         "bytes": str(report["bytes"]),
@@ -59,7 +65,7 @@ def prepare(directory: Path, config: dict, harvester) -> dict:
         f"{report['sha256']}  {archive.name}\n", encoding="utf-8"
     )
     (directory / "README.md").write_text(
-        dataset_readme(config["deployment"]["readme_template"], config, report),
+        dataset_readme(config["deployment"]["readme_template"], config, report, permanent_structure_errors(archive)),
         encoding="utf-8",
     )
     return report
