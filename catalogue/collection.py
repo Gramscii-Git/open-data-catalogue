@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import math
 import os
 import subprocess
 import sys
@@ -26,9 +27,9 @@ def load(path):
     plan = json.loads(raw)
     fields(plan, {"schema", "publisher", "retry_policy", "environment_sha256",
                   "harvester_revision", "provider", "steps", "directory",
-                  "wait_for_current", "notification"}, "collection plan")
-    if type(plan["schema"]) is not int or plan["schema"] != 1:
-        raise ValueError("collection plan schema must be 1")
+                  "wait_for_current", "patience_seconds", "notification"}, "collection plan")
+    if type(plan["schema"]) is not int or plan["schema"] != 2:
+        raise ValueError("collection plan schema must be 2")
     for name in ("publisher", "retry_policy"):
         reference = plan[name]
         fields(reference, {"path", "sha256"}, name)
@@ -50,6 +51,12 @@ def load(path):
     plan["directory"] = (path.parent / text(plan["directory"], "directory")).resolve()
     if type(plan["wait_for_current"]) is not bool:
         raise ValueError("wait_for_current must be boolean")
+    patience = plan["patience_seconds"]
+    if patience is not None:
+        if type(patience) not in {int, float} or not math.isfinite(patience) or patience <= 0:
+            raise ValueError("patience_seconds must be positive and finite, or null")
+        if "structure" not in steps:
+            raise ValueError("patience_seconds applies only to structure collection")
     fields(plan["notification"], {"complete", "failed"}, "notification")
     for status, command in plan["notification"].items():
         if command is not None:
@@ -160,8 +167,10 @@ def run(plan_path, *, check=False):
                     require_source(current_config, current_plan["harvester_revision"])
                     state.update(status="running", step=step)
                     write_state(state_path, state)
+                    patience = current_plan["patience_seconds"]
                     harvester(current_config, step, "--provider", plan["provider"],
-                              "--retry-policy", str(plan["retry_policy"]["path"]))
+                              "--retry-policy", str(plan["retry_policy"]["path"]),
+                              *(("--patience", str(patience)) if step == "structure" and patience is not None else ()))
                     state["completed"].append(step)
                     state["step"] = None
                     write_state(state_path, state)
