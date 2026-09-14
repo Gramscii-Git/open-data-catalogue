@@ -41,6 +41,67 @@ The seven-table discovery archive remains a separate, older release with recorde
 quality defects. The [Hub card](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue)
 describes both artifacts and their measured limits.
 
+## Standalone collection, retries and resumption
+
+`collect` runs an explicitly declared sequence of native `sync` and `structure`
+commands. It does not invoke Codex, an LLM, document enrichment or publication.
+The native source must support `--retry-policy` on both collection commands.
+
+```sh
+python3 ./collect --plan collection.local.json --check
+python3 ./collect --plan collection.local.json
+```
+
+The plan uses schema 1 and requires every field below. SHA-256 values are measured
+from the actual files; the harvester revision is its full Git commit. Missing or
+changed bindings fail explicitly. `--check` verifies the plan bindings and clean
+source without starting a collection; the native CLI validates the retry policy
+before it accesses the database.
+
+| Field | Contract |
+| --- | --- |
+| `schema` | Integer `1` |
+| `publisher` | Object with `path` to the publisher TOML and its `sha256` |
+| `retry_policy` | Object with `path` to the native retry JSON and its `sha256` |
+| `environment_sha256` | Digest of the publisher's declared private environment file |
+| `harvester_revision` | Full commit of the clean native source |
+| `provider` | Exact provider identity |
+| `steps` | Unique `sync` and/or `structure` entries; sync precedes structure |
+| `directory` | Private persistent directory for the collection state |
+| `wait_for_current` | Boolean; wait for the active publisher's kernel lock or refuse overlap |
+| `notification` | Object with `complete` and `failed`; each is a command argument list or explicit `null` |
+
+Paths resolve relative to the plan. The collector atomically saves `state.json`
+after each completed native command. A failed or interrupted phase is not marked
+complete. Rerunning the same plan skips completed phases; native structure
+collection retains its own database resume contract. An interrupted sync can
+refresh registry/report work again. A different configuration requires a distinct
+plan/state directory, not a rewritten successful checkpoint.
+
+Retries occur within the native client on the same GET request. Each attempt
+passes through the shared provider admission gate. The explicit policy controls
+backoff, attempt budget and the delay when a rate limit supplies no `Retry-After`.
+Provider-directed delays can exceed the backoff cap. Permanent source failures,
+invalid configuration, cancellation and exhausted retries remain failures. The
+launcher does not repeatedly restart an arbitrary nonzero command.
+
+Status events are printed immediately, native retries are logged, and notification
+commands run on completion or failure. Notification failure is recorded separately
+and does not cause successful collection phases to run again. A command returning
+success does not attest that a desktop notification is visibly delivered; macOS
+notification preferences still apply. No chat notification is implied.
+
+Run the script from a terminal or a separately managed system service. Writing a
+plan or finishing this command does not install an automatic service. Its owner
+must remain alive until completion; owner termination drains the native child
+through the publisher's existing process lifecycle. The Mac must remain awake
+for network work to progress. A launchd job should not blindly restart every
+failure, because permanent errors require attention.
+
+Collection does not waive any release gate. After source work and document
+regeneration succeed, `update prepare` and `update publish` retain the existing
+strict quality checks and immutable Hugging Face readbacks.
+
 ## Configuration
 
 Python 3.11 or newer is required. The publisher itself uses only the standard

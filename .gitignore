@@ -1,5 +1,7 @@
 build/
 publisher.local.toml
+collection.local.json
+retry.local.json
 update-plan.local.json
 update-state.local.json
 update-state.local.json.lock/

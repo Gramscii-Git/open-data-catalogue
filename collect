@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+"""Collect declared OpenData phases with explicit retries and durable progress."""
+
+from catalogue.collection import main
+
+raise SystemExit(main())

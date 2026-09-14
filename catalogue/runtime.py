@@ -20,13 +20,15 @@ _lock_descriptors = ContextVar("publisher_lock_descriptors", default=())
 
 
 @contextmanager
-def process_lock(path, *, label):
+def process_lock(path, *, label, wait=False):
+    if type(wait) is not bool:
+        raise ValueError("process lock wait must be boolean")
     descriptor = os.open(path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     try:
         if not stat.S_ISREG(os.fstat(descriptor).st_mode):
             raise ValueError(f"{label} lock requires a regular file: {path}")
         try:
-            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(descriptor, fcntl.LOCK_EX | (0 if wait else fcntl.LOCK_NB))
         except BlockingIOError as error:
             raise RuntimeError(f"{label} lock is held by an execution or its draining command: {path}") from error
         os.ftruncate(descriptor, 0)
