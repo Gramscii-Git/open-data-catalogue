@@ -7,6 +7,7 @@ from collections import Counter
 from pathlib import Path
 
 from .documents import inspect_contract, inspect_membership
+from .structure_errors import declared_permanent
 
 SCHEMA_VERSION = 2
 
@@ -106,16 +107,26 @@ def inspect_archive(path: Path, policy: dict) -> dict:
                             raise ValueError(
                                 f"catalogue field {field!r} must be boolean or null"
                             )
+                    if type(row.get("retired")) is not bool:
+                        raise ValueError("catalogue field 'retired' must be boolean")
+                    if row["retired"]:
+                        raise ValueError(
+                            f"catalogue row {identity!r} is retired; a published archive holds current datasets"
+                        )
                     catalog[identity] = row
                     providers[provider] += 1
-                    metrics["missing_licences"] += (
-                        not isinstance(row.get("licence"), str)
-                        or not row["licence"].strip()
-                    )
+                    # A licence governs data SDG serves; an unserved dataset is never given an inferred one.
+                    metrics["missing_licences"] += all(
+                        row[field] is True for field in policy["structure_fields"]
+                    ) and (not isinstance(row.get("licence"), str) or not row["licence"].strip())
                 elif table == "opendata_structures":
                     if "error" not in row or "harvested_at" not in row:
                         raise ValueError("structure must declare its harvest state")
-                    metrics["structure_errors"] += row["error"] is not None
+                    permanent = isinstance(row["error"], str) and declared_permanent(
+                        document_contract["rendering"]["providers"][provider], row["error"]
+                    )
+                    metrics["permanent_structure_errors"] += permanent
+                    metrics["structure_errors"] += row["error"] is not None and not permanent
                     if row["harvested_at"] is not None:
                         structures.add(identity)
                 elif table == "opendata_documents":

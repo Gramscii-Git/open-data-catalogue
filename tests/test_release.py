@@ -21,12 +21,17 @@ from catalogue.discovery import dataset_readme
 from catalogue.document_inputs import Inputs
 from catalogue.documents import digest
 from catalogue.publish import file_url, revision_from_result, verify_download
+from catalogue.structure_errors import permanent_structure_errors
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCUMENT_CONTRACT = json.loads((ROOT / "tests/fixtures/document-contract.json").read_text())
+TEMPLATE = ("An error occured while trying to retrieve mapping set for dataflow: {agency}+{id}+{version}: \n"
+            " Dataflow 'urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow={agency}:{id}({version})' doesn't contain a mapping set")
+BODY = ("An error occured while trying to retrieve mapping set for dataflow: IT1+115_362+1.0: \n"
+        " Dataflow 'urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=IT1:115_362(1.0)' doesn't contain a mapping set")
 
 
-def rows():
+def rows(contract=DOCUMENT_CONTRACT):
     result = {table: [] for table in TABLE_KEYS}
     result["opendata_catalog"] = [
         {
@@ -37,6 +42,7 @@ def rows():
             "active": True,
             "served": True,
             "searchable": True,
+            "retired": False,
             "licence": "source terms",
         }
     ]
@@ -78,9 +84,9 @@ def rows():
     document = result["opendata_documents"][0]
     document["text_hash"] = hashlib.sha256(document["text"].encode()).hexdigest()
     row = result["opendata_catalog"][0]
-    inputs = Inputs(result, DOCUMENT_CONTRACT, digest)
+    inputs = Inputs(result, contract, digest)
     document["projection"] = {
-        "contract_sha256": digest(DOCUMENT_CONTRACT), "authority": "native_metadata", "source_language": "en",
+        "contract_sha256": digest(contract), "authority": "native_metadata", "source_language": "en",
         "source_sha256": digest(inputs.envelope(inputs.prepare(row), "en", {"title": row["title"], "metadata": {
             field: row.get(field) for field in (
                 "names", "descriptions", "category_paths", "keywords", "caveat",
@@ -191,7 +197,7 @@ class Releases(unittest.TestCase):
             self.inspect(rows())
         self.assertEqual(caught.exception.report["metrics"]["invalid_document_projections"], 1)
 
-    def test_retired_catalogue_records_are_preserved_without_current_documents(self):
+    def test_inactive_catalogue_records_are_preserved_without_current_documents(self):
         data = rows()
         data["opendata_catalog"][0]["active"] = False
         with self.assertRaises(QualityError) as caught:
@@ -199,6 +205,15 @@ class Releases(unittest.TestCase):
         self.assertEqual(caught.exception.report["metrics"]["undeclared_documents"], 1)
         data["opendata_documents"] = []
         self.assertEqual(self.inspect(data)["tables"]["opendata_catalog"], 1)
+
+    def test_a_retired_catalogue_row_is_refused(self):
+        data = rows()
+        data["opendata_catalog"][0]["retired"] = True
+        with self.assertRaisesRegex(ValueError, "is retired"):
+            self.inspect(data)
+        del data["opendata_catalog"][0]["retired"]
+        with self.assertRaisesRegex(ValueError, "'retired' must be boolean"):
+            self.inspect(data)
 
     def test_contract_pin_and_zero_missing_requirement_cannot_be_skipped(self):
         self.policy["document_contract_sha256"] = "0" * 64
@@ -217,6 +232,43 @@ class Releases(unittest.TestCase):
             self.inspect(data)
         self.assertEqual(caught.exception.report["metrics"]["structure_errors"], 1)
         self.assertEqual(caught.exception.report["metrics"]["missing_licences"], 1)
+
+    def test_a_declared_permanent_structure_error_is_reported_apart(self):
+        self.contract["rendering"]["providers"]["sample"] = {
+            "id": "sample", "driver": "sdmx",
+            "extra": {"dataflow_permanent_errors": [{"status": 500, "body_template": TEMPLATE}]},
+        }
+        self.policy["document_contract_sha256"] = digest(self.contract)
+        data = rows(self.contract)
+        data["opendata_structures"][0]["error"] = "sample answered 500: " + BODY
+        row = data["opendata_catalog"][0]
+        source = {"title": row["title"], "metadata": {field: row.get(field) for field in (
+            "names", "descriptions", "category_paths", "keywords", "caveat", "filters", "sources", "period_start", "period_end", "freshness",
+        )}}
+        inputs = Inputs(data, self.contract, digest)
+        data["opendata_documents"][0]["projection"]["source_sha256"] = digest(inputs.envelope(inputs.prepare(row), "en", source))
+        self.assertEqual(self.inspect(rows(self.contract))["metrics"]["permanent_structure_errors"], 0)
+        report = self.inspect(data)
+        self.assertEqual(report["metrics"]["permanent_structure_errors"], 1)
+        self.assertEqual(report["metrics"]["structure_errors"], 0)
+        self.assertEqual(permanent_structure_errors(self.archive), [
+            {"provider": "sample", "dataset_id": "a", "error": "sample answered 500: " + BODY},
+        ])
+        data["opendata_structures"][0]["error"] = (
+            "sample/rest: request failed after 8 attempts: sample answered 500: " + BODY
+        )
+        with self.assertRaises(QualityError) as caught:
+            self.inspect(data)
+        self.assertEqual(caught.exception.report["metrics"]["structure_errors"], 1)
+
+    def test_licences_are_required_for_served_datasets_only(self):
+        data = rows()
+        data["opendata_catalog"][0]["licence"] = None
+        data["opendata_catalog"][0]["served"] = False
+        data["opendata_catalog"][0]["searchable"] = False
+        data["opendata_documents"] = []
+        report = self.inspect(data)
+        self.assertEqual(report["metrics"]["missing_licences"], 0)
 
     def test_missing_structure_and_language_are_rejected(self):
         data = rows()
@@ -296,13 +348,21 @@ class Releases(unittest.TestCase):
 
     def test_readme_comes_from_the_validated_snapshot(self):
         report = self.inspect(rows())
-        rendered = dataset_readme(ROOT / "README.dataset.md", self.config, report)
+        rendered = dataset_readme(ROOT / "README.dataset.md", self.config, report, [])
         self.assertIn(report["sha256"], rendered)
         self.assertIn("| opendata_catalog | 1 |", rendered)
         invalid = self.directory / "README.md"
         invalid.write_text("Missing fields", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "placeholder"):
-            dataset_readme(invalid, self.config, report)
+            dataset_readme(invalid, self.config, report, [])
+
+    def test_the_dataset_card_lists_declared_permanent_errors_escaped(self):
+        report = {"manifest": {"taken_at": "2026-01-01T00:00:00Z"}, "tables": {}, "providers": {},
+                  "metrics": {"permanent_structure_errors": 1}, "sha256": "0" * 64, "bytes": 1}
+        errors = [{"provider": "sample", "dataset_id": "a", "error": "sample answered 500: a|b\nc"}]
+        rendered = dataset_readme(ROOT / "README.dataset.md", self.config, report, errors)
+        self.assertIn("| sample | `a` | sample answered 500: a&#124;b c |", rendered)
+        self.assertIn("| none | | |", dataset_readme(ROOT / "README.dataset.md", self.config, report, []))
 
     def test_configuration_requires_all_fields_and_rejects_invalid_types(self):
         original = (ROOT / "publisher.example.toml").read_text(encoding="utf-8")
