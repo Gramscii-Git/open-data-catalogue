@@ -57,7 +57,7 @@ python3 ./collect --plan collection.local.json --check
 python3 ./collect --plan collection.local.json
 ```
 
-The plan uses schema 1 and requires every field below. SHA-256 values are measured
+The plan uses schema 2 and requires every field below. SHA-256 values are measured
 from the actual files; the harvester revision is its full Git commit. Missing or
 changed bindings fail explicitly. `--check` verifies the plan bindings and clean
 source without starting a collection; the native CLI validates the retry policy
@@ -65,7 +65,7 @@ before it accesses the database.
 
 | Field | Contract |
 | --- | --- |
-| `schema` | Integer `1` |
+| `schema` | Integer `2` |
 | `publisher` | Object with `path` to the publisher TOML and its `sha256` |
 | `retry_policy` | Object with `path` to the native retry JSON and its `sha256` |
 | `environment_sha256` | Digest of the publisher's declared private environment file |
@@ -74,6 +74,7 @@ before it accesses the database.
 | `steps` | Unique `sync` and/or `structure` entries; sync precedes structure |
 | `directory` | Private persistent directory for the collection state |
 | `wait_for_current` | Boolean; wait for the active publisher's kernel lock or refuse overlap |
+| `patience_seconds` | Positive seconds one dataset may take in the `structure` step before it is left for a later run, or explicit `null` to wait for the real result |
 | `notification` | Object with `complete` and `failed`; each is a command argument list or explicit `null` |
 
 Paths resolve relative to the plan. The collector atomically saves `state.json`
@@ -82,6 +83,14 @@ complete. Rerunning the same plan skips completed phases; native structure
 collection retains its own database resume contract. An interrupted sync can
 refresh registry/report work again. A different configuration requires a distinct
 plan/state directory, not a rewritten successful checkpoint.
+
+`patience_seconds` is passed to native `structure` as `--patience`. A dataset that
+exceeds it is stored with the error `no answer within N s`, is harvested after the
+other pending datasets by the next run, and remains pending until a run collects
+it. An elapsed patience records incomplete work; it never marks source data as
+missing. Set the value from the longest successful dataset harvests measured for
+the provider, and collect what it leaves behind with a later plan whose patience
+is `null`.
 
 Retries occur within the native client on the same GET request. Each attempt
 passes through the shared provider admission gate. The explicit policy controls

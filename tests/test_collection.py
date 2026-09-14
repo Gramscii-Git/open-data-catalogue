@@ -48,13 +48,14 @@ class CollectionTests(unittest.TestCase):
             template = template.replace(original, replacement)
         self.publisher.write_text(template)
         self.plan_path = self.root / "collection.json"
-        self.plan = {"schema": 1,
+        self.plan = {"schema": 2,
                      "publisher": {"path": str(self.publisher), "sha256": self.digest(self.publisher)},
                      "retry_policy": {"path": str(self.policy), "sha256": self.digest(self.policy)},
                      "environment_sha256": self.digest(self.environment),
                      "harvester_revision": self.git("rev-parse", "HEAD"),
                      "provider": "istat", "steps": ["sync", "structure"],
                      "directory": str(self.root / "collection"), "wait_for_current": True,
+                     "patience_seconds": None,
                      "notification": {"complete": None, "failed": None}}
         self.save_plan()
 
@@ -77,6 +78,38 @@ class CollectionTests(unittest.TestCase):
 
     def steps(self):
         return [json.loads(line)["step"] for line in self.calls.read_text().splitlines()]
+
+    def patience(self):
+        return {json.loads(line)["step"]: json.loads(line)["patience"] for line in self.calls.read_text().splitlines()}
+
+    def test_patience_reaches_only_the_structure_command(self):
+        self.plan["patience_seconds"] = 600
+        self.save_plan()
+        self.execute()
+        self.assertEqual(self.patience(), {"sync": None, "structure": 600.0})
+
+    def test_null_patience_waits_for_the_real_result(self):
+        self.execute()
+        self.assertEqual(self.patience(), {"sync": None, "structure": None})
+
+    def test_patience_must_be_positive_finite_and_for_structure(self):
+        invalid = "patience_seconds must be positive and finite, or null"
+        for plan, message in (({"patience_seconds": 0}, invalid), ({"patience_seconds": -1}, invalid),
+                              ({"patience_seconds": True}, invalid), ({"patience_seconds": "600"}, invalid),
+                              ({"patience_seconds": float("inf")}, invalid),
+                              ({"patience_seconds": 600, "steps": ["sync"]}, "applies only to structure"),
+                              ({"schema": 1}, "schema must be 2")):
+            original = dict(self.plan)
+            self.plan.update(plan)
+            self.save_plan()
+            with self.assertRaisesRegex(ValueError, message):
+                load(self.plan_path)
+            self.plan = original
+        missing = dict(self.plan)
+        del missing["patience_seconds"]
+        self.plan_path.write_text(json.dumps(missing))
+        with self.assertRaisesRegex(ValueError, "must contain exactly"):
+            load(self.plan_path)
 
     def test_completed_phases_survive_failure_and_are_not_reexecuted(self):
         self.failure.touch()
