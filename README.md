@@ -17,8 +17,9 @@ does not refresh their source evidence or qualify a new dataset release. The
 [publication review](docs/audits/2026-09-12-hub-release-state.md) records the exact
 archive pins and the publisher, updater and boundary responsibilities.
 The [September 14 resumption checkpoint](docs/audits/2026-09-14-istat-resumption.md)
-records the running ISTAT collection, saved code, private recovery inputs and
-remaining publication steps. It does not attest a new Hub dataset release.
+records the ISTAT collection before the standalone collector, saved code, private
+recovery inputs and remaining publication steps. It does not attest a new Hub
+dataset release.
 
 The [historical national availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/fc82d7bd8154da355a45a81d772615306413fdc9/availability)
 contains 911,670 joint combinations for five DVNS datasets and 25 Cruscotto domains
