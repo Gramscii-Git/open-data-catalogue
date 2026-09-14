@@ -43,6 +43,10 @@ describes both artifacts and their measured limits.
 
 ## Standalone collection, retries and resumption
 
+The [active collection checkpoint](docs/audits/2026-09-14-standalone-collection.md)
+records the actual local owner, verified source pins, progress paths and restart
+commands.
+
 `collect` runs an explicitly declared sequence of native `sync` and `structure`
 commands. It does not invoke Codex, an LLM, document enrichment or publication.
 The native source must support `--retry-policy` on both collection commands.

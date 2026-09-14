@@ -4,6 +4,10 @@ This is an operational checkpoint, not a completed publication. Times below are
 observations on 14 September 2026 in Europe/Rome unless an explicit offset is
 given. Credentials and generated evidence remain outside Git.
 
+The [standalone collection checkpoint](2026-09-14-standalone-collection.md)
+records the subsequent completion of run 13, explicit failures and the
+launchd-owned structure continuation with request backoff.
+
 ## Saved code
 
 - Publisher: `c0995168230ea98dd037ad833061d45272bbe6d5`, already on `main`.
