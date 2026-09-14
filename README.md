@@ -210,7 +210,8 @@ Every command requires an explicit configuration and action:
 | publish | Prepares and validates the current database | Yes |
 | release | Refreshes, prepares and validates | Yes |
 
-A partial structure harvest is an explicit failure, recorded by SDG, and prevents
+A structure harvest that leaves a dataset in an error no provider rule declares
+permanent is partial: SDG records it as an explicit failure, and it prevents
 subsequent publication. Provider timeouts are configured, not inferred. A failed
 run is not retried automatically by this publisher.
 
@@ -223,13 +224,23 @@ unlinked. Inspect the recorded owner and phase receipts after an interrupted run
 
 Validation reads every JSONL row and checks the exact table set, row identities,
 duplicates, manifest counts, catalogue references, provider coverage, vocabulary
-references and configured completeness limits. No row is silently removed or
-given an invented licence to make a release pass.
+references and configured completeness limits. The harvester's export leaves
+out retired catalogue rows and the rows keyed to their datasets, and validation
+refuses a retired row that is present. No current row is silently removed or
+given an invented licence to make a release pass: a licence is required for every
+served dataset, and a dataset SDG does not serve is published without one rather
+than with an inferred one.
+
+A structure error whose stored text is exactly a provider answer that one of the
+provider's declared dataflow rules matches is counted as
+`permanent_structure_errors` and listed with that answer on the dataset card.
+Every other structure error counts as `structure_errors`.
 
 The example policy is deliberately strict: it rejects structure errors, missing
-required structures/documents, missing licences, legacy vocabulary scopes and
-missing structure-to-vocabulary mappings. Its minimum dataset count is an explicit
-release baseline. Intentional coverage reductions require policy review.
+required structures/documents, missing licences for served datasets, legacy
+vocabulary scopes and missing structure-to-vocabulary mappings. Its minimum
+dataset count is an explicit release baseline of current datasets. Intentional
+coverage reductions require policy review.
 
 A rejected preparation retains its archive and `quality.json` for inspection.
 The published catalogue may predate this policy and fail it; that is not permission

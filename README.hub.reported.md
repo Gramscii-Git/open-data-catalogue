@@ -164,8 +164,9 @@ flag is not admission under the current policy.
 $catalogue_metrics
 
 Structure errors, missing metadata and unresolved vocabulary references remain
-release defects. They are not made acceptable by publishing the availability
-index. A corrected catalogue release must pass the required checks before it
+release defects. A structure error that is exactly a provider answer one of its
+declared dataflow rules matches is counted apart as `permanent_structure_errors`.
+Defects are not made acceptable by publishing the availability index. A corrected catalogue release must pass the required checks before it
 replaces the current archive. Counts above describe this published archive,
 not an unpublished working database.
 
