@@ -37,6 +37,7 @@ def rows():
             "active": True,
             "served": True,
             "searchable": True,
+            "retired": False,
             "licence": "source terms",
         }
     ]
@@ -191,7 +192,7 @@ class Releases(unittest.TestCase):
             self.inspect(rows())
         self.assertEqual(caught.exception.report["metrics"]["invalid_document_projections"], 1)
 
-    def test_retired_catalogue_records_are_preserved_without_current_documents(self):
+    def test_inactive_catalogue_records_are_preserved_without_current_documents(self):
         data = rows()
         data["opendata_catalog"][0]["active"] = False
         with self.assertRaises(QualityError) as caught:
@@ -199,6 +200,15 @@ class Releases(unittest.TestCase):
         self.assertEqual(caught.exception.report["metrics"]["undeclared_documents"], 1)
         data["opendata_documents"] = []
         self.assertEqual(self.inspect(data)["tables"]["opendata_catalog"], 1)
+
+    def test_a_retired_catalogue_row_is_refused(self):
+        data = rows()
+        data["opendata_catalog"][0]["retired"] = True
+        with self.assertRaisesRegex(ValueError, "is retired"):
+            self.inspect(data)
+        del data["opendata_catalog"][0]["retired"]
+        with self.assertRaisesRegex(ValueError, "'retired' must be boolean"):
+            self.inspect(data)
 
     def test_contract_pin_and_zero_missing_requirement_cannot_be_skipped(self):
         self.policy["document_contract_sha256"] = "0" * 64
@@ -217,6 +227,15 @@ class Releases(unittest.TestCase):
             self.inspect(data)
         self.assertEqual(caught.exception.report["metrics"]["structure_errors"], 1)
         self.assertEqual(caught.exception.report["metrics"]["missing_licences"], 1)
+
+    def test_licences_are_required_for_served_datasets_only(self):
+        data = rows()
+        data["opendata_catalog"][0]["licence"] = None
+        data["opendata_catalog"][0]["served"] = False
+        data["opendata_catalog"][0]["searchable"] = False
+        data["opendata_documents"] = []
+        report = self.inspect(data)
+        self.assertEqual(report["metrics"]["missing_licences"], 0)
 
     def test_missing_structure_and_language_are_rejected(self):
         data = rows()

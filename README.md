@@ -187,7 +187,7 @@ contract change.
 
 All fields are required and validated. Paths are resolved relative to the
 configuration file. There are no implicit deployment paths or release thresholds.
-The harvester must implement publication contract 2; an incompatible checkout is
+The harvester must implement publication contract 3; an incompatible checkout is
 refused before any catalogue mutation. Its embedder must be available for indexing.
 
 ## Commands
