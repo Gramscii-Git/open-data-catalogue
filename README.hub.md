@@ -119,6 +119,36 @@ and values. It must fail on missing or altered archive bytes without replacing
 them with a newer native response. Undeclared and unlicensed domains are excluded.
 Readers pin the manifest and response files to their full publication revision.
 
+## Standalone provider catalogues
+
+Provider snapshots can be released independently after they pass the current
+schema and quality contract. They do not change the combined discovery archive
+described below.
+
+### Milano
+
+The [verified Milano release](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/tree/80586f06a9d9c58053589ad932f2ff07f7b40600/providers/milano)
+records the Comune di Milano CKAN inventory collected on
+**2026-09-23T14:00:18.846564+00:00**. The source inventory contains 5,960
+resources; the standalone release contains the 3,292 active resources with a
+validated structure and search document. Of these, 2,901 expose a CKAN
+DataStore query contract. The remaining source resources are not presented as
+queryable structured data.
+
+| Artifact | Value |
+| --- | --- |
+| Catalogue rows | 3,292 |
+| Structures | 3,292 |
+| Search documents | 3,292 |
+| CKAN DataStore resources | 2,901 |
+| [Canonical archive](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80586f06a9d9c58053589ad932f2ff07f7b40600/providers/milano/open-data-catalogue.tar.gz) | 4,358,356 bytes |
+| Archive SHA-256 | `3f9cba6fe153ba9649bf55a8b609dbd4019e1e64b5929730929732ca9a8c85f4` |
+| [Browsable catalogue rows](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/blob/80586f06a9d9c58053589ad932f2ff07f7b40600/providers/milano/catalogue.jsonl) | 3,292 JSONL rows |
+| [Validation report](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/blob/80586f06a9d9c58053589ad932f2ff07f7b40600/providers/milano/quality.json) | No quality issues |
+
+Milano enters the combined discovery archive only with the coordinated release
+that follows completion and validation of Eurostat and the other providers.
+
 ## Discovery catalogue
 
 Snapshot: **$catalogue_taken_at**. The discovery archive is a separate release;
