@@ -35,6 +35,8 @@ The archives include no search vectors or credentials.
 The viewer exposes explicitly configured subsets, each with a `data` split:
 `catalogue` contains all discovery entries. Each named availability index has
 separate dataset and combination tables, retaining its own source revision.
+Standalone provider subsets such as `milano_catalogue` point to independently
+verified provider releases and remain separate from `catalogue`.
 These are metadata tables, not training examples or observation values.
 
 Viewer tables are derived from the exact archives linked below. Nested metadata

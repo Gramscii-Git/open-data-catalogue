@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "column_sets": {
     "catalogue": [
       {
@@ -276,6 +276,16 @@
       }
     ]
   },
+  "published": [
+    {
+      "provider": "milano",
+      "destination": "providers/milano",
+      "revision": "80586f06a9d9c58053589ad932f2ff07f7b40600",
+      "viewer_sha256": "c4e737197293cec3c076ca9d4db4f1d4d7cd38c6300bb18f67186c85870e8cc6",
+      "viewer_bytes": 274,
+      "data_bytes": 32107738
+    }
+  ],
   "tables": [
     {
       "name": "catalogue",

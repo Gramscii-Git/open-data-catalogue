@@ -1,6 +1,7 @@
 """Hub documentation verifies published bytes and exposes rejected catalogue gates."""
 
 import http.server
+import hashlib
 import json
 import tempfile
 import threading
@@ -15,7 +16,7 @@ from catalogue.config import load
 from catalogue.documentation import prepare
 from catalogue.documentation_releases import load as load_releases
 from catalogue.viewer import load as load_viewer
-from catalogue.viewer import project
+from catalogue.viewer import project, update_card
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -37,6 +38,10 @@ class DocumentationTests(unittest.TestCase):
         self.config = load(ROOT / "publisher.example.toml")
         self.config["quality"].update(minimum_datasets=1, providers={"sample": {"languages": ["en"], "vocabulary": True}})
         self.config["quality"]["document_contract_sha256"] = digest(DOCUMENT_CONTRACT)
+        viewer = json.loads((ROOT / "viewer.json").read_text())
+        viewer["published"] = []
+        self.viewer = self.root / "viewer.json"
+        self.viewer.write_text(json.dumps(viewer))
         self.releases = self.root / "releases.json"
         releases = json.loads((ROOT / "documentation-releases.example.json").read_text())
         self.payloads = {"open-data-catalogue.tar.gz": self.catalogue.read_bytes()}
@@ -83,7 +88,7 @@ class DocumentationTests(unittest.TestCase):
         directory = self.root / "publication"
         directory.mkdir()
         prepare(directory, self.config, self.catalogue, "a" * 40, self.releases,
-                ROOT / "README.hub.md", ROOT / "viewer.json")
+                ROOT / "README.hub.md", self.viewer)
         return directory
 
     def test_failed_catalogue_policy_remains_visible_beside_independent_availability(self):
@@ -166,6 +171,44 @@ class DocumentationTests(unittest.TestCase):
             self.assertIsNone(row["territory_level"])
         self.assertEqual({row["source_archive"] for row in manifest["files"]},
                          {"catalogue", "national", "ssn-history", "eurostat-series"})
+
+    def test_published_provider_viewer_is_verified_and_added_to_the_card(self):
+        config = json.loads(self.viewer.read_text())
+        columns = load_viewer(self.viewer)[0]["columns"]
+        data = (json.dumps(project(rows()["opendata_catalog"][0], columns)) + "\n").encode()
+        receipt = {
+            "schema_version": 1,
+            "config_name": "sample_catalogue",
+            "rows": 1,
+            "path": "catalogue.jsonl",
+            "sha256": hashlib.sha256(data).hexdigest(),
+            "source_sha256": "d" * 64,
+        }
+        receipt_bytes = json.dumps(receipt).encode()
+        config["published"] = [{
+            "provider": "sample",
+            "destination": "providers/sample",
+            "revision": "d" * 40,
+            "viewer_sha256": hashlib.sha256(receipt_bytes).hexdigest(),
+            "viewer_bytes": len(receipt_bytes),
+            "data_bytes": len(data),
+        }]
+        self.viewer.write_text(json.dumps(config))
+        self.payloads["providers/sample/viewer.json"] = receipt_bytes
+        self.payloads["providers/sample/catalogue.jsonl"] = data
+
+        directory = self.prepare()
+        card = (directory / "README.md").read_text()
+        configs = json.loads(next(
+            line.removeprefix("configs: ") for line in card.splitlines()
+            if line.startswith("configs: ")
+        ))
+        self.assertEqual(configs[-1]["config_name"], "sample_catalogue")
+        self.assertEqual(configs[-1]["data_files"][0]["path"], "providers/sample/catalogue.jsonl")
+        manifest = json.loads((directory / "viewer-manifest.json").read_text())
+        self.assertEqual(manifest["published_files"][0]["source_sha256"], "d" * 64)
+        self.assertEqual(update_card("configs: []\n", configs[-1:]),
+                         "configs: " + json.dumps(configs[-1:]) + "\n")
 
     def test_viewer_preserves_nulls_and_rejects_missing_or_mistyped_fields(self):
         columns = load_viewer(ROOT / "viewer.json")[0]["columns"]

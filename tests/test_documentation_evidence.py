@@ -67,7 +67,7 @@ class PublishedDocumentationTests(unittest.TestCase):
 
     def prepare(self):
         return prepare_reported(self.target, self.config, self.evidence, "catalogue-status.json",
-                                self.releases, ROOT / "README.hub.reported.md", ROOT / "viewer.json")
+                                self.releases, ROOT / "README.hub.reported.md", self.viewer)
 
     def test_preserves_historical_report_and_separates_current_admission(self):
         self.prepare()
@@ -91,7 +91,7 @@ class PublishedDocumentationTests(unittest.TestCase):
             inspect_archive(self.catalogue, self.config["quality"])
         with self.assertRaisesRegex(ValueError, "schema_version must be 2"):
             prepare(self.target, self.config, self.catalogue, "a" * 40, self.releases,
-                    ROOT / "README.hub.md", ROOT / "viewer.json")
+                    ROOT / "README.hub.md", self.viewer)
         self.assertFalse(list(self.target.iterdir()))
 
     def test_different_current_policy_never_relabels_historical_metrics(self):
@@ -179,10 +179,10 @@ class PublishedDocumentationTests(unittest.TestCase):
                 status_path(value)
             with self.subTest(staging=value), self.assertRaises(ValueError):
                 prepare_reported(self.target, self.config, self.evidence, value, self.releases,
-                                 ROOT / "README.hub.reported.md", ROOT / "viewer.json")
+                                 ROOT / "README.hub.reported.md", self.viewer)
             self.assertFalse(list(self.target.iterdir()))
             self.assertEqual(self.requests, [])
         with self.assertRaisesRegex(ValueError, "every artifact placeholder"):
             prepare_reported(self.target, self.config, self.evidence, "status.json", self.releases,
-                             ROOT / "README.hub.md", ROOT / "viewer.json")
+                             ROOT / "README.hub.md", self.viewer)
         self.assertFalse(list(self.target.iterdir()))
