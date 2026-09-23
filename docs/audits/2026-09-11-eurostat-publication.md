@@ -9,7 +9,7 @@ publication, not a new discovery release or an installed consumer.
 The archive is **8,892 bytes**, SHA-256
 `74d7d37b2d0eb8cb829b9ef3179ecc00a1b7d0bdb04aac3d0a349d9dc6b3fc57`:
 
-[Immutable Eurostat archive](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/resolve/8cf8d9de59eaf3d9873379d027ffe3283f878ca0/availability/eurostat-series/availability.tar.gz)
+[Immutable Eurostat archive](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/8cf8d9de59eaf3d9873379d027ffe3283f878ca0/availability/eurostat-series/availability.tar.gz)
 
 The producer was the clean, committed and pushed `c05c56e54cce92619279715745c89111d08c7ab5`.
 Its complete suite passes 129 tests in 24.195 seconds. The exact projection core
@@ -64,7 +64,7 @@ The root card and seven viewer tables are published at immutable revision
 and verified their sizes and SHA-256 digests. Root independently compared every
 staged file to the reviewed preview; all were byte-identical.
 
-[Immutable dataset card](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/blob/6c7fa70bbe1e3dd7a7f456e62aad346742866816/README.md)
+[Immutable dataset card](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/blob/6c7fa70bbe1e3dd7a7f456e62aad346742866816/README.md)
 is 29,571 bytes, SHA-256
 `53024936e2d2fd0a2942c1e1d293cc4e32e920826292c327b43bc75cc9d70843`.
 The final producer `0d718e8` has the same code/tests as qualified `4bf752d`,

@@ -1,13 +1,13 @@
 # Open Data catalogue publisher
 
-Produces verified releases of the [catalogue on Hugging Face](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue).
+Produces verified releases of the [catalogue on Hugging Face](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue).
 The SDG harvester owns provider access, database tables and document indexing.
 This repository owns release policy, archive validation, publication and
 publication receipts.
 [Boundaries](https://github.com/Gramscii-Git/boundaries) is the separate geographic
 asset repository; matching territorial codes and vintages must be checked.
 
-The [Hub card corrected on September 12, 2026](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/f3930bb41012ae41d68902f171389ec09afec290)
+The [Hub card corrected on September 12, 2026](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/tree/f3930bb41012ae41d68902f171389ec09afec290)
 retains a September 7 discovery snapshot and three historical availability
 indexes. All 35 indexed datasets' selection evidence expired on September 11;
 none is current evidence for a new selection. The discovery archive remains
@@ -21,16 +21,16 @@ records the ISTAT collection before the standalone collector, saved code, privat
 recovery inputs and remaining publication steps. It does not attest a new Hub
 dataset release.
 
-The [historical national availability revision](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/fc82d7bd8154da355a45a81d772615306413fdc9/availability)
+The [historical national availability revision](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/tree/fc82d7bd8154da355a45a81d772615306413fdc9/availability)
 contains 911,670 joint combinations for five DVNS datasets and 25 Cruscotto domains
 across 197,471 completed partitions. COFOG covers 34 geographies for 2014–2024;
 four OpenCivitas annual datasets cover all 15 ordinary-statute regions. Cruscotto
 covers the complete 7,896-code universe returned by its source inventory on
-September 10, 2026. The [inventory receipt](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/raw/fc82d7bd8154da355a45a81d772615306413fdc9/availability/inventories.json)
+September 10, 2026. The [inventory receipt](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/raw/fc82d7bd8154da355a45a81d772615306413fdc9/availability/inventories.json)
 records retrieval at 07:56:02 UTC and HTTP Last-Modified September 5, 2026.
 These source dates do not establish an administrative vintage or the current
 number of Italian municipalities. Its
-[licensed source snapshots](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/eaeeae1eca695583e2e4c1ae6fa956fd13c05023/source-snapshots)
+[licensed source snapshots](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/tree/eaeeae1eca695583e2e4c1ae6fa956fd13c05023/source-snapshots)
 preserve the original responses in 256 immutable shards, with source receipts,
 licences and attribution. Source evidence has an explicit
 24-hour selection lifetime, expiring September 11 at 07:56–08:11 UTC for this
@@ -39,7 +39,7 @@ release; the archived evidence remains reproducible afterwards. ANNCSU adds
 municipality responses contain no ANNCSU observations. See the
 [release audit](docs/audits/2026-09-10-national-25-domains.md) for exact pins and limits.
 The seven-table discovery archive remains a separate, older release with recorded
-quality defects. The [Hub card](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue)
+quality defects. The [Hub card](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue)
 describes both artifacts and their measured limits.
 
 ## Standalone collection, retries and resumption
@@ -201,6 +201,24 @@ Every command requires an explicit configuration and action:
 ./update --config publisher.local.toml publish
 ./update --config publisher.local.toml release
 ```
+
+A completed provider can be published under its own repository directory
+without replacing the combined catalogue:
+
+```sh
+./update --config publisher.local.toml publish-provider-catalogue \
+  --archive path/to/provider-catalogue.tar.gz \
+  --provider PROVIDER_ID \
+  --destination providers/PROVIDER_ID \
+  --minimum-datasets EXPECTED_MINIMUM \
+  --readme-template README.provider.md \
+  --viewer-config viewer.json
+```
+
+The command validates the provider scope against the full installed document
+contract, projects a directly browsable `catalogue.jsonl`, uploads only the
+provider directory and verifies every uploaded file at the immutable commit.
+It never replaces the combined `open-data-catalogue.tar.gz`.
 
 | Command | Provider/database work | Upload |
 | --- | --- | --- |

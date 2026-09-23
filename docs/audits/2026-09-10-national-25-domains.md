@@ -9,8 +9,8 @@ installation in a running chat deployment or completion of other provider scopes
 
 | Artifact | Immutable revision | SHA-256 | Bytes |
 | --- | --- | --- | ---: |
-| [National availability](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/resolve/fc82d7bd8154da355a45a81d772615306413fdc9/availability/availability.tar.gz) | `fc82d7bd8154da355a45a81d772615306413fdc9` | `6daac1bf6aa8cdb8087440b75ccba01aacec197659ffefd45b8d4fbbf0b710e6` | 50,882,306 |
-| [Cruscotto snapshot manifest](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/resolve/eaeeae1eca695583e2e4c1ae6fa956fd13c05023/source-snapshots/manifest.json) | `eaeeae1eca695583e2e4c1ae6fa956fd13c05023` | `b2c2b5ef99136b363aff3259f6725b1ef36a724e88cb6ba2bc4ecbd78d42e1ae` | 1,269,379 |
+| [National availability](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/fc82d7bd8154da355a45a81d772615306413fdc9/availability/availability.tar.gz) | `fc82d7bd8154da355a45a81d772615306413fdc9` | `6daac1bf6aa8cdb8087440b75ccba01aacec197659ffefd45b8d4fbbf0b710e6` | 50,882,306 |
+| [Cruscotto snapshot manifest](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/eaeeae1eca695583e2e4c1ae6fa956fd13c05023/source-snapshots/manifest.json) | `eaeeae1eca695583e2e4c1ae6fa956fd13c05023` | `b2c2b5ef99136b363aff3259f6725b1ef36a724e88cb6ba2bc4ecbd78d42e1ae` | 1,269,379 |
 
 The archive contains 911,670 combinations, 30 datasets and 197,471 completed
 partitions. Five DVNS datasets and 25 Cruscotto domains are included. The snapshot
@@ -35,7 +35,7 @@ digests can differ while preserving the verified source content and bindings.
 
 ## Source universe and ANNCSU
 
-The [published inventory evidence](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/raw/fc82d7bd8154da355a45a81d772615306413fdc9/availability/inventories.json)
+The [published inventory evidence](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/raw/fc82d7bd8154da355a45a81d772615306413fdc9/availability/inventories.json)
 records 7,896 distinct six-digit codes returned by the Cruscotto lookup endpoint
 `https://cruscotto-italia.dati.gov.it/data/lookup/comuni-index.json`.
 Retrieval was `2026-09-10T07:56:02.502421+00:00`; HTTP Last-Modified was
@@ -93,7 +93,7 @@ authenticated publication and activation checks above used the real Hub bytes.
 
 ## Hub documentation and viewer
 
-The [published Hub card](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/blob/c2eae1ea79ea39a2ad9c07c0a416da152bae2a6f/README.md)
+The [published Hub card](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/blob/c2eae1ea79ea39a2ad9c07c0a416da152bae2a6f/README.md)
 and seven viewer tables were published at
 `c2eae1ea79ea39a2ad9c07c0a416da152bae2a6f`. Every one of the ten publication files
 passed size and SHA-256 readback. The README is 27,817 bytes with SHA-256
@@ -103,7 +103,7 @@ independent availability releases, preserving exact evidence verification and
 expiry times. Period summaries remain bounded; full identifiers and calendar
 bounds remain in the pinned archives and viewer rows.
 
-The [viewer manifest](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/resolve/c2eae1ea79ea39a2ad9c07c0a416da152bae2a6f/viewer-manifest.json)
+The [viewer manifest](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/c2eae1ea79ea39a2ad9c07c0a416da152bae2a6f/viewer-manifest.json)
 records every table's source archive digest, row count, size and checksum. Local
 evidence is `documentation-bgihbtyc/publication.json` and
 `documentation-bgihbtyc/viewer-manifest.json`, with the complete input set in

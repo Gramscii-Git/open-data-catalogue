@@ -136,6 +136,16 @@ def main(argv=None) -> int:
     publish_availability.add_argument("--destination", required=True)
     publish_availability.add_argument("--policy", type=Path, required=True)
     publish_availability.add_argument("--readme-template", type=Path, required=True)
+    provider_catalogue = commands.add_parser(
+        "publish-provider-catalogue",
+        help="validate and publish one provider without replacing the combined catalogue",
+    )
+    provider_catalogue.add_argument("--archive", type=Path, required=True)
+    provider_catalogue.add_argument("--provider", required=True)
+    provider_catalogue.add_argument("--destination", required=True)
+    provider_catalogue.add_argument("--minimum-datasets", type=int, required=True)
+    provider_catalogue.add_argument("--readme-template", type=Path, required=True)
+    provider_catalogue.add_argument("--viewer-config", type=Path, required=True)
     activate_availability = commands.add_parser(
         "activate-availability", help="verify and activate a published index in the configured SDG deployment"
     )
@@ -237,6 +247,26 @@ def main(argv=None) -> int:
                 print(f"publication directory: {directory}", file=sys.stderr, flush=True)
                 print(json.dumps(publish(
                     args.directory, directory, args.destination, config, args.policy, args.readme_template,
+                ), indent=2))
+            return 0
+        if args.command == "publish-provider-catalogue":
+            from .provider_catalogue import publish
+
+            with publication_lock(config["deployment"]["build"]):
+                directory = Path(tempfile.mkdtemp(
+                    prefix="provider-publication-",
+                    dir=config["deployment"]["build"],
+                ))
+                print(f"publication directory: {directory}", file=sys.stderr, flush=True)
+                print(json.dumps(publish(
+                    args.archive.resolve(),
+                    directory,
+                    args.provider,
+                    args.destination,
+                    args.minimum_datasets,
+                    config,
+                    args.readme_template.resolve(),
+                    args.viewer_config.resolve(),
                 ), indent=2))
             return 0
         if args.command == "check-offline-availability":
