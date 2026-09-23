@@ -79,7 +79,7 @@ database operation, model, service or archive copy is part of this review.
 
 The owned publisher command completed normally on September 12 at
 14:41:14.955723 UTC. The resulting HF revision is
-[`f3930bb41012ae41d68902f171389ec09afec290`](https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/tree/f3930bb41012ae41d68902f171389ec09afec290).
+[`f3930bb41012ae41d68902f171389ec09afec290`](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/tree/f3930bb41012ae41d68902f171389ec09afec290).
 Its `README.md` is 30,173 bytes, SHA-256
 `c20d6043c2bb8ed22f957cbd6bd42103ac728adee3d8f7f0860ab5ba0abd0428`.
 The publisher read it back at the returned immutable commit and verified its

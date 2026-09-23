@@ -12,14 +12,14 @@ stop_grace_seconds = 10
 
 [hub]
 endpoint = "https://huggingface.co"
-repository = "Gramscii-IT/open-data-catalogue"
+repository = "Gramscii-IT/european-open-data-catalogue"
 branch = "main"
 archive = "open-data-catalogue.tar.gz"
 commit_message = "Publish verified Open Data catalogue"
 timeout_seconds = "unbounded"
 
 [quality]
-document_contract_sha256 = "1987fdcad638bc5e73a667c48bbad4542d941e7d55edf5189609cacce172e1d5"
+document_contract_sha256 = "26a363a000106f30867f38de709f8f850a1fe021c64cc6cee794c5eb270a9a88"
 query_languages = ["it", "en"]
 minimum_datasets = 15899
 maximum_structure_errors = 0
@@ -47,6 +47,9 @@ vocabulary = true
 languages = ["it", "en"]
 vocabulary = false
 [quality.providers.cruscotto]
+languages = ["it"]
+vocabulary = false
+[quality.providers.milano]
 languages = ["it"]
 vocabulary = false
 

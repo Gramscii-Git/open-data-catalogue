@@ -21,6 +21,7 @@ from catalogue.discovery import dataset_readme
 from catalogue.document_inputs import Inputs
 from catalogue.documents import digest
 from catalogue.publish import file_url, revision_from_result, verify_download
+from catalogue.provider_catalogue import prepare as prepare_provider
 from catalogue.structure_errors import permanent_structure_errors
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -146,6 +147,60 @@ class Releases(unittest.TestCase):
         )
         self.assertEqual(result["bytes"], self.archive.stat().st_size)
         self.assertEqual(result["tables"]["opendata_catalog"], 1)
+
+    def test_provider_release_has_an_explicit_scope_and_viewer(self):
+        write_archive(self.archive, rows(), contract=self.contract)
+        directory = self.directory / "provider-release"
+        directory.mkdir()
+
+        report, files, archive = prepare_provider(
+            self.archive,
+            directory,
+            "sample",
+            "providers/sample",
+            1,
+            {**self.config, "quality": self.policy},
+            ROOT / "README.provider.md",
+            ROOT / "viewer.json",
+        )
+
+        self.assertEqual(report["scope"], {
+            "providers": ["sample"],
+            "minimum_datasets": 1,
+        })
+        self.assertEqual(archive, "providers/sample/open-data-catalogue.tar.gz")
+        self.assertEqual(len((directory / "providers/sample/catalogue.jsonl").read_text().splitlines()), 1)
+        self.assertEqual(json.loads((directory / "providers/sample/viewer.json").read_text())["source_sha256"], report["sha256"])
+        self.assertEqual(set(files), {
+            "providers/sample/open-data-catalogue.tar.gz",
+            "providers/sample/manifest.json",
+            "providers/sample/quality.json",
+            "providers/sample/SHA256SUMS",
+            "providers/sample/README.md",
+            "providers/sample/catalogue.jsonl",
+            "providers/sample/viewer.json",
+        })
+
+    def test_provider_release_refuses_an_unscoped_provider_or_weak_count(self):
+        write_archive(self.archive, rows(), contract=self.contract)
+        for provider, minimum, message in (
+            ("unknown", 1, "nonempty subset"),
+            ("sample", 2, "below 2"),
+        ):
+            with self.subTest(provider=provider, minimum=minimum):
+                directory = self.directory / f"provider-{provider}-{minimum}"
+                directory.mkdir()
+                with self.assertRaisesRegex(ValueError, message):
+                    prepare_provider(
+                        self.archive,
+                        directory,
+                        provider,
+                        "providers/sample",
+                        minimum,
+                        {**self.config, "quality": self.policy},
+                        ROOT / "README.provider.md",
+                        ROOT / "viewer.json",
+                    )
 
     def test_native_english_documents_cover_declared_italian_queries_without_translation(self):
         report = self.inspect(rows())

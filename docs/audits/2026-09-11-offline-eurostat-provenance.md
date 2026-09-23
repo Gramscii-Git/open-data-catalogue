@@ -85,7 +85,7 @@ publication database or remote CI were used for this tranche.
 
 A future operator command would use the explicitly reviewed manifest and
 `--destination availability/eurostat-series` in
-`Gramscii-IT/open-data-catalogue`. It would upload only:
+`Gramscii-IT/european-open-data-catalogue`. It would upload only:
 
 - `availability.tar.gz`
 - `manifest.json`

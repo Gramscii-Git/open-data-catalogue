@@ -2,7 +2,7 @@
 pretty_name: Open Data catalogue
 license: other
 license_name: per-dataset
-license_link: https://huggingface.co/datasets/Gramscii-IT/open-data-catalogue/blob/main/README.md
+license_link: https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/blob/main/README.md
 language:
   - it
   - en

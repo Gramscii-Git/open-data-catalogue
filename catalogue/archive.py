@@ -33,7 +33,23 @@ def digest(path: Path) -> str:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def inspect_archive(path: Path, policy: dict) -> dict:
+def inspect_archive(
+    path: Path,
+    policy: dict,
+    *,
+    required_providers: set[str] | None = None,
+    minimum_datasets: int | None = None,
+) -> dict:
+    selected_providers = (
+        set(policy["providers"])
+        if required_providers is None
+        else set(required_providers)
+    )
+    if not selected_providers or not selected_providers <= set(policy["providers"]):
+        raise ValueError("required providers must be a nonempty subset of the release policy")
+    required_minimum = policy["minimum_datasets"] if minimum_datasets is None else minimum_datasets
+    if type(required_minimum) is not int or required_minimum < 0:
+        raise ValueError("minimum datasets must be a non-negative integer")
     counts = {}
     metrics = Counter()
     catalog = {}
@@ -89,6 +105,10 @@ def inspect_archive(path: Path, policy: dict) -> dict:
                 if provider not in policy["providers"]:
                     raise ValueError(
                         f"{table}: provider {provider!r} has no release policy"
+                    )
+                if provider not in selected_providers:
+                    raise ValueError(
+                        f"{table}: provider {provider!r} is outside the declared release scope"
                     )
                 if table in source_tables and (table != "opendata_terms" or row["language"] in document_contract["localization_languages"][provider]):
                     source_tables[table].append(row)
@@ -162,7 +182,8 @@ def inspect_archive(path: Path, policy: dict) -> dict:
         issues.append(
             f"{len(references - terms)} dimension vocabulary references have no terms"
         )
-    for provider, contract in policy["providers"].items():
+    for provider in sorted(selected_providers):
+        contract = policy["providers"][provider]
         if not providers[provider]:
             issues.append(f"required provider {provider!r} has no datasets")
         if contract["vocabulary"] and (
@@ -177,9 +198,9 @@ def inspect_archive(path: Path, policy: dict) -> dict:
     document_metrics, document_issues = inspect_membership(catalog, documents, document_contract, manifest, source_tables)
     metrics.update(document_metrics)
     issues.extend(document_issues)
-    if len(catalog) < policy["minimum_datasets"]:
+    if len(catalog) < required_minimum:
         issues.append(
-            f"dataset count {len(catalog)} is below {policy['minimum_datasets']}"
+            f"dataset count {len(catalog)} is below {required_minimum}"
         )
     for name in (
         "structure_errors",
@@ -202,6 +223,11 @@ def inspect_archive(path: Path, policy: dict) -> dict:
         "bytes": path.stat().st_size,
         "policy": policy,
     }
+    if required_providers is not None or minimum_datasets is not None:
+        report["scope"] = {
+            "providers": sorted(selected_providers),
+            "minimum_datasets": required_minimum,
+        }
     if issues:
         raise QualityError(report)
     return report
