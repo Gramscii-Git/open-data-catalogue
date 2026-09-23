@@ -5,12 +5,22 @@ import json
 import re
 import tarfile
 from pathlib import PurePosixPath
+import urllib.request
+
+from .publish import file_url
+
+
+def _configuration(path):
+    config = json.loads(path.read_text(encoding="utf-8"))
+    if set(config) != {"schema_version", "tables", "column_sets", "published"} or config["schema_version"] != 3:
+        raise ValueError("unsupported viewer configuration")
+    if not isinstance(config["published"], list):
+        raise ValueError("published viewer tables must be an explicit list")
+    return config
 
 
 def load(path):
-    config = json.loads(path.read_text(encoding="utf-8"))
-    if set(config) != {"schema_version", "tables", "column_sets"} or config["schema_version"] != 2:
-        raise ValueError("unsupported viewer configuration")
+    config = _configuration(path)
     column_sets = config["column_sets"]
     if not isinstance(column_sets, dict) or not column_sets:
         raise ValueError("viewer column sets must be explicit and nonempty")
@@ -63,6 +73,102 @@ def load(path):
     return tables
 
 
+def _published_entry(value):
+    expected = {
+        "provider", "destination", "revision", "viewer_sha256", "viewer_bytes", "data_bytes"
+    }
+    if not isinstance(value, dict) or set(value) != expected:
+        raise ValueError("published viewer entry fields are incomplete or unknown")
+    provider = value["provider"]
+    if not isinstance(provider, str) or not re.fullmatch(r"[a-z][a-z0-9_-]*", provider):
+        raise ValueError("published viewer provider is invalid")
+    destination = PurePosixPath(value["destination"])
+    if str(destination) != value["destination"] or destination.parts != ("providers", provider):
+        raise ValueError("published viewer destination must identify its provider directory")
+    if not isinstance(value["revision"], str) or not re.fullmatch(r"[0-9a-f]{40}", value["revision"]):
+        raise ValueError("published viewer revision must be an immutable full commit")
+    if not isinstance(value["viewer_sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", value["viewer_sha256"]):
+        raise ValueError("published viewer receipt requires a SHA-256 digest")
+    if type(value["viewer_bytes"]) is not int or value["viewer_bytes"] <= 0:
+        raise ValueError("published viewer receipt requires a positive byte count")
+    if type(value["data_bytes"]) is not int or value["data_bytes"] <= 0:
+        raise ValueError("published viewer data requires a positive byte count")
+    return value
+
+
+def _download(url, sha256, size, timeout):
+    digest = hashlib.sha256()
+    content = bytearray()
+    with urllib.request.urlopen(url, timeout=timeout) as response:
+        if response.status != 200:
+            raise RuntimeError(f"published viewer download returned HTTP {response.status}")
+        while block := response.read(1024 * 1024):
+            content.extend(block)
+            digest.update(block)
+            if len(content) > size:
+                raise RuntimeError("published viewer download exceeds its declared byte count")
+    if len(content) != size or digest.hexdigest() != sha256:
+        raise RuntimeError("published viewer download does not match its size and SHA-256")
+    return bytes(content)
+
+
+def published(path, hub):
+    config = _configuration(path)
+    tables = load(path)
+    catalogue = [table for table in tables if table["name"] == "catalogue"]
+    if len(catalogue) != 1:
+        raise ValueError("published provider viewers require exactly one catalogue table")
+    columns = catalogue[0]["columns"]
+    metadata, evidence = [], []
+    names = {table["name"] for table in tables}
+    paths = {table["path"] for table in tables}
+    for raw in config["published"]:
+        entry = _published_entry(raw)
+        receipt_path = f"{entry['destination']}/viewer.json"
+        receipt_bytes = _download(
+            file_url(hub, entry["revision"], receipt_path),
+            entry["viewer_sha256"],
+            entry["viewer_bytes"],
+            hub["timeout_seconds"],
+        )
+        receipt = json.loads(receipt_bytes)
+        expected = {"schema_version", "config_name", "rows", "path", "sha256", "source_sha256"}
+        if not isinstance(receipt, dict) or set(receipt) != expected or receipt["schema_version"] != 1:
+            raise ValueError("published provider viewer receipt is invalid")
+        if not isinstance(receipt["config_name"], str) or not re.fullmatch(r"[a-z][a-z0-9_]*", receipt["config_name"]):
+            raise ValueError("published provider viewer config name is invalid")
+        data_path = PurePosixPath(receipt["path"])
+        if data_path.parts != ("catalogue.jsonl",) or type(receipt["rows"]) is not int or receipt["rows"] <= 0:
+            raise ValueError("published provider viewer data declaration is invalid")
+        for name in ("sha256", "source_sha256"):
+            if not isinstance(receipt[name], str) or not re.fullmatch(r"[0-9a-f]{64}", receipt[name]):
+                raise ValueError("published provider viewer data requires SHA-256 identities")
+        target = str(PurePosixPath(entry["destination"]) / data_path)
+        if receipt["config_name"] in names or target in paths:
+            raise ValueError("published viewer names and paths must be unique")
+        names.add(receipt["config_name"])
+        paths.add(target)
+        data = _download(
+            file_url(hub, entry["revision"], target),
+            receipt["sha256"],
+            entry["data_bytes"],
+            hub["timeout_seconds"],
+        )
+        if len(data.splitlines()) != receipt["rows"]:
+            raise ValueError("published provider viewer row count differs from its receipt")
+        metadata.append({
+            "config_name": receipt["config_name"],
+            "default": False,
+            "data_files": [{"split": "data", "path": target}],
+            "features": [
+                {"name": column["name"], "dtype": "string" if column["type"] == "json" else column["type"]}
+                for column in columns
+            ],
+        })
+        evidence.append({**entry, **receipt, "path": target})
+    return metadata, evidence
+
+
 def project(row, columns):
     result = {}
     for column in columns:
@@ -84,7 +190,7 @@ def project(row, columns):
     return result
 
 
-def prepare(directory, tables, archives, reports):
+def prepare(directory, tables, archives, reports, external=((), ())):
     if {table["archive"] for table in tables} != set(archives) or set(archives) != set(reports):
         raise ValueError("viewer tables must cover exactly the declared archive set")
     metadata, files = [], []
@@ -109,5 +215,27 @@ def prepare(directory, tables, archives, reports):
                          "data_files": [{"split": table["split"], "path": table["path"]}],
                          "features": [{"name": column["name"], "dtype": "string" if column["type"] == "json" else column["type"]}
                                       for column in table["columns"]]})
-    (directory / "viewer-manifest.json").write_text(json.dumps({"schema_version": 1, "files": files}, indent=2), encoding="utf-8")
+    external_metadata, external_files = external
+    metadata.extend(external_metadata)
+    (directory / "viewer-manifest.json").write_text(json.dumps({
+        "schema_version": 2,
+        "files": files,
+        "published_files": external_files,
+    }, indent=2), encoding="utf-8")
     return "configs: " + json.dumps(metadata, ensure_ascii=False)
+
+
+def update_card(readme, external_metadata):
+    lines = readme.splitlines(keepends=True)
+    indexes = [index for index, line in enumerate(lines) if line.startswith("configs: ")]
+    if len(indexes) != 1:
+        raise ValueError("Hub card must contain exactly one JSON configs declaration")
+    index = indexes[0]
+    configs = json.loads(lines[index].removeprefix("configs: "))
+    external_names = {config["config_name"] for config in external_metadata}
+    retained = [config for config in configs if config.get("config_name") not in external_names]
+    paths = {item["data_files"][0]["path"] for item in retained}
+    if any(item["data_files"][0]["path"] in paths for item in external_metadata):
+        raise ValueError("published viewer path collides with an existing Hub config")
+    lines[index] = "configs: " + json.dumps([*retained, *external_metadata], ensure_ascii=False) + "\n"
+    return "".join(lines)

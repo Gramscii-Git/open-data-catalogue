@@ -84,6 +84,7 @@ class UpdateTests(unittest.TestCase):
         self.scope.write_text(json.dumps(self.spec))
         self.viewer = self.root / "viewer.json"
         viewer = json.loads((ROOT / "viewer.json").read_text())
+        viewer["published"] = []
         viewer["tables"] = [row for row in viewer["tables"] if row["archive"] in {"catalogue", "national"}]
         self.viewer.write_text(json.dumps(viewer))
         self.catalogue = self.root / "catalogue.tar.gz"

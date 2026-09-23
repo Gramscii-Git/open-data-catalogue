@@ -89,7 +89,9 @@ def _prepare(directory, config, catalogue_path, catalogue_revision, releases_pat
         raise ValueError("Hub documentation must declare every artifact placeholder")
     if status is not None and status[0] in {table["path"] for table in tables}:
         raise ValueError("catalogue status artifact collides with a viewer table")
-    values["viewer_metadata"] = viewer.prepare(directory, tables, archives, reports)
+    values["viewer_metadata"] = viewer.prepare(
+        directory, tables, archives, reports, viewer.published(viewer_path, hub)
+    )
     (directory / "catalogue-quality.json").write_bytes(quality_bytes)
     if status is not None:
         (directory / status[0]).write_text(json.dumps(status[1], indent=2), encoding="utf-8")
