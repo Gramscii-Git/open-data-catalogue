@@ -3,9 +3,10 @@
 import math
 import os
 import re
-import tomllib
 from pathlib import Path
 from urllib.parse import urlsplit
+
+import tomllib
 
 
 def fields(value, expected, name):
@@ -48,8 +49,8 @@ def load(path: Path) -> dict:
     fields(
         data, {"schema", "deployment", "hub", "quality", "schedule"}, "configuration"
     )
-    if type(data["schema"]) is not int or data["schema"] != 3:
-        raise ValueError("configuration schema must be 3")
+    if type(data["schema"]) is not int or data["schema"] != 4:
+        raise ValueError("configuration schema must be 4")
     deployment = data["deployment"]
     fields(
         deployment,
@@ -150,7 +151,20 @@ def load(path: Path) -> dict:
     actions = {"prepare", "refresh", "publish", "release", "run-update"}
     if schedule["action"] not in actions:
         raise ValueError("schedule.action must be prepare, refresh, publish, release or run-update")
-    timing = {"plan", "interval_seconds", "run_at_load"} if schedule["action"] == "run-update" else {"weekday", "hour", "minute"}
+    interval = {"interval_seconds", "run_at_load"}
+    calendar = {"weekday", "hour", "minute"}
+    trigger_fields = set(schedule) - {"label", "python", "path", "log", "action", "plan"}
+    if trigger_fields < interval:
+        raise ValueError("schedule interval trigger requires interval_seconds and run_at_load")
+    if trigger_fields < calendar:
+        raise ValueError("schedule calendar trigger requires weekday, hour and minute")
+    if trigger_fields not in (interval, calendar):
+        raise ValueError("schedule must declare exactly one interval or calendar trigger")
+    if schedule["action"] == "run-update" and trigger_fields != interval:
+        raise ValueError("schedule.run-update requires an interval trigger")
+    if schedule["action"] != "run-update" and "plan" in schedule:
+        raise ValueError("schedule.plan is valid only for run-update")
+    timing = trigger_fields | ({"plan"} if schedule["action"] == "run-update" else set())
     fields(
         schedule,
         {"label", "python", "path", "log", "action"} | timing,
@@ -163,6 +177,7 @@ def load(path: Path) -> dict:
         schedule[key] = Path(os.path.abspath(configured)) if key == "python" else configured.resolve()
     if schedule["action"] == "run-update":
         schedule["plan"] = (path.parent / text(schedule["plan"], "schedule.plan")).resolve(strict=True)
+    if trigger_fields == interval:
         if type(schedule["interval_seconds"]) is not int or schedule["interval_seconds"] <= 0:
             raise ValueError("schedule.interval_seconds must be a positive integer")
         if type(schedule["run_at_load"]) is not bool:

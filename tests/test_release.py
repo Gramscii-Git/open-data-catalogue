@@ -20,8 +20,8 @@ from catalogue.config import load
 from catalogue.discovery import dataset_readme
 from catalogue.document_inputs import Inputs
 from catalogue.documents import digest
-from catalogue.publish import file_url, revision_from_result, verify_download
 from catalogue.provider_catalogue import prepare as prepare_provider
+from catalogue.publish import file_url, revision_from_result, verify_download
 from catalogue.structure_errors import permanent_structure_errors
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -427,12 +427,12 @@ class Releases(unittest.TestCase):
             original.replace(
                 "maximum_structure_errors = 0", "maximum_structure_errors = true"
             ),
-            original.replace("schema = 3", "schema = true"),
+            original.replace("schema = 4", "schema = true"),
             original.replace(
                 'archive = "open-data-catalogue.tar.gz"',
                 'archive = "../archive.tar.gz"',
             ),
-            original.replace("hour = 3", "hour = 24"),
+            original.replace("interval_seconds = 86400", "interval_seconds = 0"),
         ):
             with self.subTest(source=source[:30]):
                 self.assertNotEqual(source, original)
@@ -458,10 +458,30 @@ class Releases(unittest.TestCase):
         schedule(ROOT / "publisher.example.toml", configured, output)
         with output.open("rb") as stream:
             definition = plistlib.load(stream)
-        self.assertEqual(definition["ProgramArguments"][-1], "prepare")
+        self.assertEqual(definition["ProgramArguments"][-1], "release")
+        self.assertEqual(definition["StartInterval"], 86400)
+        self.assertIs(definition["RunAtLoad"], False)
+        self.assertNotIn("StartCalendarInterval", definition)
         self.assertNotIn("-lc", definition["ProgramArguments"])
         with self.assertRaises(FileExistsError):
             schedule(ROOT / "publisher.example.toml", configured, output)
+
+    def test_calendar_schedule_uses_only_its_declared_fields(self):
+        configured = copy.deepcopy(self.config)
+        settings = configured["schedule"]
+        del settings["interval_seconds"]
+        del settings["run_at_load"]
+        settings.update(action="prepare", weekday=1, hour=3, minute=0)
+        output = self.directory / "calendar.plist"
+        schedule(ROOT / "publisher.example.toml", configured, output)
+        with output.open("rb") as stream:
+            definition = plistlib.load(stream)
+        self.assertEqual(
+            definition["StartCalendarInterval"],
+            {"Weekday": 1, "Hour": 3, "Minute": 0},
+        )
+        self.assertNotIn("StartInterval", definition)
+        self.assertNotIn("RunAtLoad", definition)
 
     def test_cli_requires_configuration_and_never_assumes_publication(self):
         completed = subprocess.run(

@@ -71,6 +71,7 @@ def schedule(config_path: Path, config: dict, output: Path) -> None:
             raise ValueError("schedule interval must match the update plan's freshness budget")
         require_initial_coverage(plan, config, now=datetime.now(UTC), run_at_load=settings["run_at_load"])
         payload["ProgramArguments"].extend(("--plan", str(settings["plan"])))
+    if "interval_seconds" in settings:
         payload["StartInterval"] = settings["interval_seconds"]
         payload["RunAtLoad"] = settings["run_at_load"]
     else:

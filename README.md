@@ -130,9 +130,10 @@ library. Copy `publisher.example.toml` to `publisher.local.toml`, then configure
   It must support `hf upload --json` returning a commit URL.
 - The Hub endpoint, repository, branch, build directory and README template.
 - Required providers, document languages, vocabulary requirements and release limits.
-- The scheduler interpreter, executable search path, log path and calendar.
+- The scheduler interpreter, executable search path, log path and explicit
+  interval or calendar trigger.
 
-Publisher configuration schema 3 requires the complete process environment for
+Publisher configuration schema 4 requires the complete process environment for
 harvester and offline-projection children. They inherit no shell variables.
 Declare operating-system, certificate, proxy, temporary-directory and cache
 settings there when the deployment requires them. An explicitly empty mapping
@@ -699,7 +700,7 @@ parser, database transaction, upload or readback. Expired evidence still fails
 admission. Sleeping computers, source outages and missed jobs can leave expired
 evidence; the consumer must keep refusing it.
 
-Publisher configuration schema 3 requires `deployment.stop_grace_seconds` for
+Publisher configuration schema 4 requires `deployment.stop_grace_seconds` for
 command shutdown after cancellation, owner death or an unclosed child process.
 Each harvester, upload and offline-verification command has a supervisor with an
 owner-lifetime pipe and a separate process group. Owner shutdown closes the pipe;
@@ -738,8 +739,8 @@ without cleanup can leave a last `started` phase: inspect its owner and supervis
 commands before starting another run. Keep the persistent lock file and these
 runtime records outside version control.
 
-To schedule this explicit pipeline, replace the calendar fields in `[schedule]`
-with its plan and matching interval:
+To schedule this explicit pipeline, select `run-update`, add its plan and use
+the matching interval:
 
 ```toml
 [schedule]
@@ -774,11 +775,17 @@ Generate the launchd definition from the same validated configuration:
 plutil -lint build/catalogue.plist
 ```
 
-This writes a plist; it does **not** install or start a job. The example schedules
-`prepare`, without uploads. Selecting `release` explicitly enables publication
-when that job is subsequently installed. Configure paths and credentials accessible
-to the service, validate a release first, then install the generated definition
-using launchd. Generation refuses to overwrite an existing output file.
+This writes a plist; it does **not** install or start a job. The example explicitly
+schedules `release` every 86,400 seconds and waits one interval before the first
+run. The release synchronizes provider catalogues, refreshes changed structures
+and vocabularies, rebuilds and indexes documents, validates the complete snapshot
+and uploads it only after every gate passes. Configure paths and credentials
+accessible to the service, validate a release first, then install the generated
+definition using launchd. Generation refuses to overwrite an existing output file.
+
+Keep `publisher.local.toml`, its environment file, database URL and Hugging Face
+credentials outside Git. The tracked example contains the complete non-secret
+contract and the daily cadence; copying it creates the deployment-owned file.
 
 The scheduler is not part of Linux or Windows installation. Platform
 qualification requires running the publisher's filesystem/HTTP contracts on
