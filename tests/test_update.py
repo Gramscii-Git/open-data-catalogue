@@ -479,8 +479,6 @@ class UpdateTests(unittest.TestCase):
         self.activation.write_text(json.dumps({"activated": True, "index": "national", **self.active["indexes"]["national"]}))
         self.configured()
         settings = self.config["schedule"]
-        for key in ("weekday", "hour", "minute"):
-            del settings[key]
         settings.update(action="run-update", plan=self.plan_path, interval_seconds=3600, run_at_load=True, log=self.root / "schedule.log")
         output = self.root / "job.plist"
         schedule(self.root / "publisher.toml", self.config, output)
@@ -530,13 +528,14 @@ class UpdateTests(unittest.TestCase):
     def test_schedule_configuration_requires_plan_interval_instead_of_calendar_fields(self):
         self.configured()
         template = (ROOT / "publisher.example.toml").read_text()
-        template = template.replace('action = "prepare"', 'action = "run-update"\nplan = ' + json.dumps(str(self.plan_path)) + '\ninterval_seconds = 3600\nrun_at_load = false')
+        template = template.replace(
+            'action = "release"',
+            'action = "run-update"\nplan = ' + json.dumps(str(self.plan_path)),
+        ).replace("interval_seconds = 86400", "interval_seconds = 3600")
         target = self.root / "publisher.toml"
-        target.write_text(template)
+        target.write_text(template + "weekday = 1\nhour = 3\nminute = 0\n")
         with self.assertRaisesRegex(ValueError, "exactly"):
             load_config(target)
-        for field in ("weekday = 1\n", "hour = 3\n", "minute = 0\n"):
-            template = template.replace(field, "")
         target.write_text(template)
         config = load_config(target)
         self.assertEqual(config["schedule"]["plan"], self.plan_path)

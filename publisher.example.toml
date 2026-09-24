@@ -1,4 +1,4 @@
-schema = 3
+schema = 4
 
 [deployment]
 harvester = "../semantic-deterministic-graph"
@@ -58,7 +58,6 @@ label = "it.gramscii.open-data-catalogue"
 python = "../semantic-deterministic-graph/server/.venv/bin/python"
 path = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 log = "build/schedule.log"
-weekday = 1
-hour = 3
-minute = 0
-action = "prepare"
+action = "release"
+interval_seconds = 86400
+run_at_load = false
