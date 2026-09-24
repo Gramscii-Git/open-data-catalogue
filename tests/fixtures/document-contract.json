@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 5,
   "eligibility_fields": [
     "active",
     "searchable"
@@ -10,12 +10,12 @@
     }
   },
   "searches": {
-    "it": [
-      "en"
-    ],
-    "en": [
-      "en"
-    ]
+    "it": {
+      "sample": "en"
+    },
+    "en": {
+      "sample": "en"
+    }
   },
   "definitions": {},
   "rendering": {
@@ -40,6 +40,7 @@
         "filters",
         "sources",
         "served",
+        "structure_available",
         "licence",
         "attribution",
         "document_role"
@@ -51,7 +52,8 @@
         "obs_count",
         "error",
         "source_reference",
-        "source_constraint"
+        "source_constraint",
+        "source_domain"
       ],
       "terms": [
         "scope",
@@ -95,5 +97,12 @@
     "sample": {
       "mode": "catalogue_fields"
     }
+  },
+  "retrieval_sections": [
+    "title",
+    "summary"
+  ],
+  "language_membership": {
+    "sample": "all"
   }
 }

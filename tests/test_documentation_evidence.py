@@ -77,7 +77,7 @@ class PublishedDocumentationTests(unittest.TestCase):
         self.assertFalse(status["admitted"])
         self.assertEqual(status["reason"], "snapshot_schema_mismatch")
         self.assertEqual(status["observed_snapshot_schema"], 1)
-        self.assertEqual(status["required_snapshot_schema"], 2)
+        self.assertEqual(status["required_snapshot_schema"], 4)
         self.assertEqual(status["quality_report"]["sha256"], self.configuration["quality_report"]["sha256"])
         card = (self.target / "README.md").read_text()
         self.assertIn("historical measurements", card)
@@ -87,9 +87,9 @@ class PublishedDocumentationTests(unittest.TestCase):
         self.assertEqual(len(self.requests), 5)
 
     def test_old_archive_remains_rejected_by_current_release_inspector(self):
-        with self.assertRaisesRegex(ValueError, "schema_version must be 2"):
+        with self.assertRaisesRegex(ValueError, "schema_version must be 4"):
             inspect_archive(self.catalogue, self.config["quality"])
-        with self.assertRaisesRegex(ValueError, "schema_version must be 2"):
+        with self.assertRaisesRegex(ValueError, "schema_version must be 4"):
             prepare(self.target, self.config, self.catalogue, "a" * 40, self.releases,
                     ROOT / "README.hub.md", self.viewer)
         self.assertFalse(list(self.target.iterdir()))
@@ -107,7 +107,7 @@ class PublishedDocumentationTests(unittest.TestCase):
 
     def test_schema_two_is_not_current_admission_from_format_alone(self):
         value = read(self.evidence, self.config, verify_remote=False)
-        value["evidence"]["report"]["manifest"]["schema_version"] = 2
+        value["evidence"]["report"]["manifest"]["schema_version"] = 4
         status = current_status(value, self.config["quality"])
         self.assertFalse(status["admitted"])
         self.assertEqual(status["reason"], "current_quality_not_evaluated")

@@ -43,7 +43,10 @@ $permanent_error_rows
 
 ## Reading
 
-The archive `$archive` contains seven JSONL tables and `manifest.json`.
+The archive `$archive` contains ten JSONL tables and `manifest.json`. They retain
+the catalogue, structures, dimensions, vocabularies, labels, reports, search
+documents, native provider objects, their dataset bindings and explicit native
+exclusions.
 Each JSONL line is one database row. Dates retain their recorded time zones.
 Provider identifiers and dataset keys are preserved. No credentials are included.
 

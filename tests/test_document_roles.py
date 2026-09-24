@@ -18,6 +18,50 @@ class NativeDocumentRole(unittest.TestCase):
         self.manifest = self.fixture["manifest"]
         self.contract = self.manifest["document_contract"]
         self.tables = self.fixture["tables"]
+        self.contract["schema_version"] = 5
+        self.contract["retrieval_sections"] = list(
+            self.contract["rendering"]["words"]["en"]["sections"]
+        )
+        self.contract["language_membership"] = {
+            provider: "all" for provider in self.contract["providers"]
+        }
+        self.contract["searches"] = {
+            language: {
+                provider: language if language in projections else next(iter(projections))
+                for provider, projections in self.contract["providers"].items()
+            }
+            for language in self.contract["searches"]
+        }
+        contract_sha256 = digest(self.contract)
+        self.manifest["document_contract_sha256"] = contract_sha256
+        self.manifest["document_membership"]["contract_sha256"] = contract_sha256
+        catalogue = {
+            (row["provider"], row["dataset_id"]): row
+            for row in self.tables["opendata_catalog"]
+        }
+        inputs = Inputs(self.tables, self.contract, digest)
+        for document in self.tables["opendata_documents"]:
+            row = catalogue[(document["provider"], document["dataset_id"])]
+            prepared = inputs.prepare(row)
+            authority = self.contract["providers"][document["provider"]][document["language"]]
+            if authority == "workspace_definition":
+                source = self.contract["definitions"][document["language"]][document["dataset_id"]]
+            else:
+                names = prepared.row.get("names")
+                source = {"title": names.get(document["language"]) if isinstance(names, dict) else None,
+                          "metadata": {
+                              field: prepared.row.get(field) for field in (
+                                  "names", "descriptions", "category_paths", "keywords", "caveat",
+                                  "filters", "sources", "period_start", "period_end", "freshness",
+                              )
+                          }}
+            document["projection"] = {
+                "contract_sha256": contract_sha256,
+                "authority": authority,
+                "source_language": document["language"],
+                "source_sha256": digest(inputs.envelope(prepared, document["language"], source)),
+                "text_sha256": document["text_hash"],
+            }
         self.row = self.tables["opendata_catalog"][0]
         self.member = self.row["inventory_memberships"]["registry"]
         self.source = self.member["record"]["fields"]["sources"][-1]
@@ -38,10 +82,10 @@ class NativeDocumentRole(unittest.TestCase):
     def update_native_source(self):
         self.row["sources"][-1] = copy.deepcopy(self.source)
 
-    def test_real_core_snapshot_proofs_are_accepted_with_unused_legacy_structure(self):
+    def test_native_role_proofs_are_accepted_with_unused_structure(self):
         self.assertEqual(self.fixture["origin"]["core_revision"], "ee5fe5e2")
         self.assertEqual(self.manifest["schema_version"], 2)
-        self.assertEqual(self.contract["schema_version"], 2)
+        self.assertEqual(self.contract["schema_version"], 5)
         self.assertTrue(self.tables["opendata_structures"][0]["dimensions"])
         self.assertIsNone(self.tables["opendata_structures"][0]["source_reference"])
         metrics, issues = self.inspect()
@@ -100,8 +144,8 @@ class NativeDocumentRole(unittest.TestCase):
             self.inspect()
 
     def test_previous_document_contract_version_is_explicitly_refused(self):
-        self.contract["schema_version"] = 1
-        with self.assertRaisesRegex(ValueError, "contract schema_version must be 2"):
+        self.contract["schema_version"] = 4
+        with self.assertRaisesRegex(ValueError, "contract schema_version must be 5"):
             self.inspect()
 
     def test_nonqueryable_record_cannot_be_promoted_into_observation_eligibility(self):

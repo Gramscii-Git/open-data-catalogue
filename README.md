@@ -159,13 +159,14 @@ configuration does not admit provider traffic or attest that coordination.
 Archived configurations remain historical evidence and are not upgraded
 automatically.
 
-Discovery snapshots use schema 2 and carry the validated document-language
+Discovery snapshots use schema 4 and carry the validated document-language
 contract and projection provenance. `quality.document_contract_sha256` pins that
 exact contract; obtain it from the configured harvester's `document-policy-status`
 command and review its provider languages, authorities and query routes before
-changing the deployment configuration. The example pin matches OpenData core
-commit `b1c4fd11`; the final installed code requires its own verified pin.
-The contract includes an explicit renderer manifest and hashes of its executed
+changing the deployment configuration. The example pin matches the current
+seven-provider OpenData contract; a changed installation requires its own verified pin.
+The snapshot also carries native provider objects, dataset bindings and explicit
+native exclusions. The contract includes an explicit renderer manifest and hashes of its executed
 modules, provider configuration, external words and input schema. Each document
 binds its actual catalogue fields, structure, metadata report, localization
 vocabulary, content and declared language authority to that contract. A change
@@ -180,8 +181,8 @@ English prose an Italian source document.
 Publication requires zero missing required documents, zero documents outside the
 declared current membership, and valid provenance and content hashes. Catalogue
 records and source receipts remain preserved when obsolete derived documents
-are reconciled. Old schema-1 discovery artifacts remain historical evidence and
-are explicitly refused as current schema-2 releases; they must be reconstructed
+are reconciled. Older discovery artifacts remain historical evidence and are
+explicitly refused as current schema-4 releases; they must be reconstructed
 from retained metadata with the current contract. Availability indexes and their
 source snapshots have independent schemas and are unaffected by this discovery
 contract change.
@@ -296,7 +297,7 @@ before adding their selection bindings. Coverage, temporal axes, resource limits
 and the remaining publication gates are recorded in the
 [DVNS selection audit](docs/audits/2026-09-10-dvns-selection-scopes.md).
 
-The shared availability index is separate from the seven-table discovery
+The shared availability index is separate from the ten-table discovery
 snapshot. Its release contract records datasets and explicit indexing scopes,
 completed source partitions and joint period/territory/dimension combinations.
 It contains observation-presence states and source receipts, not measurement
