@@ -1,6 +1,7 @@
 """Release contracts exercised with real archives, files and HTTP."""
 
 import copy
+import base64
 import hashlib
 import http.server
 import io
@@ -42,6 +43,7 @@ def rows(contract=DOCUMENT_CONTRACT):
             "names": {"en": "Population"},
             "active": True,
             "served": True,
+            "structure_available": True,
             "searchable": True,
             "retired": False,
             "licence": "source terms",
@@ -100,8 +102,12 @@ def rows(contract=DOCUMENT_CONTRACT):
 
 
 def write_archive(path, tables, declared=None, *, contract=DOCUMENT_CONTRACT):
+    payloads = {
+        f"{name}.jsonl": "".join(json.dumps(row) + "\n" for row in body).encode()
+        for name, body in tables.items()
+    }
     manifest = {
-        "schema_version": 2,
+        "schema_version": 4,
         "taken_at": "2026-01-01T00:00:00Z",
         "tables": {name: len(body) for name, body in tables.items()}
         if declared is None
@@ -109,12 +115,12 @@ def write_archive(path, tables, declared=None, *, contract=DOCUMENT_CONTRACT):
         "document_contract": contract,
         "document_contract_sha256": digest(contract),
         "document_membership": {"documents": len(tables["opendata_documents"]), "missing": 0, "undeclared": 0, "contract_sha256": digest(contract)},
+        "members": {
+            name: {"sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)}
+            for name, data in payloads.items()
+        },
     }
     with tarfile.open(path, "w:gz") as archive:
-        payloads = {
-            f"{name}.jsonl": "".join(json.dumps(row) + "\n" for row in body).encode()
-            for name, body in tables.items()
-        }
         payloads["manifest.json"] = json.dumps(manifest).encode()
         for name, data in payloads.items():
             member = tarfile.TarInfo(name)
@@ -147,6 +153,41 @@ class Releases(unittest.TestCase):
         )
         self.assertEqual(result["bytes"], self.archive.stat().st_size)
         self.assertEqual(result["tables"]["opendata_catalog"], 1)
+
+    def test_native_bindings_resolve_exact_content_and_receipts(self):
+        data = rows()
+        body = b"native source"
+        checksum = hashlib.sha256(body).hexdigest()
+        data["opendata_native_objects"] = [{
+            "sha256": checksum,
+            "body": base64.b64encode(body).decode(),
+        }]
+        data["opendata_native_bindings"] = [{
+            "provider": "sample",
+            "dataset_id": "a",
+            "projection_sha256": "0" * 64,
+            "graph_sha256": checksum,
+            "flow_sha256": checksum,
+            "receipts": [{"sha256": checksum, "bytes": len(body)}],
+        }]
+        self.assertEqual(self.inspect(data)["tables"]["opendata_native_objects"], 1)
+
+        data["opendata_native_objects"] = []
+        with self.assertRaisesRegex(QualityError, "native binding objects are missing"):
+            self.inspect(data)
+
+    def test_native_receipt_requires_an_immutable_object_identity(self):
+        data = rows()
+        data["opendata_native_bindings"] = [{
+            "provider": "sample",
+            "dataset_id": "a",
+            "projection_sha256": "0" * 64,
+            "graph_sha256": "1" * 64,
+            "flow_sha256": "2" * 64,
+            "receipts": [{"sha256": "not-a-digest", "bytes": 1}],
+        }]
+        with self.assertRaisesRegex(ValueError, "invalid source receipt"):
+            self.inspect(data)
 
     def test_provider_release_has_an_explicit_scope_and_viewer(self):
         write_archive(self.archive, rows(), contract=self.contract)
@@ -204,7 +245,7 @@ class Releases(unittest.TestCase):
 
     def test_native_english_documents_cover_declared_italian_queries_without_translation(self):
         report = self.inspect(rows())
-        self.assertEqual(report["manifest"]["document_contract"]["searches"]["it"], ["en"])
+        self.assertEqual(report["manifest"]["document_contract"]["searches"]["it"], {"sample": "en"})
         self.assertEqual(report["metrics"]["missing_documents"], 0)
         self.assertEqual(report["metrics"]["undeclared_documents"], 0)
 
@@ -330,8 +371,10 @@ class Releases(unittest.TestCase):
         data["opendata_structures"] = []
         self.policy["providers"]["sample"]["languages"].append("it")
         self.contract["providers"]["sample"]["it"] = "native_metadata"
-        self.contract["searches"] = {"it": ["it", "en"], "en": ["en", "it"]}
-        self.contract["rendering"]["words"]["it"] = {"sections": {"title": "Titolo"}}
+        self.contract["searches"] = {"it": {"sample": "it"}, "en": {"sample": "en"}}
+        self.contract["rendering"]["words"]["it"] = {
+            "sections": {"title": "Titolo", "summary": "Sintesi"}
+        }
         self.policy["document_contract_sha256"] = digest(self.contract)
         with self.assertRaises(QualityError) as caught:
             self.inspect(data)

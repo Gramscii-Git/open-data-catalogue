@@ -75,7 +75,7 @@ def read(path, config, *, verify_remote):
         expected = {"manifest.json", *(f"{table}.jsonl" for table in TABLE_KEYS)}
         if (len(members) != len(expected) or {member.name for member in members} != expected
                 or any(not member.isfile() for member in members)):
-            raise ValueError("published archive must contain exactly the declared seven regular tables and manifest")
+            raise ValueError("published archive must contain exactly the declared regular tables and manifest")
         if json.load(source.extractfile("manifest.json")) != manifest:
             raise ValueError("published archive manifest differs from its quality report")
     if verify_remote:

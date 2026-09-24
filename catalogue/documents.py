@@ -27,9 +27,25 @@ def inspect_contract(manifest, policy):
     if policy["maximum_missing_documents"] != 0:
         raise ValueError("exact document membership requires maximum_missing_documents=0")
     contract = manifest.get("document_contract")
-    fields(contract, {"schema_version", "eligibility_fields", "providers", "searches", "definitions", "rendering", "localization_languages", "source_roles"}, "document contract")
-    if type(contract["schema_version"]) is not int or contract["schema_version"] != 2:
-        raise ValueError("document contract schema_version must be 2")
+    fields(contract, {
+        "schema_version", "eligibility_fields", "retrieval_sections", "providers",
+        "searches", "definitions", "rendering", "localization_languages",
+        "source_roles", "language_membership",
+    }, "document contract")
+    if type(contract["schema_version"]) is not int or contract["schema_version"] != 5:
+        raise ValueError("document contract schema_version must be 5")
+    sections = contract["retrieval_sections"]
+    if (
+        not isinstance(sections, list) or not sections
+        or len(sections) != len(set(sections))
+        or any(not isinstance(section, str) or not section for section in sections)
+    ):
+        raise ValueError("document retrieval sections must be nonempty unique strings")
+    membership = contract["language_membership"]
+    if not isinstance(membership, dict) or set(membership) != set(contract["providers"]):
+        raise ValueError("document language membership must cover every provider")
+    if any(mode not in {"all", "native_titles"} for mode in membership.values()):
+        raise ValueError("document language membership mode is invalid")
     if not isinstance(contract["source_roles"], dict) or set(contract["source_roles"]) != set(contract["providers"]):
         raise ValueError("document source roles must explicitly cover every provider")
     for provider, rule in contract["source_roles"].items():
@@ -52,14 +68,20 @@ def inspect_contract(manifest, policy):
         languages.update(projections)
     if set(contract["searches"]) != set(policy["query_languages"]):
         raise ValueError("document query languages differ from the configured release policy")
-    for language, stores in contract["searches"].items():
-        if not isinstance(stores, list) or len(stores) != len(set(stores)) or set(stores) != languages:
-            raise ValueError(f"query language {language!r} does not cover every declared document store")
+    for language, routes in contract["searches"].items():
+        if not isinstance(routes, dict) or set(routes) != set(contract["providers"]):
+            raise ValueError(f"query language {language!r} does not route every declared provider")
+        if any(document_language not in contract["providers"][provider] for provider, document_language in routes.items()):
+            raise ValueError(f"query language {language!r} routes an undeclared document language")
     fields(contract["rendering"], {"providers", "words", "source_fields", "implementations"}, "document rendering")
     if set(contract["rendering"]["providers"]) != set(contract["providers"]) or set(contract["localization_languages"]) != set(contract["providers"]):
         raise ValueError("document rendering providers must match the document contract")
     if set(contract["rendering"]["words"]) != languages:
         raise ValueError("document rendering words must match the declared document languages")
+    for language, words in contract["rendering"]["words"].items():
+        rendered_sections = words.get("sections") if isinstance(words, dict) else None
+        if not isinstance(rendered_sections, dict) or set(sections) - set(rendered_sections):
+            raise ValueError(f"document rendering words in {language!r} omit retrieval sections")
     authored = {language for projections in contract["providers"].values() for language, authority in projections.items() if authority == "workspace_definition"}
     if set(contract["definitions"]) != authored:
         raise ValueError("document definitions must match their declared workspace authorities")
@@ -87,11 +109,20 @@ def inspect_contract(manifest, policy):
 def inspect_membership(catalogue, documents, contract, manifest, source_tables):
     metrics = Counter()
     issues = []
+    def required_languages(provider, row):
+        declared = contract["providers"][provider]
+        if contract["language_membership"][provider] == "all":
+            return declared
+        names = row.get("names")
+        if not isinstance(names, dict) or any(not isinstance(value, str) or not value.strip() for value in names.values()):
+            raise ValueError("native title membership requires valid published names")
+        return {language: authority for language, authority in declared.items() if language in names}
+
     expected = {
         (provider, dataset, language)
         for (provider, dataset), row in catalogue.items()
         if all(row[field] is True for field in contract["eligibility_fields"])
-        for language in contract["providers"][provider]
+        for language in required_languages(provider, row)
     }
     held = set(documents)
     metrics["missing_documents"] = len(expected - held)

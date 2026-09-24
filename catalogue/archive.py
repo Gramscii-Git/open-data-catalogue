@@ -1,7 +1,10 @@
-"""Inspect the seven-table snapshot without extracting archive paths."""
+"""Inspect the complete discovery snapshot without extracting archive paths."""
 
+import base64
+import binascii
 import hashlib
 import json
+import re
 import tarfile
 from collections import Counter
 from pathlib import Path
@@ -9,7 +12,7 @@ from pathlib import Path
 from .documents import inspect_contract, inspect_membership
 from .structure_errors import declared_permanent
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 4
 
 TABLE_KEYS = {
     "opendata_catalog": ("provider", "dataset_id"),
@@ -19,6 +22,9 @@ TABLE_KEYS = {
     "opendata_labels": ("provider", "dataset_id", "language"),
     "opendata_meta_reports": ("provider", "report_key"),
     "opendata_documents": ("provider", "dataset_id", "language"),
+    "opendata_native_objects": ("sha256",),
+    "opendata_native_bindings": ("provider", "dataset_id"),
+    "opendata_native_exclusions": ("provider", "reference"),
 }
 
 
@@ -59,6 +65,8 @@ def inspect_archive(
     dimensions = set()
     references = set()
     related_datasets = set()
+    native_objects = set()
+    native_bindings = {}
     providers = Counter()
     issues = []
     source_tables = {name: [] for name in ("opendata_structures", "opendata_terms", "opendata_structure_dims", "opendata_meta_reports")}
@@ -71,7 +79,7 @@ def inspect_archive(
             or any(not member.isfile() for member in members)
         ):
             raise ValueError(
-                "archive must contain exactly the seven JSONL tables and manifest.json as regular files"
+                "archive must contain exactly the declared JSONL tables and manifest.json as regular files"
             )
         manifest = json.load(archive.extractfile("manifest.json"))
         if (
@@ -79,7 +87,7 @@ def inspect_archive(
             or type(manifest.get("schema_version")) is not int
             or manifest["schema_version"] != SCHEMA_VERSION
         ):
-            raise ValueError("snapshot schema_version must be 2 with explicit document provenance")
+            raise ValueError("snapshot schema_version must be 4 with native evidence and explicit document provenance")
         document_contract = inspect_contract(manifest, policy)
         if not isinstance(manifest.get("taken_at"), str) or not manifest["taken_at"]:
             raise ValueError("snapshot taken_at is required")
@@ -87,10 +95,18 @@ def inspect_archive(
             manifest["tables"]
         ) != set(TABLE_KEYS):
             raise ValueError("manifest must count every snapshot table")
+        jsonl_members = {f"{table}.jsonl" for table in TABLE_KEYS}
+        if not isinstance(manifest.get("members"), dict) or set(manifest["members"]) != jsonl_members:
+            raise ValueError("manifest must identify every snapshot table member")
         for table, keys in TABLE_KEYS.items():
             seen = set()
             count = 0
-            for line in archive.extractfile(f"{table}.jsonl"):
+            member_name = f"{table}.jsonl"
+            checksum = hashlib.sha256()
+            size = 0
+            for line in archive.extractfile(member_name):
+                checksum.update(line)
+                size += len(line)
                 row = json.loads(line)
                 if not isinstance(row, dict) or any(
                     not isinstance(row.get(key), str) for key in keys
@@ -101,15 +117,16 @@ def inspect_archive(
                     raise ValueError(f"{table}: duplicate key {identity!r}")
                 seen.add(identity)
                 count += 1
-                provider = row["provider"]
-                if provider not in policy["providers"]:
-                    raise ValueError(
-                        f"{table}: provider {provider!r} has no release policy"
-                    )
-                if provider not in selected_providers:
-                    raise ValueError(
-                        f"{table}: provider {provider!r} is outside the declared release scope"
-                    )
+                provider = row.get("provider")
+                if provider is not None:
+                    if provider not in policy["providers"]:
+                        raise ValueError(
+                            f"{table}: provider {provider!r} has no release policy"
+                        )
+                    if provider not in selected_providers:
+                        raise ValueError(
+                            f"{table}: provider {provider!r} is outside the declared release scope"
+                        )
                 if table in source_tables and (table != "opendata_terms" or row["language"] in document_contract["localization_languages"][provider]):
                     source_tables[table].append(row)
                 if "dataset_id" in row:
@@ -168,12 +185,41 @@ def inspect_archive(
                             )
                         if row[name]:
                             references.add((provider, row[name]))
+                elif table == "opendata_native_objects":
+                    try:
+                        body = base64.b64decode(row.get("body", ""), validate=True)
+                    except (binascii.Error, ValueError) as error:
+                        raise ValueError(f"native object {identity!r} has invalid base64 content") from error
+                    if hashlib.sha256(body).hexdigest() != row["sha256"]:
+                        raise ValueError(f"native object {identity!r} content differs from its digest")
+                    native_objects.add(row["sha256"])
+                elif table == "opendata_native_bindings":
+                    for name in ("projection_sha256", "graph_sha256", "flow_sha256"):
+                        value = row.get(name)
+                        if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value):
+                            raise ValueError(f"native binding {identity!r} has invalid {name}")
+                    receipts = row.get("receipts")
+                    if not isinstance(receipts, list) or not receipts:
+                        raise ValueError(f"native binding {identity!r} has no receipts")
+                    for receipt in receipts:
+                        if (
+                            not isinstance(receipt, dict)
+                            or not isinstance(receipt.get("sha256"), str)
+                            or not re.fullmatch(r"[0-9a-f]{64}", receipt["sha256"])
+                            or type(receipt.get("bytes")) is not int
+                            or receipt["bytes"] <= 0
+                        ):
+                            raise ValueError(f"native binding {identity!r} has an invalid source receipt")
+                    native_bindings[identity] = row
             counts[table] = count
             declared = manifest["tables"][table]
             if type(declared) is not int or declared != count:
                 raise ValueError(
                     f"{table}: manifest count {declared!r} does not match {count}"
                 )
+            declared_member = manifest["members"][member_name]
+            if declared_member != {"sha256": checksum.hexdigest(), "bytes": size}:
+                raise ValueError(f"{member_name}: manifest member receipt differs from its content")
     if related_datasets - catalog.keys():
         issues.append(
             f"{len(related_datasets - catalog.keys())} dataset references have no catalogue row"
@@ -182,6 +228,17 @@ def inspect_archive(
         issues.append(
             f"{len(references - terms)} dimension vocabulary references have no terms"
         )
+    missing_native_objects = {
+        digest
+        for binding in native_bindings.values()
+        for digest in (
+            binding["graph_sha256"], binding["flow_sha256"],
+            *(receipt["sha256"] for receipt in binding["receipts"]),
+        )
+        if digest not in native_objects
+    }
+    if missing_native_objects:
+        issues.append(f"{len(missing_native_objects)} native binding objects are missing")
     for provider in sorted(selected_providers):
         contract = policy["providers"][provider]
         if not providers[provider]:
