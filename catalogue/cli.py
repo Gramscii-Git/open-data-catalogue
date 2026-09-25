@@ -164,6 +164,7 @@ def main(argv=None) -> int:
         if name == "publish-documentation":
             documentation.add_argument("--catalogue-archive", type=Path, required=True)
             documentation.add_argument("--catalogue-revision", required=True)
+            documentation.add_argument("--catalogue-verification", type=Path, required=True)
         else:
             documentation.add_argument("--catalogue-evidence", type=Path, required=True)
             documentation.add_argument("--catalogue-status-artifact", required=True)
@@ -232,7 +233,8 @@ def main(argv=None) -> int:
                 if args.command == "publish-documentation":
                     status_artifact = None
                     prepare_documentation(directory, config, args.catalogue_archive, args.catalogue_revision,
-                                          args.availability_releases, args.readme_template, args.viewer_config)
+                                          args.availability_releases, args.readme_template, args.viewer_config,
+                                          catalogue_verification=args.catalogue_verification)
                 else:
                     status_artifact = args.catalogue_status_artifact
                     prepare_reported(directory, config, args.catalogue_evidence, status_artifact,

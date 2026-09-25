@@ -91,7 +91,8 @@ class PublishedDocumentationTests(unittest.TestCase):
             inspect_archive(self.catalogue, self.config["quality"])
         with self.assertRaisesRegex(ValueError, "schema_version must be 4"):
             prepare(self.target, self.config, self.catalogue, "a" * 40, self.releases,
-                    ROOT / "README.hub.md", self.viewer)
+                    ROOT / "README.hub.md", self.viewer,
+                    catalogue_verification=self.verification)
         self.assertFalse(list(self.target.iterdir()))
 
     def test_different_current_policy_never_relabels_historical_metrics(self):

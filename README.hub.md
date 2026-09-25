@@ -19,7 +19,8 @@ $viewer_metadata
 This repository publishes independently versioned metadata and licensed source snapshots:
 
 - A **discovery catalogue** with **$catalogue_datasets dataset entries** from
-  ISTAT, Eurostat, OECD, ILO, DoveVannoINostriSoldi (DVNS) and Cruscotto Italia.
+  ISTAT, Eurostat, OECD, ILO, Comune di Milano, DoveVannoINostriSoldi (DVNS)
+  and Cruscotto Italia.
 - **$availability_indexes independently pinned availability indexes** with
   **$availability_combinations joint combinations across $availability_datasets datasets**, built from complete
   source responses within the explicitly declared scope.

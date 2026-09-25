@@ -138,7 +138,8 @@ def run(directory, config, plan, harvester, prepare_catalogue):
         published = read_verification(Path(catalogue["verification"]), config["hub"], config["hub"]["archive"])
         doc = plan["documentation"]
         execution.phase("documentation", lambda target: document_release(
-            target, config, Path(catalogue["archive"]), published["revision"], releases_path,
+            target, config, Path(catalogue["archive"]), published["revision"],
+            Path(catalogue["verification"]), releases_path,
             Path(doc["readme_template"]), Path(doc["viewer_config"]), document_source,
         ))
         result = {"complete": True, "directory": str(directory), "state": str(state_path),
@@ -195,9 +196,10 @@ def verify_documentation_evidence(config, source):
             for name in ("archive", "quality_report")}
 
 
-def document_release(directory, config, archive, revision, releases, template, viewer, source):
+def document_release(directory, config, archive, revision, verification, releases, template, viewer, source):
     if source["mode"] == "current_validation":
-        documentation.prepare(directory, config, archive, revision, releases, template, viewer)
+        documentation.prepare(directory, config, archive, revision, releases, template, viewer,
+                              catalogue_verification=verification)
         status_artifact = None
     else:
         status_artifact = source["status_artifact"]

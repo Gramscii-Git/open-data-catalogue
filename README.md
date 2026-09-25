@@ -519,6 +519,7 @@ The main Hub card is generated independently from the exact published artifacts:
 ./update --config publisher.local.toml publish-documentation \
   --catalogue-archive path/to/published-catalogue.tar.gz \
   --catalogue-revision FULL_CATALOGUE_COMMIT \
+  --catalogue-verification path/to/successful-catalogue-verification.json \
   --availability-releases documentation-releases.local.json \
   --readme-template README.hub.md \
   --viewer-config viewer.json
@@ -529,11 +530,13 @@ publication commit, repository destination and validation policy for every index
 Local file paths are resolved relative to that configuration. The viewer must
 explicitly cover exactly the same set of archives.
 
-Every archive download is verified at its supplied revision before the new
-card is uploaded. This command publishes `README.md`, `catalogue-quality.json`,
-the configured viewer tables and their integrity manifest. It records whether the existing catalogue passes the
-current strict policy; a failed catalogue policy remains visible and does not
-authorize replacing that archive. Availability counts, periods, territory counts
+The catalogue verification receipt must identify the inspected local archive
+and immutable revision. Availability archives are read back at their supplied
+revisions before the new card is uploaded. This command publishes `README.md`,
+`catalogue-quality.json`, the configured viewer tables and their integrity
+manifest. It records whether the existing catalogue passes the current strict
+policy; a failed catalogue policy remains visible and does not authorize
+replacing that archive. Availability counts, periods, territory counts
 and evidence expiries come from the validated index.
 
 An existing discovery publication can have a schema that the current export

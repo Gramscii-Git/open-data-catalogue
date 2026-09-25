@@ -51,10 +51,16 @@ def verify_download(url: str, sha256: str, size: int, timeout: float | None) -> 
             digest.update(block)
             length += len(block)
             if length > size:
-                raise RuntimeError("published download exceeds the expected byte count")
-    if length != size or digest.hexdigest() != sha256:
+                raise RuntimeError(
+                    f"published download exceeds expected_bytes={size}; "
+                    f"actual_bytes_at_least={length}"
+                )
+    actual_sha256 = digest.hexdigest()
+    if length != size or actual_sha256 != sha256:
         raise RuntimeError(
-            "published download does not match the release size and SHA-256"
+            "published download size/SHA-256 differs: "
+            f"expected_bytes={size} actual_bytes={length} "
+            f"expected_sha256={sha256} actual_sha256={actual_sha256}"
         )
 
 
