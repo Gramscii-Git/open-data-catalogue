@@ -49,15 +49,15 @@ def load(path: Path) -> dict:
     fields(
         data, {"schema", "deployment", "hub", "quality", "schedule"}, "configuration"
     )
-    if type(data["schema"]) is not int or data["schema"] != 4:
-        raise ValueError("configuration schema must be 4")
+    if type(data["schema"]) is not int or data["schema"] != 5:
+        raise ValueError("configuration schema must be 5")
     deployment = data["deployment"]
     fields(
         deployment,
-        {"harvester", "environment_file", "process_environment", "python", "hf", "build", "readme_template", "stop_grace_seconds"},
+        {"harvester", "environment_file", "process_environment", "python", "hf", "build", "readme_template", "viewer_config", "stop_grace_seconds"},
         "deployment",
     )
-    for key in ("harvester", "environment_file", "python", "build", "readme_template"):
+    for key in ("harvester", "environment_file", "python", "build", "readme_template", "viewer_config"):
         raw = Path(text(deployment[key], f"deployment.{key}"))
         deployment[key] = Path(os.path.abspath(path.parent / raw)) if key == "python" else (path.parent / raw).resolve()
     deployment["hf"] = strings(deployment["hf"], "deployment.hf")

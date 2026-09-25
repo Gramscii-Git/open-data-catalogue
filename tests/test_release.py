@@ -462,13 +462,15 @@ class Releases(unittest.TestCase):
 
     def test_readme_comes_from_the_validated_snapshot(self):
         report = self.inspect(rows())
-        rendered = dataset_readme(ROOT / "README.dataset.md", self.config, report, [])
+        rendered = dataset_readme(
+            ROOT / "README.dataset.md", self.config, report, [], "configs: []"
+        )
         self.assertIn(report["sha256"], rendered)
         self.assertIn("| opendata_catalog | 1 |", rendered)
         invalid = self.directory / "README.md"
         invalid.write_text("Missing fields", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "placeholder"):
-            dataset_readme(invalid, self.config, report, [])
+            dataset_readme(invalid, self.config, report, [], "configs: []")
 
     def test_an_existing_archive_is_staged_as_a_complete_release(self):
         write_archive(self.archive, rows(), contract=self.contract)
@@ -487,14 +489,32 @@ class Releases(unittest.TestCase):
             f"{report['sha256']}  {target.name}\n",
         )
         self.assertIn(report["sha256"], (directory / "README.md").read_text())
+        viewer_manifest = json.loads((directory / "viewer-manifest.json").read_text())
+        self.assertEqual(viewer_manifest["files"][0]["path"], "viewer/catalogue.jsonl")
+        self.assertEqual(viewer_manifest["files"][0]["rows"], 1)
+        metadata = json.loads(
+            next(
+                line.removeprefix("configs: ")
+                for line in (directory / "README.md").read_text().splitlines()
+                if line.startswith("configs: ")
+            )
+        )
+        self.assertEqual(metadata[0]["data_files"][0]["path"], "viewer/catalogue.jsonl")
 
     def test_the_dataset_card_lists_declared_permanent_errors_escaped(self):
         report = {"manifest": {"taken_at": "2026-01-01T00:00:00Z"}, "tables": {}, "providers": {},
                   "metrics": {"permanent_structure_errors": 1}, "sha256": "0" * 64, "bytes": 1}
         errors = [{"provider": "sample", "dataset_id": "a", "error": "sample answered 500: a|b\nc"}]
-        rendered = dataset_readme(ROOT / "README.dataset.md", self.config, report, errors)
+        rendered = dataset_readme(
+            ROOT / "README.dataset.md", self.config, report, errors, "configs: []"
+        )
         self.assertIn("| sample | `a` | sample answered 500: a&#124;b c |", rendered)
-        self.assertIn("| none | | |", dataset_readme(ROOT / "README.dataset.md", self.config, report, []))
+        self.assertIn(
+            "| none | | |",
+            dataset_readme(
+                ROOT / "README.dataset.md", self.config, report, [], "configs: []"
+            ),
+        )
 
     def test_configuration_requires_all_fields_and_rejects_invalid_types(self):
         original = (ROOT / "publisher.example.toml").read_text(encoding="utf-8")
@@ -504,7 +524,7 @@ class Releases(unittest.TestCase):
             original.replace(
                 "maximum_structure_errors = 0", "maximum_structure_errors = true"
             ),
-            original.replace("schema = 4", "schema = true"),
+            original.replace("schema = 5", "schema = true"),
             original.replace(
                 'archive = "open-data-catalogue.tar.gz"',
                 'archive = "../archive.tar.gz"',

@@ -1,4 +1,4 @@
-schema = 4
+schema = 5
 
 [deployment]
 harvester = "../semantic-deterministic-graph"
@@ -8,6 +8,7 @@ python = "../semantic-deterministic-graph/server/.venv/bin/python"
 hf = ["hf"]
 build = "build"
 readme_template = "README.dataset.md"
+viewer_config = "viewer.json"
 stop_grace_seconds = 10
 
 [hub]

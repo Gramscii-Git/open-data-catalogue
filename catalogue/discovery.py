@@ -6,11 +6,18 @@ import shutil
 from pathlib import Path
 from string import Template
 
+from . import viewer
 from .archive import QualityError, inspect_archive
 from .structure_errors import permanent_structure_errors
 
 
-def dataset_readme(template_path: Path, config: dict, report: dict, permanent_errors: list[dict]) -> str:
+def dataset_readme(
+    template_path: Path,
+    config: dict,
+    report: dict,
+    permanent_errors: list[dict],
+    viewer_metadata: str,
+) -> str:
     template = Template(template_path.read_text(encoding="utf-8"))
     values = {
         "taken_at": report["manifest"]["taken_at"],
@@ -30,6 +37,7 @@ def dataset_readme(template_path: Path, config: dict, report: dict, permanent_er
         "archive": config["hub"]["archive"],
         "sha256": report["sha256"],
         "bytes": str(report["bytes"]),
+        "viewer_metadata": viewer_metadata,
     }
     if not template.is_valid() or set(template.get_identifiers()) != set(values):
         raise ValueError(
@@ -39,6 +47,19 @@ def dataset_readme(template_path: Path, config: dict, report: dict, permanent_er
 
 
 def _write_release(directory: Path, config: dict, archive: Path, report: dict) -> None:
+    tables = [
+        table
+        for table in viewer.load(config["deployment"]["viewer_config"])
+        if table["name"] == "catalogue"
+    ]
+    if len(tables) != 1:
+        raise ValueError("discovery viewer requires exactly one catalogue table")
+    viewer_metadata = viewer.prepare(
+        directory,
+        tables,
+        {"catalogue": archive},
+        {"catalogue": report},
+    )
     (directory / "manifest.json").write_text(
         json.dumps(report["manifest"], indent=2), encoding="utf-8"
     )
@@ -49,7 +70,13 @@ def _write_release(directory: Path, config: dict, archive: Path, report: dict) -
         f"{report['sha256']}  {archive.name}\n", encoding="utf-8"
     )
     (directory / "README.md").write_text(
-        dataset_readme(config["deployment"]["readme_template"], config, report, permanent_structure_errors(archive)),
+        dataset_readme(
+            config["deployment"]["readme_template"],
+            config,
+            report,
+            permanent_structure_errors(archive),
+            viewer_metadata,
+        ),
         encoding="utf-8",
     )
 
