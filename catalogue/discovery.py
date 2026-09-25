@@ -2,6 +2,7 @@
 
 import html
 import json
+import shutil
 from pathlib import Path
 from string import Template
 
@@ -37,24 +38,7 @@ def dataset_readme(template_path: Path, config: dict, report: dict, permanent_er
     return template.substitute(values)
 
 
-def prepare(directory: Path, config: dict, harvester) -> dict:
-    archive = directory / config["hub"]["archive"]
-    exported = json.loads(
-        harvester(config, "export", "--to", str(archive), capture=True)
-    )
-    try:
-        report = inspect_archive(archive, config["quality"])
-    except QualityError as error:
-        (directory / "quality.json").write_text(
-            json.dumps(error.report, indent=2), encoding="utf-8"
-        )
-        raise
-    if (
-        exported["sha256"] != report["sha256"]
-        or exported["bytes"] != report["bytes"]
-        or exported["tables"] != report["tables"]
-    ):
-        raise ValueError("export report does not match the validated archive")
+def _write_release(directory: Path, config: dict, archive: Path, report: dict) -> None:
     (directory / "manifest.json").write_text(
         json.dumps(report["manifest"], indent=2), encoding="utf-8"
     )
@@ -68,4 +52,39 @@ def prepare(directory: Path, config: dict, harvester) -> dict:
         dataset_readme(config["deployment"]["readme_template"], config, report, permanent_structure_errors(archive)),
         encoding="utf-8",
     )
+
+
+def _inspect_release(directory: Path, config: dict, archive: Path) -> dict:
+    try:
+        report = inspect_archive(archive, config["quality"])
+    except QualityError as error:
+        (directory / "quality.json").write_text(
+            json.dumps(error.report, indent=2), encoding="utf-8"
+        )
+        raise
+    return report
+
+
+def prepare_archive(directory: Path, config: dict, source: Path) -> dict:
+    """Stage and validate an existing snapshot as the complete discovery release."""
+    archive = directory / config["hub"]["archive"]
+    shutil.copyfile(source, archive)
+    report = _inspect_release(directory, config, archive)
+    _write_release(directory, config, archive, report)
+    return report
+
+
+def prepare(directory: Path, config: dict, harvester) -> dict:
+    archive = directory / config["hub"]["archive"]
+    exported = json.loads(
+        harvester(config, "export", "--to", str(archive), capture=True)
+    )
+    report = _inspect_release(directory, config, archive)
+    if (
+        exported["sha256"] != report["sha256"]
+        or exported["bytes"] != report["bytes"]
+        or exported["tables"] != report["tables"]
+    ):
+        raise ValueError("export report does not match the validated archive")
+    _write_release(directory, config, archive, report)
     return report

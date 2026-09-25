@@ -5,7 +5,10 @@ import binascii
 import hashlib
 import json
 import re
+import sqlite3
 import tarfile
+import tempfile
+import zlib
 from collections import Counter
 from pathlib import Path
 
@@ -45,6 +48,57 @@ def inspect_archive(
     *,
     required_providers: set[str] | None = None,
     minimum_datasets: int | None = None,
+) -> dict:
+    with tempfile.TemporaryDirectory(dir=path.parent, prefix=".catalogue-inspection-") as directory:
+        with StructureStore(Path(directory) / "structures.sqlite3") as structures:
+            return _inspect_archive(
+                path,
+                policy,
+                structures,
+                required_providers=required_providers,
+                minimum_datasets=minimum_datasets,
+            )
+
+
+class StructureStore:
+    def __init__(self, path: Path):
+        self.connection = sqlite3.connect(path)
+        self.connection.execute("PRAGMA journal_mode=OFF")
+        self.connection.execute("PRAGMA synchronous=OFF")
+        self.connection.execute(
+            "CREATE TABLE structures (provider TEXT NOT NULL, dataset_id TEXT NOT NULL, body BLOB NOT NULL, "
+            "PRIMARY KEY(provider,dataset_id)) WITHOUT ROWID"
+        )
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.connection.close()
+
+    def add(self, row: dict) -> None:
+        try:
+            self.connection.execute(
+                "INSERT INTO structures(provider,dataset_id,body) VALUES(?,?,?)",
+                (row["provider"], row["dataset_id"], zlib.compress(json.dumps(row, ensure_ascii=False).encode())),
+            )
+        except sqlite3.IntegrityError as error:
+            raise ValueError(f"opendata_structures: duplicate key {(row['provider'], row['dataset_id'])!r}") from error
+
+    def get(self, identity) -> dict | None:
+        held = self.connection.execute(
+            "SELECT body FROM structures WHERE provider=? AND dataset_id=?", identity,
+        ).fetchone()
+        return None if held is None else json.loads(zlib.decompress(held[0]))
+
+
+def _inspect_archive(
+    path: Path,
+    policy: dict,
+    structure_store: StructureStore,
+    *,
+    required_providers: set[str] | None,
+    minimum_datasets: int | None,
 ) -> dict:
     selected_providers = (
         set(policy["providers"])
@@ -127,7 +181,9 @@ def inspect_archive(
                         raise ValueError(
                             f"{table}: provider {provider!r} is outside the declared release scope"
                         )
-                if table in source_tables and (table != "opendata_terms" or row["language"] in document_contract["localization_languages"][provider]):
+                if table == "opendata_structures":
+                    structure_store.add(row)
+                elif table in source_tables and (table != "opendata_terms" or row["language"] in document_contract["localization_languages"][provider]):
                     source_tables[table].append(row)
                 if "dataset_id" in row:
                     related_datasets.add((provider, row["dataset_id"]))
@@ -252,7 +308,10 @@ def inspect_archive(
     for (provider, dataset), row in catalog.items():
         if all(row[field] is True for field in policy["structure_fields"]):
             metrics["missing_structures"] += (provider, dataset) not in structures
-    document_metrics, document_issues = inspect_membership(catalog, documents, document_contract, manifest, source_tables)
+    document_metrics, document_issues = inspect_membership(
+        catalog, documents, document_contract, manifest, source_tables,
+        structure_lookup=structure_store.get,
+    )
     metrics.update(document_metrics)
     issues.extend(document_issues)
     if len(catalog) < required_minimum:

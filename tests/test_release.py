@@ -18,7 +18,7 @@ from pathlib import Path
 from catalogue.archive import TABLE_KEYS, QualityError, inspect_archive
 from catalogue.cli import publication_lock, schedule
 from catalogue.config import load
-from catalogue.discovery import dataset_readme
+from catalogue.discovery import dataset_readme, prepare_archive
 from catalogue.document_inputs import Inputs
 from catalogue.documents import digest
 from catalogue.provider_catalogue import prepare as prepare_provider
@@ -153,6 +153,22 @@ class Releases(unittest.TestCase):
         )
         self.assertEqual(result["bytes"], self.archive.stat().st_size)
         self.assertEqual(result["tables"]["opendata_catalog"], 1)
+
+    def test_document_inputs_resolve_structures_from_bounded_storage(self):
+        data = rows(self.contract)
+        structure = data["opendata_structures"].pop()
+        requested = []
+
+        def lookup(identity):
+            requested.append(identity)
+            return structure
+
+        prepared = Inputs(data, self.contract, digest, structure_lookup=lookup).prepare(
+            data["opendata_catalog"][0]
+        )
+
+        self.assertEqual(requested, [("sample", "a")])
+        self.assertEqual(prepared.structure["error"], None)
 
     def test_native_bindings_resolve_exact_content_and_receipts(self):
         data = rows()
@@ -453,6 +469,24 @@ class Releases(unittest.TestCase):
         invalid.write_text("Missing fields", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "placeholder"):
             dataset_readme(invalid, self.config, report, [])
+
+    def test_an_existing_archive_is_staged_as_a_complete_release(self):
+        write_archive(self.archive, rows(), contract=self.contract)
+        directory = self.directory / "release"
+        directory.mkdir()
+        config = {**self.config, "quality": self.policy}
+
+        report = prepare_archive(directory, config, self.archive)
+
+        target = directory / config["hub"]["archive"]
+        self.assertEqual(target.read_bytes(), self.archive.read_bytes())
+        self.assertEqual(json.loads((directory / "quality.json").read_text()), report)
+        self.assertEqual(json.loads((directory / "manifest.json").read_text()), report["manifest"])
+        self.assertEqual(
+            (directory / "SHA256SUMS").read_text(),
+            f"{report['sha256']}  {target.name}\n",
+        )
+        self.assertIn(report["sha256"], (directory / "README.md").read_text())
 
     def test_the_dataset_card_lists_declared_permanent_errors_escaped(self):
         report = {"manifest": {"taken_at": "2026-01-01T00:00:00Z"}, "tables": {}, "providers": {},

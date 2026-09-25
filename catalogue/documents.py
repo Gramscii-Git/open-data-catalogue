@@ -106,7 +106,7 @@ def inspect_contract(manifest, policy):
     return contract
 
 
-def inspect_membership(catalogue, documents, contract, manifest, source_tables):
+def inspect_membership(catalogue, documents, contract, manifest, source_tables, *, structure_lookup=None):
     metrics = Counter()
     issues = []
     def required_languages(provider, row):
@@ -128,7 +128,7 @@ def inspect_membership(catalogue, documents, contract, manifest, source_tables):
     metrics["missing_documents"] = len(expected - held)
     metrics["undeclared_documents"] = len(held - expected)
     sha256 = digest(contract)
-    inputs = Inputs(source_tables, contract, digest)
+    inputs = Inputs(source_tables, contract, digest, structure_lookup=structure_lookup)
     for identity, document in documents.items():
         if identity not in expected:
             continue
@@ -166,7 +166,19 @@ def inspect_membership(catalogue, documents, contract, manifest, source_tables):
     for key in ("undeclared_documents", "invalid_document_projections"):
         if metrics[key]:
             issues.append(f"{key}: {metrics[key]} violates exact document membership")
+    coverage = [
+        {"provider": row["provider"], "dataset_id": row["dataset_id"], "language": language}
+        for row in catalogue.values()
+        if all(row[field] is True for field in contract["eligibility_fields"])
+        for language in contract["providers"][row["provider"]]
+        if language not in required_languages(row["provider"], row)
+    ]
     receipt = {"documents": len(held), "missing": 0, "undeclared": 0, "contract_sha256": sha256}
+    if coverage:
+        receipt["unpublished_titles"] = sorted(
+            coverage,
+            key=lambda item: (item["provider"], item["dataset_id"], item["language"]),
+        )
     if manifest.get("document_membership") != receipt:
         issues.append("document membership receipt differs from the inspected archive")
     return metrics, issues

@@ -14,7 +14,7 @@ from pathlib import Path
 from .archive import QualityError, inspect_archive
 from .availability import inspect_availability, policy_from
 from .config import child_environment, load
-from .discovery import prepare
+from .discovery import prepare, prepare_archive
 from .publish import upload
 from .runtime import process_lock, run_command
 
@@ -91,6 +91,11 @@ def main(argv=None) -> int:
         "check", help="validate an existing archive; no harvest or upload"
     )
     check.add_argument("--archive", type=Path, required=True)
+    publish_archive = commands.add_parser(
+        "publish-archive",
+        help="validate and publish an existing complete catalogue archive without harvesting",
+    )
+    publish_archive.add_argument("--archive", type=Path, required=True)
     verify_catalogue_command = commands.add_parser(
         "verify-catalogue", help="record a new immutable discovery readback; no upload or quality waiver"
     )
@@ -300,6 +305,15 @@ def main(argv=None) -> int:
             print(
                 json.dumps(inspect_archive(args.archive, config["quality"]), indent=2)
             )
+            return 0
+        if args.command == "publish-archive":
+            with publication_lock(config["deployment"]["build"]):
+                directory = Path(tempfile.mkdtemp(
+                    prefix="archive-publication-", dir=config["deployment"]["build"]
+                ))
+                print(f"publication directory: {directory}", file=sys.stderr, flush=True)
+                report = prepare_archive(directory, config, args.archive.resolve())
+                print(json.dumps(upload(directory, config, report), indent=2))
             return 0
         if args.command == "build-availability":
             from .availability_build import prepare as prepare_availability
