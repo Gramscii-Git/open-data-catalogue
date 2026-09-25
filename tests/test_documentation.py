@@ -15,6 +15,7 @@ from test_release import DOCUMENT_CONTRACT, digest, rows, write_archive
 from catalogue.config import load
 from catalogue.documentation import prepare
 from catalogue.documentation_releases import load as load_releases
+from catalogue.publish import file_url
 from catalogue.viewer import load as load_viewer
 from catalogue.viewer import project, update_card
 
@@ -78,6 +79,22 @@ class DocumentationTests(unittest.TestCase):
         self.thread.start()
         self.addCleanup(self.close_server)
         self.config["hub"]["endpoint"] = f"http://127.0.0.1:{self.server.server_port}"
+        revision = "a" * 40
+        self.verification = self.root / "catalogue-verification.json"
+        self.verification.write_text(json.dumps({
+            "schema_version": 1,
+            "method": "immutable-readback",
+            "artifact": {
+                "revision": revision,
+                "sha256": hashlib.sha256(self.catalogue.read_bytes()).hexdigest(),
+                "bytes": self.catalogue.stat().st_size,
+                "url": file_url(self.config["hub"], revision, self.config["hub"]["archive"]),
+            },
+            "started_at": datetime(2026, 9, 8, tzinfo=UTC).isoformat(),
+            "completed_at": datetime(2026, 9, 8, tzinfo=UTC).isoformat(),
+            "verified": True,
+            "error": None,
+        }))
 
     def close_server(self):
         self.server.shutdown()
@@ -88,7 +105,8 @@ class DocumentationTests(unittest.TestCase):
         directory = self.root / "publication"
         directory.mkdir()
         prepare(directory, self.config, self.catalogue, "a" * 40, self.releases,
-                ROOT / "README.hub.md", self.viewer)
+                ROOT / "README.hub.md", self.viewer,
+                catalogue_verification=self.verification)
         return directory
 
     def test_failed_catalogue_policy_remains_visible_beside_independent_availability(self):
@@ -99,8 +117,16 @@ class DocumentationTests(unittest.TestCase):
         text = (directory / "README.md").read_text()
         self.assertIn("**does not pass**", text)
         self.assertIn("across 3 datasets", text)
-        self.assertEqual(len(self.requests), 4)
+        self.assertEqual(len(self.requests), 3)
         self.assertEqual({path.name for path in directory.iterdir()}, {"README.md", "catalogue-quality.json", "viewer-manifest.json", "viewer"})
+
+    def test_catalogue_readback_must_match_the_inspected_archive(self):
+        receipt = json.loads(self.verification.read_text())
+        receipt["artifact"]["sha256"] = "0" * 64
+        self.verification.write_text(json.dumps(receipt))
+        with self.assertRaisesRegex(ValueError, "does not identify the inspected archive"):
+            self.prepare()
+        self.assertEqual(self.requests, [])
 
     def test_different_remote_bytes_prevent_a_new_card(self):
         self.payloads["availability/eurostat-series/availability.tar.gz"] = b"different"

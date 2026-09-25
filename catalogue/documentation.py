@@ -14,14 +14,23 @@ from .documentation_evidence import current_status, status_path
 from .documentation_evidence import read as read_evidence
 from .documentation_releases import load as load_releases
 from .publish import file_url, upload_files, verify_download
+from .receipts import read_verification
 
 
-def prepare(directory, config, catalogue_path, catalogue_revision, releases_path, template_path, viewer_path):
+def prepare(directory, config, catalogue_path, catalogue_revision, releases_path, template_path, viewer_path,
+            *, catalogue_verification):
     try:
         catalogue = inspect_archive(catalogue_path, config["quality"])
         accepted = True
     except QualityError as error:
         catalogue, accepted = error.report, False
+    hub = config["hub"]
+    verified = read_verification(catalogue_verification, hub, hub["archive"])
+    expected = {"revision": catalogue_revision, "sha256": catalogue["sha256"],
+                "bytes": catalogue["bytes"],
+                "url": file_url(hub, catalogue_revision, hub["archive"])}
+    if verified != expected:
+        raise ValueError("catalogue verification does not identify the inspected archive")
     quality = json.dumps({"accepted": accepted, "policy": config["quality"], "report": catalogue}, indent=2).encode()
     return _prepare(directory, config, catalogue_path, catalogue_revision, releases_path, template_path,
                     viewer_path, catalogue, accepted, quality, {}, None)
@@ -53,7 +62,7 @@ def _prepare(directory, config, catalogue_path, catalogue_revision, releases_pat
     hub = config["hub"]
     catalogue_url = file_url(hub, catalogue_revision, hub["archive"])
     archives, reports = {"catalogue": catalogue_path}, {"catalogue": catalogue}
-    downloads = [(catalogue_url, catalogue)] if status is None else []
+    downloads = []
     index_rows, coverage = [], []
     for name, release in releases.items():
         report = inspect_availability(release["archive"], policy_from(release["policy"]))

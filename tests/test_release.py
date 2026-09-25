@@ -633,9 +633,9 @@ class Publication(unittest.TestCase):
             url = f"http://127.0.0.1:{server.server_port}/archive"
             digest = hashlib.sha256(payload).hexdigest()
             verify_download(url, digest, len(payload), 5)
-            with self.assertRaises(RuntimeError):
+            with self.assertRaisesRegex(RuntimeError, f"actual_sha256={digest}"):
                 verify_download(url, "0" * 64, len(payload), 5)
-            with self.assertRaises(RuntimeError):
+            with self.assertRaisesRegex(RuntimeError, f"expected_bytes={len(payload) - 1}"):
                 verify_download(url, digest, len(payload) - 1, 5)
         finally:
             server.shutdown()
