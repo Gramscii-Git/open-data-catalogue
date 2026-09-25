@@ -128,12 +128,13 @@ library. Copy `publisher.example.toml` to `publisher.local.toml`, then configure
   their virtual-environment identity even when the executable is a symlink.
 - The Hugging Face CLI command, logged in with write access to the target dataset.
   It must support `hf upload --json` returning a commit URL.
-- The Hub endpoint, repository, branch, build directory and README template.
+- The Hub endpoint, repository, branch, build directory, README template and
+  typed viewer configuration.
 - Required providers, document languages, vocabulary requirements and release limits.
 - The scheduler interpreter, executable search path, log path and explicit
   interval or calendar trigger.
 
-Publisher configuration schema 4 requires the complete process environment for
+Publisher configuration schema 5 requires the complete process environment for
 harvester and offline-projection children. They inherit no shell variables.
 Declare operating-system, certificate, proxy, temporary-directory and cache
 settings there when the deployment requires them. An explicitly empty mapping
@@ -607,8 +608,9 @@ separate from activating a new data revision.
 ### Discovery snapshot publication
 
 Only a validated release directory is uploaded. One Hub commit carries the archive,
-manifest, checksums, quality report and README rendered from `README.dataset.md`.
-Counts and snapshot dates come from the archive, not hand-maintained prose.
+manifest, checksums, quality report, typed catalogue viewer projection, viewer
+manifest and README rendered from `README.dataset.md`. Counts, snapshot dates and
+viewer rows come from the validated archive, not hand-maintained prose.
 
 The publisher uses the **commit returned by the upload**, never a later lookup of
 `main`. It downloads every published file at that immutable revision and checks
@@ -701,7 +703,7 @@ parser, database transaction, upload or readback. Expired evidence still fails
 admission. Sleeping computers, source outages and missed jobs can leave expired
 evidence; the consumer must keep refusing it.
 
-Publisher configuration schema 4 requires `deployment.stop_grace_seconds` for
+Publisher configuration schema 5 requires `deployment.stop_grace_seconds` for
 command shutdown after cancellation, owner death or an unclosed child process.
 Each harvester, upload and offline-verification command has a supervisor with an
 owner-lifetime pipe and a separate process group. Owner shutdown closes the pipe;

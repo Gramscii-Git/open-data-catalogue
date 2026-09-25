@@ -5,6 +5,7 @@ license_name: per-dataset
 language:
   - it
   - en
+$viewer_metadata
 ---
 
 # Open Data catalogue
@@ -12,6 +13,8 @@ language:
 Metadata and searchable descriptions collected from public-data providers.
 Observations are not included: obtain numeric values from the original provider.
 Search vectors are not included: build an index with the reader's own embedder.
+The Dataset Viewer exposes the discovery catalogue as a typed JSONL projection;
+the complete native tables remain in the verified archive.
 
 ## Release
 

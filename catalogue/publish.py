@@ -60,7 +60,16 @@ def verify_download(url: str, sha256: str, size: int, timeout: float | None) -> 
 
 def upload(directory: Path, config: dict, report: dict) -> dict:
     hub = config["hub"]
-    files = (hub["archive"], "manifest.json", "SHA256SUMS", "quality.json", "README.md")
+    viewer_manifest = json.loads((directory / "viewer-manifest.json").read_bytes())
+    files = (
+        hub["archive"],
+        "manifest.json",
+        "SHA256SUMS",
+        "quality.json",
+        "README.md",
+        "viewer-manifest.json",
+        *(entry["path"] for entry in viewer_manifest["files"]),
+    )
     return upload_files(directory, config, files, hub["archive"], report)
 
 
