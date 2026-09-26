@@ -165,7 +165,8 @@ contract and projection provenance. `quality.document_contract_sha256` pins that
 exact contract; obtain it from the configured harvester's `document-policy-status`
 command and review its provider languages, authorities and query routes before
 changing the deployment configuration. The example pin matches the current
-seven-provider OpenData contract; a changed installation requires its own verified pin.
+eleven-provider OpenData contract, including Milano, Napoli, Roma, Torino and
+Bologna; a changed installation requires its own verified pin.
 The snapshot also carries native provider objects, dataset bindings and explicit
 native exclusions. The contract includes an explicit renderer manifest and hashes of its executed
 modules, provider configuration, external words and input schema. Each document

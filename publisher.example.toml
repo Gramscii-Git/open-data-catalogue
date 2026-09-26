@@ -20,7 +20,7 @@ commit_message = "Publish verified Open Data catalogue"
 timeout_seconds = "unbounded"
 
 [quality]
-document_contract_sha256 = "b770ec23a9f34e9f769a3bbcf6df80b6a6b6f4811722d64a1cb26558faa2fa12"
+document_contract_sha256 = "58718f0ef6d70ac60184b8e37f96fe5303fdceca9a29647031175371c659863e"
 query_languages = ["it", "en"]
 minimum_datasets = 15899
 maximum_structure_errors = 0
@@ -51,6 +51,18 @@ vocabulary = false
 languages = ["it"]
 vocabulary = false
 [quality.providers.milano]
+languages = ["it"]
+vocabulary = false
+[quality.providers.napoli]
+languages = ["it"]
+vocabulary = false
+[quality.providers.roma]
+languages = ["it"]
+vocabulary = false
+[quality.providers.torino]
+languages = ["it"]
+vocabulary = false
+[quality.providers.bologna]
 languages = ["it"]
 vocabulary = false
 
