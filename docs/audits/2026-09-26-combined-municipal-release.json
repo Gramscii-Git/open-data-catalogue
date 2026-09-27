@@ -1,0 +1,1403 @@
+{
+  "recorded_at": "2026-09-27T10:04:54.665607+00:00",
+  "repository": "Gramscii-IT/european-open-data-catalogue",
+  "archive": {
+    "path": "open-data-catalogue.tar.gz",
+    "bytes": 9596005562,
+    "sha256": "a825f403f0d580e60d6b961f39a793e15f9976978ec06926a1924aba435415a9",
+    "url": "https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80cf77126adef9eae78dfccb73adbfa09cdaa122/open-data-catalogue.tar.gz",
+    "verified_at": "2026-09-27T10:01:47.084631+00:00"
+  },
+  "archive_revision": "80cf77126adef9eae78dfccb73adbfa09cdaa122",
+  "documentation_revision": "7a57c136db4b80f66ae21915184583bd2b14ab04",
+  "verified": true,
+  "tested_sdg_commit": "85381f09b6657caa83c0036c7a12e7bc688e6645",
+  "snapshot_export_commit": "9fa898350b0d909da69fb09b2f2afbd2e7855007",
+  "implementation": {
+    "at": "2026-09-26T21:50:51.866174+00:00",
+    "snapshot_export_commit": "9fa898350b0d909da69fb09b2f2afbd2e7855007",
+    "tested_runtime_commit": "85381f09b6657caa83c0036c7a12e7bc688e6645",
+    "document_contract_sha256": "58718f0ef6d70ac60184b8e37f96fe5303fdceca9a29647031175371c659863e",
+    "snapshot_implementation_blob": "06c3837949da47c64358438637e77528b6779e71",
+    "reviewed_changes": [
+      {
+        "path": "server/sdg/plugins/opendata/discovery.py",
+        "sha256": "c06426129f894eb9ac352212bb324aab5aec7db5c4f74c09ca210508398ad3f7"
+      },
+      {
+        "path": "server/tests/test_opendata_discovery_identity.py",
+        "sha256": "f0b6656e8e5ce614e36084c9d480e4e29d4842028bc74b105135c3a7654b7054"
+      }
+    ],
+    "discovery_tests_sha256": "7f2ea2a6cc7e2e825f5e3df886de320a1468afa72470f43021689c38ff70d78b",
+    "scope": "Only discovery reference syntax and its focused tests change after export starts. All snapshot, provider, document-renderer, migration and configuration bytes remain identical. The running export retains its original code provenance."
+  },
+  "discovery_tests": {
+    "at": "2026-09-26T21:50:51.865836+00:00",
+    "commit": "85381f09b6657caa83c0036c7a12e7bc688e6645",
+    "passed": 60,
+    "elapsed_seconds": 41.92,
+    "platform": "macOS ARM64, Python 3.13.12, PostgreSQL 18.6",
+    "command": "PYTHONPATH=/private/tmp/sdg-opendata-combined-municipalities/server python -m pytest tests/test_opendata_discovery_identity.py tests/test_opendata_catalogue_filters.py tests/test_opendata_catalogue_api.py -q --basetemp=/private/tmp/sdg-opendata-combined-municipal-release/pytest-discovery-isolated",
+    "log_sha256": "8e29ce6a1908839a33bed6b00cabe2b26d4adbfb4806e66d5aced26a0ec7d902",
+    "ruff": "passed",
+    "git_diff_check": "passed",
+    "resolved_attempts": [
+      "An initial fixture cleared catalogue rows but retained a structure error; both owned test tables are now reset explicitly.",
+      "Four API subprocess tests loaded the main installation; explicit PYTHONPATH now binds parent and children to the isolated worktree. All sixty cases pass."
+    ]
+  },
+  "publisher_base": "7f3ebcb095fe0ded0d84cd7eb4052fd3d9ce9f5a",
+  "document_contract_sha256": "58718f0ef6d70ac60184b8e37f96fe5303fdceca9a29647031175371c659863e",
+  "tables": {
+    "opendata_catalog": 23612,
+    "opendata_structures": 23612,
+    "opendata_structure_dims": 66505,
+    "opendata_terms": 3025090,
+    "opendata_labels": 0,
+    "opendata_meta_reports": 1175,
+    "opendata_documents": 27043,
+    "opendata_native_objects": 21598,
+    "opendata_native_bindings": 12664,
+    "opendata_native_exclusions": 10069
+  },
+  "providers": [
+    {
+      "provider": "bologna",
+      "inventory": 357,
+      "active": 357,
+      "searchable": 357,
+      "declared_served": 357,
+      "searchable_acquirable": 357,
+      "missing_licence": 0
+    },
+    {
+      "provider": "cruscotto",
+      "inventory": 25,
+      "active": 25,
+      "searchable": 25,
+      "declared_served": 25,
+      "searchable_acquirable": 25,
+      "missing_licence": 0
+    },
+    {
+      "provider": "dvns",
+      "inventory": 54,
+      "active": 54,
+      "searchable": 54,
+      "declared_served": 54,
+      "searchable_acquirable": 54,
+      "missing_licence": 0
+    },
+    {
+      "provider": "eurostat",
+      "inventory": 8138,
+      "active": 8138,
+      "searchable": 7592,
+      "declared_served": 8138,
+      "searchable_acquirable": 7592,
+      "missing_licence": 0
+    },
+    {
+      "provider": "ilo",
+      "inventory": 1211,
+      "active": 1211,
+      "searchable": 996,
+      "declared_served": 1211,
+      "searchable_acquirable": 996,
+      "missing_licence": 0
+    },
+    {
+      "provider": "istat",
+      "inventory": 4526,
+      "active": 4526,
+      "searchable": 4525,
+      "declared_served": 4526,
+      "searchable_acquirable": 4525,
+      "missing_licence": 0
+    },
+    {
+      "provider": "milano",
+      "inventory": 3289,
+      "active": 3289,
+      "searchable": 2904,
+      "declared_served": 2904,
+      "searchable_acquirable": 2904,
+      "missing_licence": 0
+    },
+    {
+      "provider": "napoli",
+      "inventory": 320,
+      "active": 320,
+      "searchable": 320,
+      "declared_served": 320,
+      "searchable_acquirable": 320,
+      "missing_licence": 0
+    },
+    {
+      "provider": "oecd",
+      "inventory": 1514,
+      "active": 1514,
+      "searchable": 1514,
+      "declared_served": 1514,
+      "searchable_acquirable": 1514,
+      "missing_licence": 0
+    },
+    {
+      "provider": "roma",
+      "inventory": 3066,
+      "active": 3066,
+      "searchable": 3066,
+      "declared_served": 3066,
+      "searchable_acquirable": 3066,
+      "missing_licence": 0
+    },
+    {
+      "provider": "torino",
+      "inventory": 1112,
+      "active": 1112,
+      "searchable": 1112,
+      "declared_served": 1112,
+      "searchable_acquirable": 1112,
+      "missing_licence": 0
+    }
+  ],
+  "documents": [
+    {
+      "provider": "bologna",
+      "language": "it",
+      "count": 357
+    },
+    {
+      "provider": "cruscotto",
+      "language": "it",
+      "count": 25
+    },
+    {
+      "provider": "dvns",
+      "language": "en",
+      "count": 54
+    },
+    {
+      "provider": "dvns",
+      "language": "it",
+      "count": 54
+    },
+    {
+      "provider": "eurostat",
+      "language": "en",
+      "count": 7592
+    },
+    {
+      "provider": "ilo",
+      "language": "en",
+      "count": 996
+    },
+    {
+      "provider": "istat",
+      "language": "en",
+      "count": 4524
+    },
+    {
+      "provider": "istat",
+      "language": "it",
+      "count": 4525
+    },
+    {
+      "provider": "milano",
+      "language": "it",
+      "count": 2904
+    },
+    {
+      "provider": "napoli",
+      "language": "it",
+      "count": 320
+    },
+    {
+      "provider": "oecd",
+      "language": "en",
+      "count": 1514
+    },
+    {
+      "provider": "roma",
+      "language": "it",
+      "count": 3066
+    },
+    {
+      "provider": "torino",
+      "language": "it",
+      "count": 1112
+    }
+  ],
+  "languages": [
+    {
+      "provider": "bologna",
+      "language": "en",
+      "count": 2
+    },
+    {
+      "provider": "bologna",
+      "language": "it",
+      "count": 357
+    },
+    {
+      "provider": "cruscotto",
+      "language": "it",
+      "count": 25
+    },
+    {
+      "provider": "dvns",
+      "language": "it",
+      "count": 54
+    },
+    {
+      "provider": "eurostat",
+      "language": "de",
+      "count": 8138
+    },
+    {
+      "provider": "eurostat",
+      "language": "en",
+      "count": 8138
+    },
+    {
+      "provider": "eurostat",
+      "language": "fr",
+      "count": 8138
+    },
+    {
+      "provider": "ilo",
+      "language": "en",
+      "count": 1211
+    },
+    {
+      "provider": "istat",
+      "language": "en",
+      "count": 4525
+    },
+    {
+      "provider": "istat",
+      "language": "it",
+      "count": 4526
+    },
+    {
+      "provider": "milano",
+      "language": "it",
+      "count": 3289
+    },
+    {
+      "provider": "napoli",
+      "language": "it",
+      "count": 320
+    },
+    {
+      "provider": "oecd",
+      "language": "en",
+      "count": 1514
+    },
+    {
+      "provider": "roma",
+      "language": "it",
+      "count": 3066
+    },
+    {
+      "provider": "torino",
+      "language": "it",
+      "count": 1112
+    }
+  ],
+  "licences": [
+    {
+      "provider": "bologna",
+      "licence": "CC BY 1.0",
+      "count": 2
+    },
+    {
+      "provider": "bologna",
+      "licence": "CC BY 3.0 IT",
+      "count": 3
+    },
+    {
+      "provider": "bologna",
+      "licence": "CC BY 4.0",
+      "count": 350
+    },
+    {
+      "provider": "bologna",
+      "licence": "CC BY-NC 3.0 IT",
+      "count": 1
+    },
+    {
+      "provider": "bologna",
+      "licence": "CC0 1.0 Universal (CC0 1.0)",
+      "count": 1
+    },
+    {
+      "provider": "cruscotto",
+      "licence": "CC BY 3.0",
+      "count": 1
+    },
+    {
+      "provider": "cruscotto",
+      "licence": "CC BY 4.0",
+      "count": 18
+    },
+    {
+      "provider": "cruscotto",
+      "licence": "CC BY 4.0 ex art. 52 c.2 CAD",
+      "count": 2
+    },
+    {
+      "provider": "cruscotto",
+      "licence": "CC BY 4.0 ex art. 52 c.2 D.Lgs 82/2005 (CAD); D.Lgs 117/2017 art. 53 pubblicita legale RUNTS",
+      "count": 1
+    },
+    {
+      "provider": "cruscotto",
+      "licence": "IODL 2.0",
+      "count": 3
+    },
+    {
+      "provider": "dvns",
+      "licence": "CC BY",
+      "count": 3
+    },
+    {
+      "provider": "dvns",
+      "licence": "CC BY 3.0",
+      "count": 3
+    },
+    {
+      "provider": "dvns",
+      "licence": "CC BY 4.0",
+      "count": 17
+    },
+    {
+      "provider": "dvns",
+      "licence": "CC BY-SA 4.0",
+      "count": 2
+    },
+    {
+      "provider": "dvns",
+      "licence": "CC-BY-3.0-IT",
+      "count": 1
+    },
+    {
+      "provider": "dvns",
+      "licence": "CC-BY-4.0",
+      "count": 2
+    },
+    {
+      "provider": "dvns",
+      "licence": "IODL 2.0",
+      "count": 2
+    },
+    {
+      "provider": "dvns",
+      "licence": "IODL-2.0",
+      "count": 1
+    },
+    {
+      "provider": "dvns",
+      "licence": "not-declared",
+      "count": 18
+    },
+    {
+      "provider": "dvns",
+      "licence": "per-corpus",
+      "count": 1
+    },
+    {
+      "provider": "dvns",
+      "licence": "reuse-terms",
+      "count": 1
+    },
+    {
+      "provider": "dvns",
+      "licence": "source-specific-terms",
+      "count": 1
+    },
+    {
+      "provider": "dvns",
+      "licence": "verify",
+      "count": 2
+    },
+    {
+      "provider": "eurostat",
+      "licence": "Eurostat reuse policy",
+      "count": 8138
+    },
+    {
+      "provider": "ilo",
+      "licence": "ILO rights and permissions",
+      "count": 1211
+    },
+    {
+      "provider": "istat",
+      "licence": "CC BY 4.0",
+      "count": 4526
+    },
+    {
+      "provider": "milano",
+      "licence": "https://w3id.org/italia/controlled-vocabulary/licences/A11_CCO10",
+      "count": 71
+    },
+    {
+      "provider": "milano",
+      "licence": "https://w3id.org/italia/controlled-vocabulary/licences/A21_CCBY40",
+      "count": 2716
+    },
+    {
+      "provider": "milano",
+      "licence": "https://w3id.org/italia/controlled-vocabulary/licences/A23_CCBY30IT",
+      "count": 169
+    },
+    {
+      "provider": "milano",
+      "licence": "https://w3id.org/italia/controlled-vocabulary/licences/A29_IODL20",
+      "count": 328
+    },
+    {
+      "provider": "milano",
+      "licence": "https://w3id.org/italia/controlled-vocabulary/licences/A31_CCBYSA40",
+      "count": 3
+    },
+    {
+      "provider": "milano",
+      "licence": "https://w3id.org/italia/controlled-vocabulary/licences/A33_CCBYSA30IT",
+      "count": 2
+    },
+    {
+      "provider": "napoli",
+      "licence": "https://w3id.org/italia/controlled-vocabulary/licences/A21_CCBY40",
+      "count": 320
+    },
+    {
+      "provider": "oecd",
+      "licence": "OECD Terms and Conditions",
+      "count": 1514
+    },
+    {
+      "provider": "roma",
+      "licence": "Creative Commons Attribuzione",
+      "count": 6
+    },
+    {
+      "provider": "roma",
+      "licence": "http://dati.gov.it/onto/controlledvocabulary/License/A21_CCBY40",
+      "count": 42
+    },
+    {
+      "provider": "roma",
+      "licence": "https://w3id.org/italia/controlled-vocabulary/licences/A21_CCBY40",
+      "count": 3010
+    },
+    {
+      "provider": "roma",
+      "licence": "https://w3id.org/italia/controlled-vocabulary/licences/A31_CCBYSA40",
+      "count": 8
+    },
+    {
+      "provider": "torino",
+      "licence": "https://w3id.org/italia/controlled-vocabulary/licences/A1_PublicDomain",
+      "count": 5
+    },
+    {
+      "provider": "torino",
+      "licence": "https://w3id.org/italia/controlled-vocabulary/licences/A21_CCBY40",
+      "count": 1107
+    }
+  ],
+  "portable_exclusions": [
+    {
+      "provider": "bologna",
+      "count": 348
+    },
+    {
+      "provider": "eurostat",
+      "count": 13
+    },
+    {
+      "provider": "ilo",
+      "count": 215
+    },
+    {
+      "provider": "istat",
+      "count": 4
+    },
+    {
+      "provider": "milano",
+      "count": 3065
+    },
+    {
+      "provider": "napoli",
+      "count": 3
+    },
+    {
+      "provider": "oecd",
+      "count": 6
+    },
+    {
+      "provider": "roma",
+      "count": 4137
+    },
+    {
+      "provider": "torino",
+      "count": 2278
+    }
+  ],
+  "quality_metrics": {
+    "missing_licences": 0,
+    "permanent_structure_errors": 0,
+    "structure_errors": 0,
+    "unscoped_terms": 0,
+    "missing_structures": 0,
+    "missing_documents": 0,
+    "undeclared_documents": 0
+  },
+  "publisher_tests": {
+    "at": "2026-09-26T20:58:33.743873+00:00",
+    "base_revision": "db58dd9bcbe9b413af52a235b852aeb3155971ce",
+    "tree_diff_sha256": "0eb34aa4bf8ae0db29a2bc63ba32b7f817e558f63a8cd9362c05eea0267e9b53",
+    "python": "3.14.6",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "command": "/opt/homebrew/bin/python3 -m unittest discover -s tests -v",
+    "tests": 191,
+    "seconds": 42.479,
+    "passed": true,
+    "log_sha256": "1102f856c5d3803bef8744aa61ef6c1d3ba09461e996b36c1986d9bc74c772bc",
+    "earlier_attempt": {
+      "log": "publisher-tests.log",
+      "result": "Failed: sandbox refused local listeners and installed SDG package shadowed isolated command fixtures",
+      "resolved_by": "Independent standard-library Python interpreter and permission for local HTTP test servers"
+    },
+    "unverified_platforms": [
+      "Linux",
+      "Windows"
+    ],
+    "tested_revision": "7f3ebcb095fe0ded0d84cd7eb4052fd3d9ce9f5a"
+  },
+  "publisher_evidence_consumer": {
+    "at": "2026-09-27T10:04:06.931354+00:00",
+    "revision": "80cf77126adef9eae78dfccb73adbfa09cdaa122",
+    "verified": true,
+    "evidence_sha256": "49fe5ce371aeccdcd4cb5c8fc28a39006874ae6fe5b5284805651a93d38b23fe",
+    "archive_sha256": "a825f403f0d580e60d6b961f39a793e15f9976978ec06926a1924aba435415a9",
+    "quality_report_sha256": "fafdb08a7a7b101cdab95023bc723893d446bd1a9767237826516a9282e2c91b",
+    "remote_verification": "Reused completed immutable byte/SHA-256 readback for every published file"
+  },
+  "publication_review": {
+    "verified": true,
+    "files": 11,
+    "archive_sha256": "a825f403f0d580e60d6b961f39a793e15f9976978ec06926a1924aba435415a9",
+    "catalogue_entries": 23612,
+    "searchable_entries": 22465,
+    "documents": 27043,
+    "providers": {
+      "bologna": 357,
+      "cruscotto": 25,
+      "dvns": 54,
+      "eurostat": 8138,
+      "ilo": 1211,
+      "istat": 4526,
+      "milano": 3289,
+      "napoli": 320,
+      "oecd": 1514,
+      "roma": 3066,
+      "torino": 1112
+    },
+    "retained_other_viewer_configs": [
+      "eurostat_series_combinations",
+      "eurostat_series_datasets",
+      "milano_catalogue",
+      "national_combinations",
+      "national_datasets",
+      "ssn_history_combinations",
+      "ssn_history_datasets"
+    ],
+    "native_licences_and_viewer_records": "preserved",
+    "search_limitations": "explicit",
+    "manifest_and_clean_import": "matching",
+    "remote_publication": "pending"
+  },
+  "rag_scope": "All 22 provider/language-route searches and four provider-scoped municipal paraphrases pass. The original 30-probe study finds 29 expected targets; the Napoli city-qualified global question misses its target. Separate diagnostic controls find Napoli globally using the native title and the original question without the city qualifier. Every original result and the two earlier short-title ISTAT misses remain explicit. No threshold change, query rewriting, automatic alternate query or source qualification waiver is applied.",
+  "rag_searches": 30,
+  "rag_characterization": {
+    "probes": 30,
+    "target_found": 29,
+    "target_missing": 1,
+    "all_targets_found": false,
+    "strict_run_outcome": "failed; retained without relabeling as a passing benchmark",
+    "source_receipt_sha256": "99fe8c6b75a9bf70e3ec8d03e0bbdeeaa2a1e5f2376bcd30b7f3a5a7b1083967"
+  },
+  "rag_global_relevance_misses": [
+    {
+      "probe": {
+        "provider": "napoli",
+        "query_language": "it",
+        "document_language": "it",
+        "kind": "paraphrase",
+        "scope": "global",
+        "query": "Quanti visitatori ha avuto il Castel Nuovo di Napoli nel 2018?",
+        "expected_dataset_id": "480f6433-efdc-4a2b-88f0-f84f5ff9bd51",
+        "ranked": [],
+        "outcome": "Empty(reason='no_dataset', detail='', params={})",
+        "expected_rank": null,
+        "passed": false
+      },
+      "target_before_floor": [
+        {
+          "rank": 1,
+          "score": -3.0364391803741455,
+          "provider": "napoli",
+          "dataset_id": "480f6433-efdc-4a2b-88f0-f84f5ff9bd51",
+          "document_language": "it",
+          "section": "0",
+          "candidate": {
+            "content": "Titolo\nNumero visitatori di Castel Nuovo-Maschio Angioino — Numero Visitatori Castel Nuovo-Maschio Angioino Anno 2018\nSintesi\nNumero dei visitatori che accedono a Castel Nuovo-Maschio Angioino\nNumero dei visitatori di Castel Nuovo-Maschio Angioino  nell'anno 2018 raggruppati per mese",
+            "at": 0
+          }
+        },
+        {
+          "rank": 24,
+          "score": -9.436363220214844,
+          "provider": "napoli",
+          "dataset_id": "480f6433-efdc-4a2b-88f0-f84f5ff9bd51",
+          "document_language": "it",
+          "section": "1",
+          "candidate": {
+            "content": "Campi della risorsa\n_id (int); Mese (text): Mese dell' anno di riferimento; Anno (numeric): Anno di riferimento; Nro_Visitatori (numeric): Dato aggregato del numero di visitatori per mese ed anno; Nota (text): Nota aggiuntiva",
+            "at": 23
+          }
+        }
+      ],
+      "floor": -2.635,
+      "source_trace_sha256": "bac2472a49035639d02069e7766f87947296a28554db53ed7d20e5a073f61f87"
+    }
+  ],
+  "rag_diagnostic_controls": [
+    {
+      "provider": "napoli",
+      "query_language": "it",
+      "document_language": "it",
+      "kind": "diagnostic_control",
+      "scope": "provider",
+      "query": "Quanti visitatori ha avuto il Castel Nuovo nel 2018?",
+      "expected_dataset_id": "480f6433-efdc-4a2b-88f0-f84f5ff9bd51",
+      "expected_rank": 1,
+      "passed": true,
+      "ranked": [
+        {
+          "provider": "napoli",
+          "dataset_id": "480f6433-efdc-4a2b-88f0-f84f5ff9bd51",
+          "score": 0.4061013460159302,
+          "section": "0"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "765e5b88-898a-4488-a7ba-337d4ecc2cf0",
+          "score": -2.5076406002044678,
+          "section": "1"
+        }
+      ],
+      "outcome": "rows"
+    },
+    {
+      "provider": "napoli",
+      "query_language": "it",
+      "document_language": "it",
+      "kind": "diagnostic_control",
+      "scope": "global",
+      "query": "Quanti visitatori ha avuto il Castel Nuovo nel 2018?",
+      "expected_dataset_id": "480f6433-efdc-4a2b-88f0-f84f5ff9bd51",
+      "expected_rank": 1,
+      "passed": true,
+      "ranked": [
+        {
+          "provider": "napoli",
+          "dataset_id": "480f6433-efdc-4a2b-88f0-f84f5ff9bd51",
+          "score": 0.4087713360786438,
+          "section": "0"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "765e5b88-898a-4488-a7ba-337d4ecc2cf0",
+          "score": -2.507854461669922,
+          "section": "1"
+        }
+      ],
+      "outcome": "rows"
+    },
+    {
+      "provider": "napoli",
+      "query_language": "it",
+      "document_language": "it",
+      "kind": "diagnostic_control",
+      "scope": "provider",
+      "query": "Quanti visitatori ha avuto il Castel Nuovo di Napoli nel 2018?",
+      "expected_dataset_id": "480f6433-efdc-4a2b-88f0-f84f5ff9bd51",
+      "expected_rank": 1,
+      "passed": true,
+      "ranked": [
+        {
+          "provider": "napoli",
+          "dataset_id": "480f6433-efdc-4a2b-88f0-f84f5ff9bd51",
+          "score": -1.6438721418380737,
+          "section": "2"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "a9e3dd91-0091-45f6-b4b4-21d198f0b0ec",
+          "score": -1.7670232057571411,
+          "section": "2"
+        }
+      ],
+      "outcome": "rows"
+    },
+    {
+      "provider": "napoli",
+      "query_language": "it",
+      "document_language": "it",
+      "kind": "diagnostic_control",
+      "scope": "global",
+      "query": "Quanti visitatori ha avuto il Castel Nuovo di Napoli nel 2018?",
+      "expected_dataset_id": "480f6433-efdc-4a2b-88f0-f84f5ff9bd51",
+      "expected_rank": null,
+      "passed": false,
+      "ranked": [],
+      "outcome": "Empty(reason='no_dataset', detail='', params={})"
+    },
+    {
+      "provider": "napoli",
+      "query_language": "it",
+      "document_language": "it",
+      "kind": "diagnostic_control",
+      "scope": "global",
+      "query": "Numero visitatori di Castel Nuovo-Maschio Angioino — Numero Visitatori Castel Nuovo-Maschio Angioino Anno 2018",
+      "expected_dataset_id": "480f6433-efdc-4a2b-88f0-f84f5ff9bd51",
+      "expected_rank": 1,
+      "passed": true,
+      "ranked": [
+        {
+          "provider": "napoli",
+          "dataset_id": "480f6433-efdc-4a2b-88f0-f84f5ff9bd51",
+          "score": 4.074153900146484,
+          "section": "0"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "60559480-9de5-46f6-b749-b855cd99dafd",
+          "score": 3.4651224613189697,
+          "section": "0"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "51e1786e-9eff-41c3-8ffa-46f1e9bfe8b7",
+          "score": 2.9670960903167725,
+          "section": "0"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "9f92734f-fc8e-45f6-8794-e99297840ffc",
+          "score": 2.7393500804901123,
+          "section": "0"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "d4ede339-2224-4b43-9a74-7d48c0479611",
+          "score": 2.7068655490875244,
+          "section": "0"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "37afa089-2387-4389-8fcb-bed7a8e3168e",
+          "score": 2.6839864253997803,
+          "section": "0"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "d8dff554-60b7-459b-8c4e-6406efcf74b7",
+          "score": 2.1292026042938232,
+          "section": "0"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "765e5b88-898a-4488-a7ba-337d4ecc2cf0",
+          "score": 1.7754526138305664,
+          "section": "0"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "a6ffeb04-2456-45ce-9a38-64658b57fef4",
+          "score": -1.6206040382385254,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "545543b8-8ae3-4dec-9e81-6f2330b9e612",
+          "score": -1.6217039823532104,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "0af283d2-3933-4398-8924-db3cdb0e0fa9",
+          "score": -1.6385607719421387,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "d876e264-b678-431e-a54f-718ba0a496d9",
+          "score": -1.639200210571289,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "f37aa4b5-262f-487b-9d7d-edcdfeaa232b",
+          "score": -1.639200210571289,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "c12c7fe1-f517-48d1-83f4-17a611bb8b4d",
+          "score": -1.639200210571289,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "215b1917-f139-4573-a1c6-2fdc2b324db7",
+          "score": -1.639200210571289,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "db883a8b-8892-4c3a-981e-66c770a3b52c",
+          "score": -1.639200210571289,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "026acd8b-1e23-4424-8d45-688e883d43ec",
+          "score": -1.639200210571289,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "c81837e4-5b14-4521-a6f4-a9b9fe2ed861",
+          "score": -1.639200210571289,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "c62bad88-f82d-4cd1-97a7-ce590dbf3672",
+          "score": -1.639200210571289,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "bf6c7e7a-d667-407d-93c3-f424a99edf95",
+          "score": -1.6393113136291504,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "437ce081-42e5-44fe-85e1-7a5ad70c1055",
+          "score": -1.6394307613372803,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "4fa7b4b7-d206-4081-a9fe-8f1642c75150",
+          "score": -1.6394307613372803,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "ae93f74e-fd38-4b64-92d7-8b34d0aa123a",
+          "score": -1.6394307613372803,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "f3140969-18a7-4290-b370-a4bbee46d87d",
+          "score": -1.6394307613372803,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "a9e3dd91-0091-45f6-b4b4-21d198f0b0ec",
+          "score": -1.6394307613372803,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "baefb2b8-412e-4632-8056-91a3b1ed6bb7",
+          "score": -1.6394307613372803,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "67cf74a9-5385-469c-a30d-eda6d05bfd92",
+          "score": -1.6395107507705688,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "9c9619b0-75e6-4517-81aa-7e2cc9e46cb7",
+          "score": -1.6395107507705688,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "f09afa49-d9cc-4e4d-883d-21488593b84a",
+          "score": -1.6395107507705688,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "12104e69-924e-4a81-abde-f244d5d3d0af",
+          "score": -1.6395107507705688,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "b36f9507-6912-406e-a3e4-9ad12d86cea0",
+          "score": -1.6395107507705688,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "2c511888-59a5-4580-8215-116f0a3b74e8",
+          "score": -1.6395107507705688,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "bc8a8e5f-c2ad-4f81-848c-6572df279bd8",
+          "score": -1.6395107507705688,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "8410c160-38fe-491c-8524-e554a54f487a",
+          "score": -1.6403576135635376,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "a60ae675-d66b-4cae-b87c-8bee8d7a60cc",
+          "score": -1.6403576135635376,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "f52c21a5-249e-4eeb-be30-9e530df794ef",
+          "score": -1.6403576135635376,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "401d8a6b-a80c-4e5b-b802-518315033005",
+          "score": -1.6403576135635376,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "38651ed0-f27a-4863-ae9e-1572722d746e",
+          "score": -1.6403576135635376,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "3a296681-4c08-414a-a0a0-c6a069c79b58",
+          "score": -1.6403576135635376,
+          "section": "1"
+        },
+        {
+          "provider": "napoli",
+          "dataset_id": "5278663a-cb3d-4d5c-b7b6-eb58069c3bd5",
+          "score": -1.6403576135635376,
+          "section": "1"
+        }
+      ],
+      "outcome": "rows"
+    }
+  ],
+  "rag_relevance_limitations": {
+    "recorded_at": "2026-09-26T21:27:09.207956+00:00",
+    "document_contract_sha256": "58718f0ef6d70ac60184b8e37f96fe5303fdceca9a29647031175371c659863e",
+    "observations_sha256": "db2ffe47e60c7ccd78cecba4537df588af528bfe6a57b7bbb45777446b84a316",
+    "probes": [
+      {
+        "provider": "istat",
+        "query_language": "it",
+        "document_language": "it",
+        "kind": "title",
+        "query": "Morti",
+        "expected_dataset_id": "26_29_DF_DCIS_DECESSI_2",
+        "ranked": [
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005",
+            "score": -1.3533375263214111,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_6",
+            "score": -2.336944818496704,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_2",
+            "score": -2.3983089923858643,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_9",
+            "score": -2.416701078414917,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_7",
+            "score": -2.4549872875213623,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_1",
+            "score": -2.493403673171997,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_493_DF_DCIS_CMORTE1_EV_2",
+            "score": -2.514723300933838,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_494_DF_DCIS_CMORTE1_RES_8",
+            "score": -2.5631446838378906,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_700_DF_DCIS_CMORTEINF2_EV_1",
+            "score": -2.5741360187530518,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_493_DF_DCIS_CMORTE1_EV_1",
+            "score": -2.5830771923065186,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_494_DF_DCIS_CMORTE1_RES_2",
+            "score": -2.625415802001953,
+            "section": "0"
+          }
+        ],
+        "outcome": "rows",
+        "expected_rank": null,
+        "passed": false
+      },
+      {
+        "provider": "istat",
+        "query_language": "en",
+        "document_language": "en",
+        "kind": "title",
+        "query": "Deaths",
+        "expected_dataset_id": "26_29_DF_DCIS_DECESSI_2",
+        "ranked": [
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_8",
+            "score": -1.5424675941467285,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_1",
+            "score": -1.6275579929351807,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_7",
+            "score": -1.6707137823104858,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_9",
+            "score": -1.6919772624969482,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_6",
+            "score": -1.7644742727279663,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_2",
+            "score": -1.845226764678955,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_3",
+            "score": -1.9239948987960815,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_4",
+            "score": -2.070908308029175,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005",
+            "score": -2.1865146160125732,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "39_1005_DF_DCIS_SUICIDI_5",
+            "score": -2.230400323867798,
+            "section": "0"
+          },
+          {
+            "provider": "istat",
+            "dataset_id": "26_29",
+            "score": -2.406118631362915,
+            "section": "0"
+          }
+        ],
+        "outcome": "rows",
+        "expected_rank": null,
+        "passed": false
+      }
+    ],
+    "interpretation": "The short titles Morti and Deaths return other mortality datasets but omit the selected ISTAT flow. A plain title is not an exact-identity lookup in the discovery contract. This measured recall limit is retained; source-summary queries are verified separately.",
+    "configured_floor": -2.635,
+    "threshold_changed": false,
+    "query_rewriting": false,
+    "direct_identity_selection_verified": true
+  },
+  "boundaries_review": {
+    "base_revision": "aaf1ffa7ddeed9b0806077180cb22aae99484a4a",
+    "verified_sets": [
+      {
+        "set": "italy-macro-areas-2026",
+        "sha256": "7a7cd481b2860b8a7c232d192fdd55fa86ebb75b6a9552f568059bf49c7d4b9f",
+        "shapes": 5
+      },
+      {
+        "set": "italy-regions-2026",
+        "sha256": "7963e74dc142126cc2807bef0be26d4117031851a08622fae9dd04c267f8ef26",
+        "shapes": 22
+      },
+      {
+        "set": "italy-provinces-2026",
+        "sha256": "292b3a4bd42844846519e8271466d23e96cf207861cad858e1c238da416ca798",
+        "shapes": 110
+      },
+      {
+        "set": "italy-municipalities-2026",
+        "sha256": "c0759f670a54920772b2cafd1541717e34c17b2a44cb970d0a7f05a502673420",
+        "shapes": 7896
+      },
+      {
+        "set": "italy-municipalities-2018",
+        "sha256": "90ede3e5e6533edc5d58a8bf868f3654ee66607b6f8ff0b03a2030b19e73ff30",
+        "shapes": 7954
+      },
+      {
+        "set": "italy-municipalities-2019",
+        "sha256": "4a6ee6c0675da5a736426f217665fa9f85f2e8c8a7f1c0b37b2186f80d518bd6",
+        "shapes": 7914
+      },
+      {
+        "set": "italy-municipalities-2021",
+        "sha256": "030f54e34fcf7b583a9863b46bfd1601c072499be24db1e7f9becb2daf093366",
+        "shapes": 7904
+      },
+      {
+        "set": "europe-nuts1-2024",
+        "sha256": "25ced35220f9d1dc5ef3573f6e9989b6de7859472d311fbac9b5e7bfa2a90539",
+        "shapes": 111
+      },
+      {
+        "set": "europe-nuts2-2024",
+        "sha256": "6cf445662590b8ca7c17ff3394c1d7f3ae3febb32fa28eea6cedec236fc45eac",
+        "shapes": 291
+      },
+      {
+        "set": "europe-nuts3-2024",
+        "sha256": "6f0c585c165fc4aa01651f51c3c20e1d86de1a042df240f81f9c6ff2226675da",
+        "shapes": 1330
+      },
+      {
+        "set": "europe-countries-natural-earth-5.1.1",
+        "sha256": "70cd83aa4832c9d195108cc4e2990f128052e24acb4967cb7c6691b695401d09",
+        "shapes": 68
+      },
+      {
+        "set": "world-map-units-natural-earth-5.1.1",
+        "sha256": "68b225b731701c87d9b6a1db334760ed89de092f1b8b87649bedb51ae8046132",
+        "shapes": 247
+      }
+    ],
+    "municipal_shape_identities": [
+      {
+        "name": "Torino",
+        "aliases": [
+          "001272"
+        ]
+      },
+      {
+        "name": "Milano",
+        "aliases": [
+          "015146"
+        ]
+      },
+      {
+        "name": "Bologna",
+        "aliases": [
+          "037006"
+        ]
+      },
+      {
+        "name": "Roma",
+        "aliases": [
+          "058091"
+        ]
+      },
+      {
+        "name": "Napoli",
+        "aliases": [
+          "063049"
+        ]
+      }
+    ],
+    "scope": "Existing geometry identity only; no municipal dataset-to-boundary join is qualified by this check",
+    "boundary_changes": false,
+    "hub_publication_performed": false
+  },
+  "boundary_documentation_review": {
+    "revision": "6180f18361b28d130cfee20b9085fc3fbaff13c0",
+    "previous_documentation_commit": "ac63ceaa1c8969190dc8ca92fc9f4ffd31685a1a",
+    "changed_paths": [
+      "HUGGING_FACE_README.md",
+      "README.md"
+    ],
+    "diff_check": "passed",
+    "geometry_verification_reused_sha256": "ae841ee3562a0d00d2dd8a9b1392df281ac4db5d1a4b2f702d25b8e8c8868106",
+    "pull_request": "https://github.com/Gramscii-Git/Boundaries/pull/3",
+    "scope": "Only searchable municipal entries are asserted to have verified acquisition contracts; metadata-only entries remain distinct."
+  },
+  "boundary_documentation_pr": "https://github.com/Gramscii-Git/Boundaries/pull/3",
+  "runtime_cutover": "Pending coordination with the chat session",
+  "publication_files": [
+    {
+      "path": "open-data-catalogue.tar.gz",
+      "bytes": 9596005562,
+      "sha256": "a825f403f0d580e60d6b961f39a793e15f9976978ec06926a1924aba435415a9",
+      "url": "https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80cf77126adef9eae78dfccb73adbfa09cdaa122/open-data-catalogue.tar.gz",
+      "verified_at": "2026-09-27T10:01:47.084631+00:00"
+    },
+    {
+      "path": "README.md",
+      "bytes": 35202,
+      "sha256": "c484157a3e988a8afd246e9e3ad5ac61b984774c027e26a6dfc728aca7511d14",
+      "url": "https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80cf77126adef9eae78dfccb73adbfa09cdaa122/README.md",
+      "verified_at": "2026-09-27T10:01:47.530666+00:00"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 184842,
+      "sha256": "d825daf99ba03be8fc04192dfc4f86de26feaf8b40f2e9c157ea3f9bb63fb9a8",
+      "url": "https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80cf77126adef9eae78dfccb73adbfa09cdaa122/manifest.json",
+      "verified_at": "2026-09-27T10:01:47.896521+00:00"
+    },
+    {
+      "path": "quality.json",
+      "bytes": 193311,
+      "sha256": "6f3389c069f634a82dfe4d3ebedc7076547b02c31bcf56e9e05317a59380c8d0",
+      "url": "https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80cf77126adef9eae78dfccb73adbfa09cdaa122/quality.json",
+      "verified_at": "2026-09-27T10:01:48.212389+00:00"
+    },
+    {
+      "path": "catalogue-quality.json",
+      "bytes": 201129,
+      "sha256": "fafdb08a7a7b101cdab95023bc723893d446bd1a9767237826516a9282e2c91b",
+      "url": "https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80cf77126adef9eae78dfccb73adbfa09cdaa122/catalogue-quality.json",
+      "verified_at": "2026-09-27T10:01:48.589491+00:00"
+    },
+    {
+      "path": "catalogue-status.json",
+      "bytes": 3454,
+      "sha256": "b5503dc424711178af78550da1a4b85d59657af93f5dba11148a4d4137f01527",
+      "url": "https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80cf77126adef9eae78dfccb73adbfa09cdaa122/catalogue-status.json",
+      "verified_at": "2026-09-27T10:01:48.944381+00:00"
+    },
+    {
+      "path": "catalogue-exclusions.json",
+      "bytes": 5302341,
+      "sha256": "4436579a259458c78c1dc7cbfc8d1bea2eb8b2bb0e789abb89b6a2eaef3e89c0",
+      "url": "https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80cf77126adef9eae78dfccb73adbfa09cdaa122/catalogue-exclusions.json",
+      "verified_at": "2026-09-27T10:01:49.368925+00:00"
+    },
+    {
+      "path": "catalogue-search-verification.json",
+      "bytes": 97454,
+      "sha256": "64e554396cc630d09e711d04d553cf70543eac9f611af9ee623e9416901a884f",
+      "url": "https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80cf77126adef9eae78dfccb73adbfa09cdaa122/catalogue-search-verification.json",
+      "verified_at": "2026-09-27T10:01:49.690834+00:00"
+    },
+    {
+      "path": "SHA256SUMS",
+      "bytes": 93,
+      "sha256": "09ab51ddefcf4a8c8bec92090145d7bbe9cf335c6a25a78e15b5cdd93603770b",
+      "url": "https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80cf77126adef9eae78dfccb73adbfa09cdaa122/SHA256SUMS",
+      "verified_at": "2026-09-27T10:01:49.992510+00:00"
+    },
+    {
+      "path": "viewer-manifest.json",
+      "bytes": 2910,
+      "sha256": "59fdf6a2f23f9668e64a5081464adff5a63d513be2bed2edba242a4ab49534c6",
+      "url": "https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80cf77126adef9eae78dfccb73adbfa09cdaa122/viewer-manifest.json",
+      "verified_at": "2026-09-27T10:01:50.308875+00:00"
+    },
+    {
+      "path": "viewer/catalogue.jsonl",
+      "bytes": 312231304,
+      "sha256": "09e5001e4ecc9afed5925fa3a38209cc0b9169df8aafeccb78dbd009de5f93ef",
+      "url": "https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/resolve/80cf77126adef9eae78dfccb73adbfa09cdaa122/viewer/catalogue.jsonl",
+      "verified_at": "2026-09-27T10:02:01.577725+00:00"
+    }
+  ],
+  "final_publisher_tests": {
+    "at": "2026-09-27T10:06:48+00:00",
+    "repository": "/private/tmp/open-data-catalogue-municipal-release",
+    "source_commit": "7f3ebcb095fe0ded0d84cd7eb4052fd3d9ce9f5a",
+    "quality_configuration_sha256": "6ce38dfe1179bf3dad44187f8fd3228e1ba6fd5ba5cfc8d1a11145dadcd675d8",
+    "command": "/opt/homebrew/bin/python3 -m unittest discover -s tests -v",
+    "platform": "macOS 26.6.2 arm64",
+    "python": "3.14.6",
+    "tests": 191,
+    "seconds": 42.711,
+    "passed": true,
+    "terminal_result": "Ran 191 tests in 42.711s; OK",
+    "exec_session": 89198,
+    "scope": "Publisher suite rerun after the eleven-provider quality baseline reached 23,612 entries. Later changes to README and release prose do not change executable code or quality policy."
+  }
+}

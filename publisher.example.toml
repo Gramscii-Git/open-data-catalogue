@@ -22,7 +22,7 @@ timeout_seconds = "unbounded"
 [quality]
 document_contract_sha256 = "58718f0ef6d70ac60184b8e37f96fe5303fdceca9a29647031175371c659863e"
 query_languages = ["it", "en"]
-minimum_datasets = 15899
+minimum_datasets = 23612
 maximum_structure_errors = 0
 maximum_missing_structures = 0
 maximum_missing_licences = 0

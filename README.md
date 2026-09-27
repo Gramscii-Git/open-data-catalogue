@@ -7,19 +7,19 @@ publication receipts.
 [Boundaries](https://github.com/Gramscii-Git/boundaries) is the separate geographic
 asset repository; matching territorial codes and vintages must be checked.
 
-The [Hub card corrected on September 12, 2026](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/tree/f3930bb41012ae41d68902f171389ec09afec290)
-retains a September 7 discovery snapshot and three historical availability
-indexes. All 35 indexed datasets' selection evidence expired on September 11;
-none is current evidence for a new selection. The discovery archive remains
-schema 1 with recorded quality defects and no admission under the current
-schema-2 contract. These artifacts remain reproducible; updating their card
-does not refresh their source evidence or qualify a new dataset release. The
-[publication review](docs/audits/2026-09-12-hub-release-state.md) records the exact
-archive pins and the publisher, updater and boundary responsibilities.
-The [September 14 resumption checkpoint](docs/audits/2026-09-14-istat-resumption.md)
-records the ISTAT collection before the standalone collector, saved code, private
-recovery inputs and remaining publication steps. It does not attest a new Hub
-dataset release.
+The [verified combined release](docs/audits/2026-09-26-combined-municipal-release.md)
+contains **23,612 catalogue entries**, **22,465 searchable entries**
+and **27,043 language-specific documents** across eleven providers: ISTAT, Eurostat,
+OECD, ILO, DVNS, Cruscotto Italia, Milano, Napoli, Roma, Torino and Bologna. It uses
+snapshot schema 4 with exact document membership and native source evidence. The audit
+records the immutable Hub revision, archive checksum, qualification limits, clean import,
+search checks and publication readback. Runtime adoption remains a coordinated deployment.
+
+The [September 12 review](docs/audits/2026-09-12-hub-release-state.md) describes the older
+schema-1 discovery archive and expired historical selection evidence. It is historical
+evidence, not the current discovery release or a refresh of source observations. The
+[September 14 checkpoint](docs/audits/2026-09-14-istat-resumption.md) records collection
+ownership and recovery inputs before the combined release.
 
 The [historical national availability revision](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/tree/fc82d7bd8154da355a45a81d772615306413fdc9/availability)
 contains 911,670 joint combinations for five DVNS datasets and 25 Cruscotto domains
@@ -38,9 +38,9 @@ release; the archived evidence remains reproducible afterwards. ANNCSU adds
 23,670 combinations across 7,890 source municipality codes; six completed
 municipality responses contain no ANNCSU observations. See the
 [release audit](docs/audits/2026-09-10-national-25-domains.md) for exact pins and limits.
-The seven-table discovery archive remains a separate, older release with recorded
-quality defects. The [Hub card](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue)
-describes both artifacts and their measured limits.
+The September 12 seven-table discovery archive is historical and retains its
+recorded quality defects. The [Hub card](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue)
+describes the current release and the historical artifacts with their measured limits.
 
 ## Standalone collection, retries and resumption
 
