@@ -65,6 +65,9 @@ def verify_download(url: str, sha256: str, size: int, timeout: float | None) -> 
 
 
 def upload(directory: Path, config: dict, report: dict) -> dict:
+    """Publish the catalogue; the archive's one readback is also its verification receipt."""
+    from .receipts import verify_catalogue  # receipts reads the Hub through this module
+
     hub = config["hub"]
     viewer_manifest = json.loads((directory / "viewer-manifest.json").read_bytes())
     files = (
@@ -76,10 +79,17 @@ def upload(directory: Path, config: dict, report: dict) -> dict:
         "viewer-manifest.json",
         *(entry["path"] for entry in viewer_manifest["files"]),
     )
-    return upload_files(directory, config, files, hub["archive"], report)
+    publication = send_files(directory, config, files, hub["archive"], report)
+    verify_catalogue(config, directory / hub["archive"], publication["revision"], publication["sha256"],
+                     publication["bytes"], directory / "verification.json")
+    return verify_files(directory, config, [name for name in files if name != hub["archive"]], publication)
 
 
 def upload_files(directory: Path, config: dict, files, archive: str, report: dict) -> dict:
+    return verify_files(directory, config, files, send_files(directory, config, files, archive, report))
+
+
+def send_files(directory: Path, config: dict, files, archive: str, report: dict) -> dict:
     hub = config["hub"]
     arguments = [
         *config["deployment"]["hf"],
@@ -116,12 +126,17 @@ def upload_files(directory: Path, config: dict, files, archive: str, report: dic
     (directory / "publication.json").write_text(
         json.dumps({**publication, "verified": False}, indent=2), encoding="utf-8"
     )
+    return publication
+
+
+def verify_files(directory: Path, config: dict, files, publication: dict) -> dict:
+    hub = config["hub"]
     for filename in files:
         path = directory / filename
         with path.open("rb") as stream:
             digest = hashlib.file_digest(stream, "sha256").hexdigest()
         verify_download(
-            file_url(hub, revision, filename),
+            file_url(hub, publication["revision"], filename),
             digest,
             path.stat().st_size,
             hub["timeout_seconds"],

@@ -398,6 +398,8 @@ class UpdateTests(unittest.TestCase):
         verification = read_verification(Path(state["catalogue"]["verification"]), self.config["hub"], self.config["hub"]["archive"])
         publication = json.loads((directory / "discovery/publication.json").read_bytes())
         self.assertEqual(verification, self.pin(publication))
+        archive = f"/{publication['revision']}/{self.config['hub']['archive']}"
+        self.assertEqual(sum(path.endswith(archive) for path in self.requests), 1)
         self.assertTrue(any(call[0] == "export" for call in self.harvester_calls))
         self.assertEqual(len((self.hub / "uploads.jsonl").read_text().splitlines()), 3)
 
