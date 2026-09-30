@@ -5,10 +5,11 @@ import json
 import sqlite3
 import tarfile
 import tempfile
-import tomllib
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlsplit
+
+import tomllib
 
 from .archive import digest
 from .config import fields, strings, text

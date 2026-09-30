@@ -4,8 +4,8 @@ import hashlib
 import json
 import re
 import tarfile
-from pathlib import PurePosixPath
 import urllib.request
+from pathlib import PurePosixPath
 
 from .publish import file_url
 
@@ -15,7 +15,7 @@ def _configuration(path):
     if set(config) != {"schema_version", "tables", "column_sets", "published"} or config["schema_version"] != 3:
         raise ValueError("unsupported viewer configuration")
     if not isinstance(config["published"], list):
-        raise ValueError("published viewer tables must be an explicit list")
+        raise TypeError("published viewer tables must be an explicit list")
     return config
 
 
