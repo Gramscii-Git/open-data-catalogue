@@ -7,16 +7,16 @@ any dataset.
 
 ## Decisions
 
-1. **Retired catalogue rows are not published.** SDG publication contract 3
+1. **Retired catalogue rows are not published.** Harvester publication contract 3
    leaves datasets `sync` retired out of the exported archive, together with the
    structures, labels and documents keyed to them. The publisher refuses an
-   archive that still holds a retired row. SDG keeps the rows as history.
+   archive that still holds a retired row. The harvester keeps the rows as history.
 2. **A structure error a provider declares permanent is published with its
    answer.** An error whose stored text is exactly a provider answer one of that
    provider's `dataflow_permanent_errors` rules matches is counted as
    `permanent_structure_errors` and listed on the dataset card. Every other
    structure error still rejects a release.
-3. **Licences are required for served datasets.** A dataset SDG does not serve
+3. **Licences are required for served datasets.** A dataset the harvester does not serve
    is published without a licence rather than with one inferred from its source
    institution. DVNS is asked to declare the rights of EPEA; the request is
    drafted below.
@@ -47,7 +47,7 @@ Read-only transactions on the publication database, 14 September 2026, between
 - `minimum_datasets` in `publisher.example.toml` becomes 15,899, the current
   datasets an archive under contract 3 carries.
 
-No licence can be projected onto the retired rows from provider terms. SDG's
+No licence can be projected onto the retired rows from provider terms. The harvester's
 `providers.yaml` declares the terms of Eurostat, OECD and ILO with
 `scope: dataset-specific` and those of ISTAT with
 `scope: provider-with-exceptions`. The earlier audit found dataset-specific
@@ -55,8 +55,8 @@ exceptions and restrictive conditions among exactly these rows.
 
 ## Structure errors measured
 
-The same transactions classified every stored structure error with SDG's
-`declared_permanent_error` and the rules in `providers.yaml` at SDG `main`
+The same transactions classified every stored structure error with the harvester's
+`declared_permanent_error` and the rules in `providers.yaml` at the harvester's `main`
 `9c3b65cc`. No stored error belongs to a retired dataset.
 
 **ISTAT, 8 errors, all on served datasets:**
@@ -71,7 +71,7 @@ The same transactions classified every stored structure error with SDG's
 - `31_739_DF_DCCV_SPEMEFAM_7`: `500 {"errorCode":"DATAFLOW_NOT_FOUND",...}`.
   The body does not name the dataflow, so no rule may declare it permanent.
 - `124_1156`, `124_1157` and their `DF_DCAR_*_UNI_1` flows:
-  `SDMX dimension 'BODY' has no unique referenced concept`. SDG's parser
+  `SDMX dimension 'BODY' has no unique referenced concept`. The harvester's parser
   refuses these answers. The cause is still to be read from the structure
   response.
 
@@ -83,7 +83,7 @@ The same transactions classified every stored structure error with SDG's
   `DSD_REG_DEMO@DF_REGION_TYPE`, `DSD_REG_ENV@DF_ENV`, `DSD_REG_TOUR@DF_TOUR`,
   `DSD_REICO_FULL@DF_ALL` and `DSD_SOE@DF_SOE_COU`.
 - 295 × `429`: that run paced OECD at one call per second, above its published
-  limit. SDG PR 165 paces it at 4 seconds.
+  limit. Harvester PR 165 paces it at 4 seconds.
 - 10 × `404 Could not find requested structures` and 8 × `500 Value cannot be
   null. (Parameter 'maintainableReference')`. These are measured again after
   the OECD run at the new pace. A rule must name its dataflow in the body; these
@@ -96,7 +96,7 @@ OECD structure run come first.
 
 The catalogue maintainer sends this as an issue on
 [DoveVannoINostriSoldi](https://github.com/Italian-Builders-Org/DoveVannoINostriSoldi),
-in the project's language. The evidence is in SDG's
+in the project's language. The evidence is in the harvester's
 `docs/audits/2026-09-14-dvns-rights.md`.
 
 > **Titolo:** Dichiarare la licenza della serie Istat EPEA 2016–2022 nel catalogo MCP
@@ -124,6 +124,6 @@ served dataset, its licence becomes a release requirement.
 
 ## Order
 
-SDG contract 3 lands before a publisher that requires it is deployed. The
+Harvester contract 3 lands before a publisher that requires it is deployed. The
 running ISTAT collection keeps its pinned harvester and publisher revisions. No
 file the document contract hashes changes, so stored documents stay current.

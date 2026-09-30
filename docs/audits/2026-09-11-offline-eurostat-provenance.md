@@ -1,7 +1,7 @@
 # Explicit offline Eurostat producer provenance
 
 The publisher now has an explicit SDMX offline validation and publication path.
-It reuses the current SDG graph, constraint, CSV and availability projectors;
+It reuses the current harvester graph, constraint, CSV and availability projectors;
 it does not change the consumer archive schema or HTTP replay. Native graph
 receipts remain separate original inputs. No dispatched request digest, response
 header, observation period or source freshness is synthesized.
@@ -33,10 +33,10 @@ The exact core is `6b139e06612bee6e5cc9dd4594599b1f6c164654`, in the separate
 `/private/tmp/sdg-eurostat-proof-core-20260911` worktree. This identity was not
 silently replaced by a later integration commit. The validator checks all
 262 Python files under `server/sdg` against the declared manifest, actual commit
-blobs and filesystem. It checks the origins and hashes of all 84 imported SDG
+blobs and filesystem. It checks the origins and hashes of all 84 imported harvester
 modules. A modified module with an adjusted manifest still fails when its code
 is absent from that commit. Unrelated ignored assets do not invalidate the code
-identity; imported SDG modules outside the declared core fail explicitly.
+identity; imported harvester modules outside the declared core fail explicitly.
 
 The actual verification runtime records CPython 3.13.12, lxml 6.1.3,
 pydantic 2.13.5, pydantic-core 2.46.5, PyYAML 6.0.3 and httpx 0.28.1, with

@@ -117,7 +117,7 @@ class AvailabilityBuildTests(unittest.TestCase):
         executable = builder.ensure_directories(directory).env_exe
         template = (ROOT / "publisher.example.toml").read_text()
         template = template.replace(
-            'python = "../semantic-deterministic-graph/server/.venv/bin/python"',
+            'python = "../harvester/server/.venv/bin/python"',
             "python = " + json.dumps(executable),
         )
         path = self.root / "publisher.toml"

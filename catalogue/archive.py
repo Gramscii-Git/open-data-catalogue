@@ -208,7 +208,7 @@ def _inspect_archive(
                         )
                     catalog[identity] = row
                     providers[provider] += 1
-                    # A licence governs data SDG serves; an unserved dataset is never given an inferred one.
+                    # A licence governs data the harvester serves; an unserved dataset is never given an inferred one.
                     metrics["missing_licences"] += all(
                         row[field] is True for field in policy["structure_fields"]
                     ) and (not isinstance(row.get("licence"), str) or not row["licence"].strip())

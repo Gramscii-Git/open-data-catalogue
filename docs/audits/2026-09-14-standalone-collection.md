@@ -9,7 +9,7 @@ not attest completed collection or a new Hugging Face publication.
   `main` through `0a8edea7f178a1688ce7459517f4e50134ce9471`, which adds only
   documentation to it.
 - Native retry implementation: `6a4ebd7dc209c59671f03579255baffcf32e215a`, on
-  SDG `main`.
+  the harvester's `main`.
 - Publisher verification passes 20 focused tests: collection state and actual
   process/lock resumption, existing command ownership, and child environment.
 - Native verification passes 154 tests in 82.37 seconds. Six existing CLI tests
@@ -17,17 +17,17 @@ not attest completed collection or a new Hugging Face publication.
   policy-validation cases run and pass. No provider or model is contacted.
 - Ruff and diff checks pass. The three native verification processes are gone,
   their process group is empty, and no owned retry database remains.
-- The running native source is SDG `64b2263d3c8d21895fd05b4cd8621b68ea9cff06`.
+- The running native source is harvester commit `64b2263d3c8d21895fd05b4cd8621b68ea9cff06`.
   It carries three structure-harvest changes, each verified in its pull request:
   a dataset whose provider answers keep failing is recorded and the harvest
-  continues ([PR 159](https://github.com/Gramscii-Git/semantic-deterministic-graph/pull/159)),
+  continues (harvester PR 159),
   a sync honours a stop before its metadata reports
-  ([PR 160](https://github.com/Gramscii-Git/semantic-deterministic-graph/pull/160)),
+  (harvester PR 160),
   and datasets with a stored error are harvested after the others while ISTAT's
   "doesn't contain a mapping set" answer is recorded without retries
-  ([PR 161](https://github.com/Gramscii-Git/semantic-deterministic-graph/pull/161)).
+  (harvester PR 161).
   Its one later runtime change declares the same answer permanent for OECD in
-  `providers.yaml` ([PR 164](https://github.com/Gramscii-Git/semantic-deterministic-graph/pull/164));
+  `providers.yaml` (harvester PR 164);
   the ISTAT collection code is that of `9f502ea6`.
 - The running publisher is `628c311694ffca08bb09de90b89523ae5586428d`. A
   collection plan declares `patience_seconds`, which the collector passes to the
@@ -126,7 +126,7 @@ rebuilt environment.
 
 The document contract of the deployed source is
 `86743b8a6717b98f94853c90308e2653356199909c2d77dc2e2986063ea5f997`, measured
-with `document-policy-status` at SDG `11795efc`; no file it pins changes between
+with `document-policy-status` at harvester commit `11795efc`; no file it pins changes between
 that commit and `64b2263d`. At r3's `9f502ea6` it was
 `9985f9d893fdb309a58825862927a8b59052617f1628eac6e2a6546025eb2cd9`: the contract
 pins `providers.yaml`, which PR 164 changes.

@@ -6,7 +6,7 @@ import tarfile
 from functools import cache
 from pathlib import Path
 
-# The parts of an SDMX dataflow reference a declared template may name, as SDG declares them.
+# The parts of an SDMX dataflow reference a declared template may name, as the harvester declares them.
 REFERENCE_PARTS = {
     "agency": r"[A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z][A-Za-z0-9_-]*)*",
     "id": r"[A-Za-z0-9_@$-]+",

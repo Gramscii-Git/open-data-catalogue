@@ -10,7 +10,7 @@ and the final SDMX code integration must precede the first source acquisition.
 Publisher checkout:
 `/Users/robertomarras/progetti/open-data-catalogue-updater`, detached at `919e78a`.
 Harvester checkout:
-`/Users/robertomarras/progetti/semantic-deterministic-graph-opendata-updater`,
+the harvester's Open Data updater checkout,
 detached at `6f0df27e`. The harvester must receive the verified final SDMX changes
 while inactive before an ordinary update run.
 

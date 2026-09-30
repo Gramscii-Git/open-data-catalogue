@@ -40,9 +40,9 @@ class CollectionTests(unittest.TestCase):
         self.publisher = self.root / "publisher.toml"
         template = (ROOT / "publisher.example.toml").read_text()
         replacements = {
-            'harvester = "../semantic-deterministic-graph"': f'harvester = {json.dumps(str(self.core))}',
-            'environment_file = "../semantic-deterministic-graph/server/.env"': f'environment_file = {json.dumps(str(self.environment))}',
-            'python = "../semantic-deterministic-graph/server/.venv/bin/python"': f'python = {json.dumps(sys.executable)}',
+            'harvester = "../harvester"': f'harvester = {json.dumps(str(self.core))}',
+            'environment_file = "../harvester/server/.env"': f'environment_file = {json.dumps(str(self.environment))}',
+            'python = "../harvester/server/.venv/bin/python"': f'python = {json.dumps(sys.executable)}',
         }
         for original, replacement in replacements.items():
             template = template.replace(original, replacement)

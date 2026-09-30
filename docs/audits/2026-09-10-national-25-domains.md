@@ -2,7 +2,7 @@
 
 The national availability archive and licensed Cruscotto source snapshots are
 published and independently read back at immutable Hugging Face revisions.
-Activation succeeded in an inactive SDG checkout. This audit does not certify
+Activation succeeded in an inactive harvester checkout. This audit does not certify
 installation in a running chat deployment or completion of other provider scopes.
 
 ## Artifacts and verification
@@ -67,7 +67,7 @@ source photographs, not inferred historical observation periods.
 
 ## Isolated consumer activation
 
-SDG commit `63643fe0` adds the explicit ANNCSU selection binding and the verified
+Harvester commit `63643fe0` adds the explicit ANNCSU selection binding and the verified
 national archive/snapshot pins. Atomic activation validated all 30 configured
 datasets, their axes, evidence validity and exact snapshot definitions. The
 imported SQLite database occupies 2,462,101,504 bytes. Existing SSN and Eurostat

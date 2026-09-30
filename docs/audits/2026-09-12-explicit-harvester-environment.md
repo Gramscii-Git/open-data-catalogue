@@ -1,6 +1,6 @@
 # Explicit native child environment
 
-The publisher passes `--env-file` to SDG, whose settings loader gives process
+The publisher passes `--env-file` to the harvester, whose settings loader gives process
 variables precedence over that file. Inheriting the invoking shell therefore
 allows an unrelated `DATABASE_URL`, `OPENDATA_PACING`, `HTTP_HOSTS` or
 `AUTH_TOKEN` to replace the declared deployment setting.
@@ -27,7 +27,7 @@ cache directories under `build/harvester-environment-20260912`.
 
 - Two real subprocess regressions first failed with inherited shell values.
   Their child is a local CLI protocol fixture: it observes the actual process
-  environment and unchanged synthetic environment file without importing SDG or
+  environment and unchanged synthetic environment file without importing the harvester or
   contacting a provider.
 - `python -B -m unittest discover -s tests -v`: **166 passed**, 36.368 seconds.
   The unchanged publisher process owner ran the suite and closed normally. The
@@ -47,6 +47,6 @@ cache directories under `build/harvester-environment-20260912`.
   `tests/fixtures/harvester_environment.py`, `tests/test_release.py` and
   `tests/test_runtime.py`. `git diff --check` passes.
 
-No native SDG collection, provider request, live database modification, runtime
+No native harvester collection, provider request, live database modification, runtime
 admission or dataset publication is part of these tests. Other operating systems
 are not qualified by this local run.
