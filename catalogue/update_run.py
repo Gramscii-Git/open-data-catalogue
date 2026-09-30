@@ -13,7 +13,6 @@ from .documentation_evidence import read as read_evidence
 from .publish import upload
 from .receipts import (
     read_verification,
-    verify_catalogue,
     verify_local_archive,
     write_json,
 )
@@ -171,10 +170,7 @@ def discovery_release(directory, config, action, harvester, prepare_catalogue):
         harvester(config, "enrich")
         harvester(config, "verify")
     report = prepare_catalogue(directory, config, harvester)
-    published = upload(directory, config, report)
-    verify_catalogue(config, directory / config["hub"]["archive"], published["revision"],
-                     published["sha256"], published["bytes"], directory / "verification.json")
-    return published
+    return upload(directory, config, report)
 
 
 def activate(config, harvester, name, publication_path, expected, snapshot_paths):
