@@ -11,19 +11,19 @@ launchd-owned structure continuation with request backoff.
 ## Saved code
 
 - Publisher: `c0995168230ea98dd037ad833061d45272bbe6d5`, already on `main`.
-- Native registry synchronization: SDG commit
+- Native registry synchronization: harvester commit
   `7c79dcae5651ced43f699f029a4b30f448b33b05`, merged through
-  [PR 156](https://github.com/Gramscii-Git/semantic-deterministic-graph/pull/156)
+  harvester PR 156
   as `0a3d2a24f4edf04fd78d5d1a895e3aa3fb1e008e`. Their source trees agree.
   The change passes 57 existing focused tests and 12 new CLI/worker regressions,
   Ruff and diff checks. Owned verification databases are removed.
-- Subsequent DVNS rights work is on SDG `plugin/opendata`: evidence checkpoint
+- Subsequent DVNS rights work is on the harvester's `plugin/opendata`: evidence checkpoint
   `5b21fc2c` and implementation `cf98e889`. The implementation passes 84 focused
   tests and Ruff. These commits do not change the running collector's source.
 
 ## Actual collection state
 
-The collector uses a clean detached SDG checkout at `7c79dcae`, the publication
+The collector uses a clean detached harvester checkout at `7c79dcae`, the publication
 database, and one shared ISTAT admission bucket for hub, REST and metadata.
 The interval is 13 seconds. Two admissions measured at 01:08 were 13.004351
 seconds apart. ISTAT's [published limit](https://www.istat.it/en/classifications-and-tools/sdmx-web-services/)

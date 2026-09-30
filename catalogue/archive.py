@@ -49,15 +49,17 @@ def inspect_archive(
     required_providers: set[str] | None = None,
     minimum_datasets: int | None = None,
 ) -> dict:
-    with tempfile.TemporaryDirectory(dir=path.parent, prefix=".catalogue-inspection-") as directory:
-        with StructureStore(Path(directory) / "structures.sqlite3") as structures:
-            return _inspect_archive(
-                path,
-                policy,
-                structures,
-                required_providers=required_providers,
-                minimum_datasets=minimum_datasets,
-            )
+    with (
+        tempfile.TemporaryDirectory(dir=path.parent, prefix=".catalogue-inspection-") as directory,
+        StructureStore(Path(directory) / "structures.sqlite3") as structures,
+    ):
+        return _inspect_archive(
+            path,
+            policy,
+            structures,
+            required_providers=required_providers,
+            minimum_datasets=minimum_datasets,
+        )
 
 
 class StructureStore:
@@ -208,7 +210,7 @@ def _inspect_archive(
                         )
                     catalog[identity] = row
                     providers[provider] += 1
-                    # A licence governs data SDG serves; an unserved dataset is never given an inferred one.
+                    # A licence governs data the harvester serves; an unserved dataset is never given an inferred one.
                     metrics["missing_licences"] += all(
                         row[field] is True for field in policy["structure_fields"]
                     ) and (not isinstance(row.get("licence"), str) or not row["licence"].strip())

@@ -153,7 +153,7 @@ def main(argv=None) -> int:
     provider_catalogue.add_argument("--readme-template", type=Path, required=True)
     provider_catalogue.add_argument("--viewer-config", type=Path, required=True)
     activate_availability = commands.add_parser(
-        "activate-availability", help="verify and activate a published index in the configured SDG deployment"
+        "activate-availability", help="verify and activate a published index in the configured harvester deployment"
     )
     activate_availability.add_argument("--publication", type=Path, required=True)
     activate_availability.add_argument("--index", required=True)

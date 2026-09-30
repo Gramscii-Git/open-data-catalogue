@@ -41,7 +41,7 @@ not renew that lifetime. The new scopes are not added to a scheduled update plan
 ## Selection bindings
 
 `scopes/dvns-observations.selections.json` is a `datasets` component for future
-assembly with the existing strict SDG reader schema. Each contained dataset entry
+assembly with the existing strict harvester reader schema. Each contained dataset entry
 validates as `DatasetSelection`. It intentionally contains no `indexes` object,
 artifact revision, digest or snapshot pin. It cannot be used as a complete reader
 policy or directly activated. The planned index names match their scope stems.

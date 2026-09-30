@@ -194,7 +194,7 @@ def imported_core_files(core_root, files, modules):
             continue
         filename = getattr(module, "__file__", None)
         if not filename or not Path(filename).resolve().is_relative_to((core_root / "server/sdg").resolve()):
-            raise ValueError("offline projection imported an SDG module outside the declared core")
+            raise ValueError("offline projection imported a harvester module outside the declared core")
         name = str(Path(filename).resolve().relative_to((core_root / "server/sdg").resolve()))
         if name not in files or digest(Path(filename)) != files[name]:
             raise ValueError("offline projection imported an undeclared core implementation")

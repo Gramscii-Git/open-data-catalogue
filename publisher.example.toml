@@ -1,10 +1,10 @@
 schema = 5
 
 [deployment]
-harvester = "../semantic-deterministic-graph"
-environment_file = "../semantic-deterministic-graph/server/.env"
+harvester = "../harvester"
+environment_file = "../harvester/server/.env"
 process_environment = {PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"}
-python = "../semantic-deterministic-graph/server/.venv/bin/python"
+python = "../harvester/server/.venv/bin/python"
 hf = ["hf"]
 build = "build"
 readme_template = "README.dataset.md"
@@ -68,7 +68,7 @@ vocabulary = false
 
 [schedule]
 label = "it.gramscii.open-data-catalogue"
-python = "../semantic-deterministic-graph/server/.venv/bin/python"
+python = "../harvester/server/.venv/bin/python"
 path = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 log = "build/schedule.log"
 action = "release"

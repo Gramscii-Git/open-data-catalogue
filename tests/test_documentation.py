@@ -1,7 +1,7 @@
 """Hub documentation verifies published bytes and exposes rejected catalogue gates."""
 
-import http.server
 import hashlib
+import http.server
 import json
 import tempfile
 import threading

@@ -43,7 +43,7 @@ source clock or TTL. This is not a fresh coverage qualification.
 
 ## Local verification
 
-On macOS arm64 with the actual SDG Python 3.13 environment:
+On macOS arm64 with the actual harvester Python 3.13 environment:
 
 - Full unittest discovery: **162 passed in 36.210 seconds**.
 - Focused ownership/readback tests: **8 passed in 3.187 seconds**, including

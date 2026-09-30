@@ -31,7 +31,7 @@ that plan or the overall release.
 
 Core commits `ee5fe5e2` and `c9fc4031` implement the document-input boundary.
 Their audit is
-`semantic-deterministic-graph/docs/audits/2026-09-11-opendata-native-document-roles.md`.
+the harvester's `docs/audits/2026-09-11-opendata-native-document-roles.md`.
 The final check used core `c9fc4031c06feaf3dff4df7aff84982e0f79c537` and this
 publisher worktree based on `c05c56e54cce92619279715745c89111d08c7ab5`.
 

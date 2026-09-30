@@ -143,7 +143,7 @@ settings there when the deployment requires them. An explicitly empty mapping
 passes none of those values. `PYTHONPATH` is reserved for the declared source
 roots and cannot be supplied in the mapping.
 
-The native SDG CLI receives `--env-file` unchanged. SDG gives an explicitly
+The native harvester CLI receives `--env-file` unchanged. The harvester gives an explicitly
 declared process variable precedence over the same setting in that file; use
 one location for each setting unless an intentional override is required. Such
 an override must appear in `process_environment`, never just in the invoking
@@ -234,12 +234,12 @@ It never replaces the combined `open-data-catalogue.tar.gz`.
 | release | Refreshes, prepares and validates | Yes |
 
 A structure harvest that leaves a dataset in an error no provider rule declares
-permanent is partial: SDG records it as an explicit failure, and it prevents
+permanent is partial: the harvester records it as an explicit failure, and it prevents
 subsequent publication. Provider timeouts are configured, not inferred. A failed
 run is not retried automatically by this publisher.
 
 Preparation writes to a unique directory under the configured build directory.
-A kernel-held lock refuses overlapping publisher runs; SDG also owns its database
+A kernel-held lock refuses overlapping publisher runs; the harvester also owns its database
 job guard. The persistent lock file is not proof of a live owner and must not be
 unlinked. Inspect the recorded owner and phase receipts after an interrupted run.
 
@@ -251,7 +251,7 @@ references and configured completeness limits. The harvester's export leaves
 out retired catalogue rows and the rows keyed to their datasets, and validation
 refuses a retired row that is present. No current row is silently removed or
 given an invented licence to make a release pass: a licence is required for every
-served dataset, and a dataset SDG does not serve is published without one rather
+served dataset, and a dataset the harvester does not serve is published without one rather
 than with an inferred one.
 
 A structure error whose stored text is exactly a provider answer that one of the
@@ -327,7 +327,7 @@ time. Consumers must also enforce its expiry when selecting options.
   --scope scopes/dvns-cofog.json --policy scopes/dvns-cofog.policy.toml
 ```
 
-This runs SDG's native index adapter and validates its finished artifact. The
+This runs the harvester's native index adapter and validates its finished artifact. The
 included scope covers DVNS `eurostat_cofog`, Italy, every year from 2014 through
 2024. It does not declare coverage of other datasets or countries. The request
 grid plans source reads; joint combinations come exclusively from returned
@@ -403,10 +403,10 @@ relative to `server/sdg`, to its digest. Verification has no elapsed-work
 deadline. These are required inputs; the command infers no missing version,
 scope, timestamp or digest.
 
-The configured harvester Python executes the existing SDG parsers in a worker
+The configured harvester Python executes the existing harvester parsers in a worker
 that rejects every network and database connection. The worker checks the core
 filesystem against both the declared manifest and actual commit blobs, then
-checks every imported SDG module's origin and digest. It reconstructs every
+checks every imported harvester module's origin and digest. It reconstructs every
 definition from the exact dataflow/DSD graph, complete referenced domains and
 original Actual constraint; it reconstructs every combination from the original
 captured observations. Partition and combination table bytes must be unchanged.
@@ -571,9 +571,9 @@ measurements to the original report and links the current status. The ordinary
 `publish-documentation` and every new export remain subject to the strict current
 inspector; an inspector failure never switches modes.
 
-SDG's indexed-selection contract requires its own explicit pin, budgets, metadata
+The harvester's indexed-selection contract requires its own explicit pin, budgets, metadata
 read allowlist and native argument bindings. After publication, activate the
-verified receipt in the SDG deployment selected by `deployment.harvester` and
+verified receipt in the harvester deployment selected by `deployment.harvester` and
 `deployment.environment_file`:
 
 ```sh
@@ -753,7 +753,7 @@ the matching interval:
 ```toml
 [schedule]
 label = "it.gramscii.open-data-catalogue"
-python = "../semantic-deterministic-graph/server/.venv/bin/python"
+python = "../harvester/server/.venv/bin/python"
 path = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 log = "build/schedule.log"
 action = "run-update"

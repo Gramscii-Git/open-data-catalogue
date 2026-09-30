@@ -1,7 +1,7 @@
 """Release contracts exercised with real archives, files and HTTP."""
 
-import copy
 import base64
+import copy
 import hashlib
 import http.server
 import io
