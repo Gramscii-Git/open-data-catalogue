@@ -148,6 +148,7 @@ def main(argv=None) -> int:
     )
     provider_catalogue.add_argument("--archive", type=Path, required=True)
     provider_catalogue.add_argument("--provider", required=True)
+    provider_catalogue.add_argument("--config-name", required=True)
     provider_catalogue.add_argument("--destination", required=True)
     provider_catalogue.add_argument("--minimum-datasets", type=int, required=True)
     provider_catalogue.add_argument("--readme-template", type=Path, required=True)
@@ -275,6 +276,7 @@ def main(argv=None) -> int:
                     config,
                     args.readme_template.resolve(),
                     args.viewer_config.resolve(),
+                    config_name=args.config_name,
                 ), indent=2))
             return 0
         if args.command == "check-offline-availability":

@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import re
 import shutil
 import tarfile
 from pathlib import Path, PurePosixPath
@@ -57,8 +58,12 @@ def prepare(
     config: dict,
     readme_template: Path,
     viewer_config: Path,
+    *,
+    config_name: str,
 ) -> tuple[dict, tuple[str, ...], str]:
     """Validate and stage one provider archive and its directly browsable rows."""
+    if not isinstance(config_name, str) or re.fullmatch(r"[a-z][a-z0-9_]*", config_name) is None:
+        raise ValueError("provider viewer config name must be a canonical identifier")
     target = directory / _destination(destination)
     target.mkdir(parents=True)
     archive = target / config["hub"]["archive"]
@@ -96,7 +101,7 @@ def prepare(
     (target / "viewer.json").write_text(
         json.dumps({
             "schema_version": 1,
-            "config_name": f"{provider}_catalogue",
+            "config_name": config_name,
             "rows": rows,
             "path": "catalogue.jsonl",
             "sha256": viewer_sha256,
@@ -126,6 +131,8 @@ def publish(
     config: dict,
     readme_template: Path,
     viewer_config: Path,
+    *,
+    config_name: str,
 ) -> dict:
     report, files, archive = prepare(
         source,
@@ -136,5 +143,6 @@ def publish(
         config,
         readme_template,
         viewer_config,
+        config_name=config_name,
     )
     return upload_files(directory, config, files, archive, report)
