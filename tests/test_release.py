@@ -219,6 +219,7 @@ class Releases(unittest.TestCase):
             {**self.config, "quality": self.policy},
             ROOT / "README.provider.md",
             ROOT / "viewer.json",
+            config_name="planning_layers",
         )
 
         self.assertEqual(report["scope"], {
@@ -228,6 +229,7 @@ class Releases(unittest.TestCase):
         self.assertEqual(archive, "providers/sample/open-data-catalogue.tar.gz")
         self.assertEqual(len((directory / "providers/sample/catalogue.jsonl").read_text().splitlines()), 1)
         self.assertEqual(json.loads((directory / "providers/sample/viewer.json").read_text())["source_sha256"], report["sha256"])
+        self.assertEqual(json.loads((directory / "providers/sample/viewer.json").read_text())["config_name"], "planning_layers")
         self.assertEqual(set(files), {
             "providers/sample/open-data-catalogue.tar.gz",
             "providers/sample/manifest.json",
@@ -257,7 +259,21 @@ class Releases(unittest.TestCase):
                         {**self.config, "quality": self.policy},
                         ROOT / "README.provider.md",
                         ROOT / "viewer.json",
+                        config_name="sample_catalogue",
                     )
+
+    def test_provider_viewer_rejects_invalid_names_before_staging(self):
+        for name in ("", "milano-pgt_catalogue", "Planning", "../planning", None):
+            with self.subTest(name=name):
+                directory = self.directory / "invalid-viewer"
+                with self.assertRaisesRegex(ValueError, "canonical identifier"):
+                    prepare_provider(
+                        self.archive, directory, "sample", "providers/sample", 1,
+                        {**self.config, "quality": self.policy},
+                        ROOT / "README.provider.md", ROOT / "viewer.json",
+                        config_name=name,
+                    )
+                self.assertFalse(directory.exists())
 
     def test_native_english_documents_cover_declared_italian_queries_without_translation(self):
         report = self.inspect(rows())

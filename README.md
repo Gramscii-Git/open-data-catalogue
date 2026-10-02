@@ -214,6 +214,7 @@ without replacing the combined catalogue:
 ./update --config publisher.local.toml publish-provider-catalogue \
   --archive path/to/provider-catalogue.tar.gz \
   --provider PROVIDER_ID \
+  --config-name VIEWER_NAME \
   --destination providers/PROVIDER_ID \
   --minimum-datasets EXPECTED_MINIMUM \
   --readme-template README.provider.md \
@@ -224,6 +225,11 @@ The command validates the provider scope against the full installed document
 contract, projects a directly browsable `catalogue.jsonl`, uploads only the
 provider directory and verifies every uploaded file at the immutable commit.
 It never replaces the combined `open-data-catalogue.tar.gz`.
+
+`--config-name` explicitly names the provider's Hub viewer subset. It starts
+with a lowercase letter and contains lowercase letters, digits or underscores.
+Provider identifiers retain their source identity, including hyphens; for
+example, provider `milano-pgt` can declare viewer `milano_pgt_catalogue`.
 
 | Command | Provider/database work | Upload |
 | --- | --- | --- |
