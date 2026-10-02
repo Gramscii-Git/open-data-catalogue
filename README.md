@@ -838,3 +838,27 @@ column type. Only those JSONL files are selected by the dataset card; manifests
 and quality reports are not loaded as data. Nested fields retain their JSON
 content without provider-dependent column inference. `viewer-manifest.json`
 records exact row counts, source archive hashes and output checksums.
+
+Viewer configuration schema 4 requires an explicit `groups` list alongside
+`tables`, `column_sets` and `published`. A group has a canonical `name` and a
+nonempty list of unique provider identities from `published`. For example, after
+publishing and reading back both provider snapshots, the release configuration
+can declare:
+
+```json
+{"name": "planning", "providers": ["milano-pgt", "lombardia-pgt"]}
+```
+
+The documentation builder verifies each pinned provider receipt and JSONL file,
+including byte count, digest, row count, dataset identity and typed projection.
+It emits one group subset whose `data` split explicitly lists those provider
+files in the declared order. Other providers remain outside the group. The
+individual provider views remain available with the same features. Group names
+cannot collide with existing subsets, and shared paths cannot declare conflicting
+features. This uses the Hub's documented [list of paths per split](https://huggingface.co/docs/hub/en/datasets-manual-configuration#splits).
+
+The committed configuration declares `groups: []`: the planning snapshots have
+not been published and have no immutable receipts yet. Supplying invented pins
+or silently omitting an unavailable group member is an error. The national
+planning census remains a separate artifact and viewer contract, backed by its
+actual source captures; provider grouping does not create or attest that census.
