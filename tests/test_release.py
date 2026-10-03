@@ -107,7 +107,7 @@ def write_archive(path, tables, declared=None, *, contract=DOCUMENT_CONTRACT):
         for name, body in tables.items()
     }
     manifest = {
-        "schema_version": 4,
+        "schema_version": 5,
         "taken_at": "2026-01-01T00:00:00Z",
         "tables": {name: len(body) for name, body in tables.items()}
         if declared is None
