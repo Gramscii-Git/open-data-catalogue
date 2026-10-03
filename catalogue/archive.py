@@ -15,7 +15,7 @@ from pathlib import Path
 from .documents import inspect_contract, inspect_membership
 from .structure_errors import declared_permanent
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 TABLE_KEYS = {
     "opendata_catalog": ("provider", "dataset_id"),
@@ -28,6 +28,7 @@ TABLE_KEYS = {
     "opendata_native_objects": ("sha256",),
     "opendata_native_bindings": ("provider", "dataset_id"),
     "opendata_native_exclusions": ("provider", "reference"),
+    "opendata_held_codes": ("provider", "dataset_id", "dimension_id"),
 }
 
 
@@ -143,7 +144,7 @@ def _inspect_archive(
             or type(manifest.get("schema_version")) is not int
             or manifest["schema_version"] != SCHEMA_VERSION
         ):
-            raise ValueError("snapshot schema_version must be 4 with native evidence and explicit document provenance")
+            raise ValueError("snapshot schema_version must be 5 with native evidence, held codes and explicit document provenance")
         document_contract = inspect_contract(manifest, policy)
         if not isinstance(manifest.get("taken_at"), str) or not manifest["taken_at"]:
             raise ValueError("snapshot taken_at is required")

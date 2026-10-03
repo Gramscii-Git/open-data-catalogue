@@ -155,7 +155,7 @@ that follows completion and validation of Eurostat and the other providers.
 ## Discovery catalogue
 
 Snapshot: **$catalogue_taken_at**. The discovery archive is a separate release;
-publishing the availability index does not refresh its ten tables or certify
+publishing the availability index does not refresh its eleven tables or certify
 that every catalogue entry is ready for acquisition.
 
 | Provider | Catalogue entries |
@@ -171,6 +171,12 @@ a stored row, preserving provider identifiers, source metadata and timestamps.
 Descriptions, structures, vocabulary labels and licences can be missing. Inclusion
 in the catalogue alone does not prove observation availability or permission to
 reuse a dataset.
+
+`opendata_held_codes` records, for each dataset and dimension, the codes its source
+publishes and the day they were checked. Its first rows come from the constraints
+archive of [ondata/opensdmx](https://github.com/ondata/opensdmx) (MIT) and from the
+providers' own constraints; the codes are the providers' (ISTAT and Eurostat under
+CC BY 4.0).
 
 [Download the pinned discovery archive]($catalogue_url).
 Size: **$catalogue_bytes bytes**. SHA-256: `$catalogue_sha256`.
