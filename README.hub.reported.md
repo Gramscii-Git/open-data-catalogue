@@ -30,6 +30,10 @@ The metadata archives contain no observation values. Availability indexes add ev
 about existing source datasets; its combinations are not additional datasets.
 The archives include no search vectors or credentials.
 
+## Acknowledgements: Vincenzo Patruno and onData
+
+Special thanks to [Vincenzo Patruno](https://www.linkedin.com/in/vincenzopatruno/) and [onData](https://github.com/ondata) for their work making official statistics easier to discover and use. Our catalogue-building workflow draws on the `istat_lookup.duckdb` territorial lookup from [onData's ISTAT MCP Server](https://github.com/ondata/istat_mcp_server) to connect ISTAT territory codes, names and geographic levels. We also use the [opensdmx](https://github.com/ondata/opensdmx) constraint archive as a source of previously collected dimension codes for ISTAT and Eurostat. These contributions helped us build territorial mappings and dataset selection tools while reducing repeated requests to the statistical services. We retain their attribution and the MIT licence of the reused artifacts. The statistical data remain attributable to their original publishers, whose dataset-specific terms continue to apply; territorial mappings and individual dimension codes do not establish that every combination of territory, period and indicator contains observations.
+
 ## Browse the tables
 
 The viewer exposes explicitly configured subsets, each with a `data` split:
