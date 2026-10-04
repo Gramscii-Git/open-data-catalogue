@@ -745,7 +745,11 @@ unlinking would permit concurrent locks on different inodes. An obsolete lock
 directory is rejected and requires explicit operator reconciliation.
 
 A later failure does not undo a verified upload or a successful activation of an
-earlier independent index. There is no automatic retry or resume. Inspect the
+earlier independent index. Discovery publishes only its archive, manifest,
+checksum and quality report. The complete Hub card and viewer tables change
+together in the final documentation phase, after all declared index updates and
+consumer checks pass. An intervening failure preserves their existing pins.
+There is no automatic retry or resume. Inspect the
 phase receipts and actual consumer status before starting a new run. A crash
 between consumer activation and saving its state requires explicit receipt
 reconciliation; the next preflight refuses the mismatched pin. A process killed
