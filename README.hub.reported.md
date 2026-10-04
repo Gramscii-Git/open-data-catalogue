@@ -18,8 +18,8 @@ $viewer_metadata
 
 This repository publishes independently versioned metadata and licensed source snapshots:
 
-- A **discovery catalogue** with **$catalogue_datasets dataset entries** from
-  ISTAT, Eurostat, OECD, ILO, DoveVannoINostriSoldi (DVNS) and Cruscotto Italia.
+- A **discovery catalogue** with **$catalogue_datasets dataset entries**,
+  covering the providers listed in the discovery table below.
 - **$availability_indexes independently pinned availability indexes** with
   **$availability_combinations joint combinations across $availability_datasets datasets**, built from complete
   source responses within the explicitly declared scope.
@@ -148,8 +148,9 @@ queryable structured data.
 | [Browsable catalogue rows](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/blob/80586f06a9d9c58053589ad932f2ff07f7b40600/providers/milano/catalogue.jsonl) | 3,292 JSONL rows |
 | [Validation report](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/blob/80586f06a9d9c58053589ad932f2ff07f7b40600/providers/milano/quality.json) | No quality issues |
 
-Milano enters the combined discovery archive only with the coordinated release
-that follows completion and validation of Eurostat and the other providers.
+The standalone provider snapshot and the combined catalogue retain independent
+inventories and source timestamps. The provider table below records the scope
+of the pinned combined release.
 
 ## Discovery catalogue
 
