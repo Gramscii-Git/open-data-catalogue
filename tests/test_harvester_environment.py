@@ -43,7 +43,7 @@ class HarvesterEnvironmentTests(unittest.TestCase):
         self.assertEqual(observed["environment_file"], str(self.config["deployment"]["environment_file"]))
         self.assertEqual(observed["file_content"], self.config["deployment"]["environment_file"].read_text())
         self.assertEqual(observed["prefix"], sys.prefix)
-        self.assertEqual(observed["module_path"], str(self.root / "core/server/sdg/plugins/opendata/__main__.py"))
+        self.assertEqual(observed["module_path"], str((self.root / "core/server/sdg/plugins/opendata/__main__.py").resolve()))
 
     def test_a_declared_process_setting_is_passed_exactly(self):
         self.config["deployment"]["process_environment"]["DATABASE_URL"] = "explicit process override"
