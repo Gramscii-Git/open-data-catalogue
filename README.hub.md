@@ -155,7 +155,7 @@ that follows completion and validation of Eurostat and the other providers.
 ## Discovery catalogue
 
 Snapshot: **$catalogue_taken_at**. The discovery archive is a separate release;
-publishing the availability index does not refresh its ten tables or certify
+publishing the availability index does not refresh its discovery tables or certify
 that every catalogue entry is ready for acquisition.
 
 | Provider | Catalogue entries |

@@ -101,13 +101,13 @@ def rows(contract=DOCUMENT_CONTRACT):
     return result
 
 
-def write_archive(path, tables, declared=None, *, contract=DOCUMENT_CONTRACT):
+def write_archive(path, tables, declared=None, *, contract=DOCUMENT_CONTRACT, snapshot_schema=5):
     payloads = {
         f"{name}.jsonl": "".join(json.dumps(row) + "\n" for row in body).encode()
         for name, body in tables.items()
     }
     manifest = {
-        "schema_version": 4,
+        "schema_version": snapshot_schema,
         "taken_at": "2026-01-01T00:00:00Z",
         "tables": {name: len(body) for name, body in tables.items()}
         if declared is None
@@ -153,6 +153,37 @@ class Releases(unittest.TestCase):
         )
         self.assertEqual(result["bytes"], self.archive.stat().st_size)
         self.assertEqual(result["tables"]["opendata_catalog"], 1)
+
+    def test_current_archive_retains_dated_native_held_codes(self):
+        data = rows()
+        data["opendata_held_codes"] = [{"provider": "sample", "dataset_id": "a", "dimension_id": "TIME_PERIOD",
+                                        "codes": ["2024", "2025"], "checked_on": "2026-01-01", "origin": "source"}]
+        report = self.inspect(data)
+        self.assertEqual(report["tables"]["opendata_held_codes"], 1)
+        self.assertEqual(report["manifest"]["schema_version"], 5)
+
+    def test_snapshot_without_the_current_schema_is_rejected(self):
+        write_archive(self.archive, rows(), snapshot_schema=4)
+        with self.assertRaisesRegex(ValueError, "schema_version must be 5"):
+            inspect_archive(self.archive, self.policy)
+
+    def test_held_codes_require_their_source_codes_date_and_origin(self):
+        row = {"provider": "sample", "dataset_id": "a", "dimension_id": "TIME_PERIOD",
+               "codes": ["2025"], "checked_on": "2026-01-01", "origin": "source"}
+        for field, value in (("codes", []), ("codes", [None]), ("checked_on", None),
+                             ("checked_on", "unknown"), ("origin", "")):
+            with self.subTest(field=field, value=value):
+                data = rows()
+                data["opendata_held_codes"] = [{**row, field: value}]
+                with self.assertRaises(ValueError):
+                    self.inspect(data)
+
+    def test_held_codes_cannot_reference_an_absent_catalogue_dataset(self):
+        data = rows()
+        data["opendata_held_codes"] = [{"provider": "sample", "dataset_id": "absent", "dimension_id": "TIME_PERIOD",
+                                        "codes": ["2025"], "checked_on": "2026-01-01", "origin": "source"}]
+        with self.assertRaises(QualityError):
+            self.inspect(data)
 
     def test_document_inputs_resolve_structures_from_bounded_storage(self):
         data = rows(self.contract)

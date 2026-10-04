@@ -162,7 +162,7 @@ configuration does not admit provider traffic or attest that coordination.
 Archived configurations remain historical evidence and are not upgraded
 automatically.
 
-Discovery snapshots use schema 4 and carry the validated document-language
+Discovery snapshots use schema 5, retain dated held codes, and carry the validated document-language
 contract and projection provenance. `quality.document_contract_sha256` pins that
 exact contract; obtain it from the configured harvester's `document-policy-status`
 command and review its provider languages, authorities and query routes before

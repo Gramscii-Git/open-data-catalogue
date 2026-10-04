@@ -10,12 +10,13 @@ import tarfile
 import tempfile
 import zlib
 from collections import Counter
+from datetime import date
 from pathlib import Path
 
 from .documents import inspect_contract, inspect_membership
 from .structure_errors import declared_permanent
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 TABLE_KEYS = {
     "opendata_catalog": ("provider", "dataset_id"),
@@ -28,6 +29,7 @@ TABLE_KEYS = {
     "opendata_native_objects": ("sha256",),
     "opendata_native_bindings": ("provider", "dataset_id"),
     "opendata_native_exclusions": ("provider", "reference"),
+    "opendata_held_codes": ("provider", "dataset_id", "dimension_id"),
 }
 
 
@@ -143,7 +145,7 @@ def _inspect_archive(
             or type(manifest.get("schema_version")) is not int
             or manifest["schema_version"] != SCHEMA_VERSION
         ):
-            raise ValueError("snapshot schema_version must be 4 with native evidence and explicit document provenance")
+            raise ValueError("snapshot schema_version must be 5 with native evidence, held codes and explicit document provenance")
         document_contract = inspect_contract(manifest, policy)
         if not isinstance(manifest.get("taken_at"), str) or not manifest["taken_at"]:
             raise ValueError("snapshot taken_at is required")
@@ -228,6 +230,15 @@ def _inspect_archive(
                     if not isinstance(row.get("text"), str) or not row["text"].strip():
                         raise ValueError(f"document {identity!r} has no text")
                     documents[identity] = row
+                elif table == "opendata_held_codes":
+                    codes, origin = row.get("codes"), row.get("origin")
+                    if (not isinstance(codes, list) or not codes
+                            or any(not isinstance(code, str) or not code for code in codes)
+                            or not isinstance(origin, str) or not origin.strip()):
+                        raise ValueError(f"held codes {identity!r} require nonempty source codes and origin")
+                    if not isinstance(row.get("checked_on"), str):
+                        raise ValueError(f"held codes {identity!r} require their source check date")
+                    date.fromisoformat(row["checked_on"])
                 elif table == "opendata_terms":
                     prefix, separator, code = row["scope"].partition(":")
                     metrics["unscoped_terms"] += (
