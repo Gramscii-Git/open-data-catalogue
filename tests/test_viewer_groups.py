@@ -89,7 +89,7 @@ class ViewerGroups(unittest.TestCase):
         archive = self.path.parent / "catalogue.tar.gz"
         write_archive(archive, rows())
         policy = load_publisher(ROOT / "publisher.example.toml")["quality"]
-        policy.update(minimum_datasets=1, providers={"sample": {"languages": ["en"], "vocabulary": True}},
+        policy.update(minimum_datasets=1, providers={"sample": {"languages": ["en"], "vocabulary": True, "vocabulary_scopes": "prefixed"}},
                       document_contract_sha256=digest(DOCUMENT_CONTRACT))
         report = inspect_archive(archive, policy)
         tables = [table for table in load(self.path) if table["name"] == "catalogue"]

@@ -71,7 +71,7 @@ class UpdateTests(unittest.TestCase):
         self.config["deployment"]["build"] = self.root / "build"
         self.config["deployment"]["hf"] = [sys.executable, str(ROOT / "tests/fixtures/publication_cli.py"),
                                                "--root", str(self.hub), "--endpoint", self.config["hub"]["endpoint"]]
-        self.config["quality"].update(minimum_datasets=1, providers={"sample": {"languages": ["en"], "vocabulary": True}})
+        self.config["quality"].update(minimum_datasets=1, providers={"sample": {"languages": ["en"], "vocabulary": True, "vocabulary_scopes": "prefixed"}})
         self.config["quality"]["document_contract_sha256"] = digest(DOCUMENT_CONTRACT)
         self.policy = self.root / "policy.toml"
         self.policy.write_text((ROOT / "availability-policy.example.toml").read_text().replace(

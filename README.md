@@ -132,11 +132,11 @@ library. Copy `publisher.example.toml` to `publisher.local.toml`, then configure
   It must support `hf upload --json` returning a commit URL.
 - The Hub endpoint, repository, branch, build directory, README template and
   typed viewer configuration.
-- Required providers, document languages, vocabulary requirements and release limits.
+- Required providers, document languages, vocabulary requirements, scope strategies and release limits.
 - The scheduler interpreter, executable search path, log path and explicit
   interval or calendar trigger.
 
-Publisher configuration schema 5 requires the complete process environment for
+Publisher configuration schema 6 requires the complete process environment for
 harvester and offline-projection children. They inherit no shell variables.
 Declare operating-system, certificate, proxy, temporary-directory and cache
 settings there when the deployment requires them. An explicitly empty mapping
@@ -270,6 +270,23 @@ required structures/documents, missing licences for served datasets, legacy
 vocabulary scopes and missing structure-to-vocabulary mappings. Its minimum
 dataset count is an explicit release baseline of current datasets. Intentional
 coverage reductions require policy review.
+
+Configuration schema 6 requires `vocabulary_scopes` for every provider.
+`prefixed` checks scopes against the declared `term_scopes` prefixes.
+`arcgis_structure` requires vocabulary and binds each scope to a successful
+archived spatial structure: its layer URL must match the provider's base URL,
+encoded dataset identity and catalogue service source. Field concepts use that
+URL with `#fields`; classification scopes use the same URL with the native field
+identity. Every dimension, code, label and native language must match that
+structure, and every expected projection must be present. Arbitrary URLs,
+unknown fields and invented terms are rejected.
+
+Native null-only domains and domains whose values are not enumerated retain
+their declared classification scopes without fabricated terms. Null values stay
+in the structure; vocabulary contains only non-null codes and preserves their
+source text, including spaces. Enumerated non-null codes must match the native
+`non_null_distinct_count`. This rule does not relax structure, document or
+licence requirements.
 
 A rejected preparation retains its archive and `quality.json` for inspection.
 The published catalogue may predate this policy and fail it; that is not permission
@@ -714,7 +731,7 @@ parser, database transaction, upload or readback. Expired evidence still fails
 admission. Sleeping computers, source outages and missed jobs can leave expired
 evidence; the consumer must keep refusing it.
 
-Publisher configuration schema 5 requires `deployment.stop_grace_seconds` for
+Publisher configuration schema 6 requires `deployment.stop_grace_seconds` for
 command shutdown after cancellation, owner death or an unclosed child process.
 Each harvester, upload and offline-verification command has a supervisor with an
 owner-lifetime pipe and a separate process group. Owner shutdown closes the pipe;

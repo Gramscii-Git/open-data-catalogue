@@ -137,7 +137,7 @@ class Releases(unittest.TestCase):
         self.config = load(ROOT / "publisher.example.toml")
         self.policy = copy.deepcopy(self.config["quality"])
         self.policy["minimum_datasets"] = 1
-        self.policy["providers"] = {"sample": {"languages": ["en"], "vocabulary": True}}
+        self.policy["providers"] = {"sample": {"languages": ["en"], "vocabulary": True, "vocabulary_scopes": "prefixed"}}
         self.contract = copy.deepcopy(DOCUMENT_CONTRACT)
         self.policy["document_contract_sha256"] = digest(self.contract)
 
@@ -571,7 +571,7 @@ class Releases(unittest.TestCase):
             original.replace(
                 "maximum_structure_errors = 0", "maximum_structure_errors = true"
             ),
-            original.replace("schema = 5", "schema = true"),
+            original.replace("schema = 6", "schema = true"),
             original.replace(
                 'archive = "open-data-catalogue.tar.gz"',
                 'archive = "../archive.tar.gz"',
