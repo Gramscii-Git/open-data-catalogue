@@ -71,7 +71,7 @@ class UpdateTests(unittest.TestCase):
         self.config["deployment"]["build"] = self.root / "build"
         self.config["deployment"]["hf"] = [sys.executable, str(ROOT / "tests/fixtures/publication_cli.py"),
                                                "--root", str(self.hub), "--endpoint", self.config["hub"]["endpoint"]]
-        self.config["quality"].update(minimum_datasets=1, providers={"sample": {"languages": ["en"], "vocabulary": True}})
+        self.config["quality"].update(minimum_datasets=1, providers={"sample": {"languages": ["en"], "vocabulary": True, "vocabulary_scopes": "prefixed"}})
         self.config["quality"]["document_contract_sha256"] = digest(DOCUMENT_CONTRACT)
         self.policy = self.root / "policy.toml"
         self.policy.write_text((ROOT / "availability-policy.example.toml").read_text().replace(
@@ -401,7 +401,31 @@ class UpdateTests(unittest.TestCase):
         archive = f"/{publication['revision']}/{self.config['hub']['archive']}"
         self.assertEqual(sum(path.endswith(archive) for path in self.requests), 1)
         self.assertTrue(any(call[0] == "export" for call in self.harvester_calls))
-        self.assertEqual(len((self.hub / "uploads.jsonl").read_text().splitlines()), 3)
+        uploads = [json.loads(line) for line in (self.hub / "uploads.jsonl").read_text().splitlines()]
+        self.assertEqual(len(uploads), 3)
+        self.assertEqual(set(uploads[0]["files"]), {self.config["hub"]["archive"], "manifest.json", "SHA256SUMS", "quality.json"})
+        self.assertIn("README.md", uploads[-1]["files"])
+        self.assertIn("viewer/national_combinations.jsonl", uploads[-1]["files"])
+
+    def test_discovery_then_failed_activation_preserves_the_complete_hub_card(self):
+        self.plan["discovery"]["action"] = "publish"
+        self.fail_activation = True
+        original = json.loads(self.state.read_bytes())
+        with self.assertRaisesRegex(ValueError, "consumer refused"):
+            self.execute()
+        directory = self.root / "execution"
+        discovery = json.loads((directory / "discovery/publication.json").read_bytes())
+        self.assertTrue(discovery["verified"])
+        state, _ = load_state(self.state, self.config)
+        self.assertEqual(state["indexes"], original["indexes"])
+        self.assertEqual(state["catalogue"]["verification"], str(directory / "discovery/verification.json"))
+        uploads = [json.loads(line) for line in (self.hub / "uploads.jsonl").read_text().splitlines()]
+        self.assertEqual(len(uploads), 2)
+        self.assertEqual(set(uploads[0]["files"]), {self.config["hub"]["archive"], "manifest.json", "SHA256SUMS", "quality.json"})
+        self.assertTrue(all("README.md" not in upload["files"] and "viewer-manifest.json" not in upload["files"]
+                            for upload in uploads))
+        self.assertFalse((directory / "documentation").exists())
+        self.assertFalse((directory / "complete.json").exists())
 
     def test_incompatible_discovery_harvester_is_refused_before_catalogue_mutations(self):
         calls = []

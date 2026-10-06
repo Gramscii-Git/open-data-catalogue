@@ -12,10 +12,13 @@ from .publish import file_url
 
 def _configuration(path):
     config = json.loads(path.read_text(encoding="utf-8"))
-    if set(config) != {"schema_version", "tables", "column_sets", "published"} or config["schema_version"] != 3:
+    if (set(config) != {"schema_version", "tables", "column_sets", "published", "groups"}
+            or type(config["schema_version"]) is not int or config["schema_version"] != 4):
         raise ValueError("unsupported viewer configuration")
     if not isinstance(config["published"], list):
         raise TypeError("published viewer tables must be an explicit list")
+    if not isinstance(config["groups"], list):
+        raise TypeError("viewer groups must be an explicit list")
     return config
 
 
@@ -70,7 +73,26 @@ def load(path):
         raise ValueError("viewer column sets must be referenced by a table")
     if sum(table["default"] for table in tables) != 1:
         raise ValueError("viewer must declare exactly one default table")
+    _groups(config, names)
     return tables
+
+
+def _groups(config, names):
+    providers = [entry["provider"] for entry in map(_published_entry, config["published"])]
+    if len(set(providers)) != len(providers):
+        raise ValueError("published viewer providers must be unique")
+    names = set(names)
+    for group in config["groups"]:
+        if not isinstance(group, dict) or set(group) != {"name", "providers"}:
+            raise ValueError("viewer group fields are incomplete or unknown")
+        name, members = group["name"], group["providers"]
+        if not isinstance(name, str) or not re.fullmatch(r"[a-z][a-z0-9_]*", name) or name in names:
+            raise ValueError("viewer group names must be canonical and unique")
+        names.add(name)
+        if (not isinstance(members, list) or not members
+                or any(not isinstance(member, str) or member not in providers for member in members)
+                or len(set(members)) != len(members)):
+            raise ValueError("viewer groups require unique explicitly published providers")
 
 
 def _published_entry(value):
@@ -121,6 +143,7 @@ def published(path, hub):
     columns = catalogue[0]["columns"]
     metadata, evidence = [], []
     names = {table["name"] for table in tables}
+    names.update(group["name"] for group in config["groups"])
     paths = {table["path"] for table in tables}
     for raw in config["published"]:
         entry = _published_entry(raw)
@@ -156,6 +179,7 @@ def published(path, hub):
         )
         if len(data.splitlines()) != receipt["rows"]:
             raise ValueError("published provider viewer row count differs from its receipt")
+        _validate_catalogue(data, columns, entry["provider"])
         metadata.append({
             "config_name": receipt["config_name"],
             "default": False,
@@ -166,7 +190,34 @@ def published(path, hub):
             ],
         })
         evidence.append({**entry, **receipt, "path": target})
+    by_provider = dict(zip((entry["provider"] for entry in evidence), metadata, strict=True))
+    for group in config["groups"]:
+        members = [by_provider[provider] for provider in group["providers"]]
+        metadata.append({
+            "config_name": group["name"],
+            "default": False,
+            "data_files": [{"split": "data", "path": [member["data_files"][0]["path"] for member in members]}],
+            "features": members[0]["features"],
+        })
     return metadata, evidence
+
+
+def _validate_catalogue(data, columns, provider):
+    identities = set()
+    for line in data.splitlines():
+        row = json.loads(line)
+        if not isinstance(row, dict) or not isinstance(row.get("record_json"), str):
+            raise TypeError("published viewer row must contain its source record")
+        source = json.loads(row["record_json"])
+        if (not isinstance(source, dict) or source.get("provider") != provider
+                or not isinstance(source.get("dataset_id"), str) or not source["dataset_id"].strip()):
+            raise ValueError("published viewer source must identify its provider and dataset")
+        if (json.dumps(row, sort_keys=True, allow_nan=False)
+                != json.dumps(project(source, columns), sort_keys=True, allow_nan=False)):
+            raise ValueError("published viewer row differs from its typed source projection")
+        if source["dataset_id"] in identities:
+            raise ValueError("published viewer dataset identities must be unique")
+        identities.add(source["dataset_id"])
 
 
 def project(row, columns):
@@ -234,8 +285,16 @@ def update_card(readme, external_metadata):
     configs = json.loads(lines[index].removeprefix("configs: "))
     external_names = {config["config_name"] for config in external_metadata}
     retained = [config for config in configs if config.get("config_name") not in external_names]
-    paths = {item["data_files"][0]["path"] for item in retained}
-    if any(item["data_files"][0]["path"] in paths for item in external_metadata):
-        raise ValueError("published viewer path collides with an existing Hub config")
+    names, paths = set(), {}
+    for config in [*retained, *external_metadata]:
+        if config["config_name"] in names:
+            raise ValueError("Hub viewer config names must be unique")
+        names.add(config["config_name"])
+        for item in config["data_files"]:
+            members = item["path"] if isinstance(item["path"], list) else [item["path"]]
+            for path in members:
+                if path in paths and paths[path] != config["features"]:
+                    raise ValueError("shared viewer paths must declare identical features")
+                paths[path] = config["features"]
     lines[index] = "configs: " + json.dumps([*retained, *external_metadata], ensure_ascii=False) + "\n"
     return "".join(lines)

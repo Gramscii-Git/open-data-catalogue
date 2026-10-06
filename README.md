@@ -132,11 +132,11 @@ library. Copy `publisher.example.toml` to `publisher.local.toml`, then configure
   It must support `hf upload --json` returning a commit URL.
 - The Hub endpoint, repository, branch, build directory, README template and
   typed viewer configuration.
-- Required providers, document languages, vocabulary requirements and release limits.
+- Required providers, document languages, vocabulary requirements, scope strategies and release limits.
 - The scheduler interpreter, executable search path, log path and explicit
   interval or calendar trigger.
 
-Publisher configuration schema 5 requires the complete process environment for
+Publisher configuration schema 6 requires the complete process environment for
 harvester and offline-projection children. They inherit no shell variables.
 Declare operating-system, certificate, proxy, temporary-directory and cache
 settings there when the deployment requires them. An explicitly empty mapping
@@ -162,7 +162,7 @@ configuration does not admit provider traffic or attest that coordination.
 Archived configurations remain historical evidence and are not upgraded
 automatically.
 
-Discovery snapshots use schema 4 and carry the validated document-language
+Discovery snapshots use schema 5, retain dated held codes, and carry the validated document-language
 contract and projection provenance. `quality.document_contract_sha256` pins that
 exact contract; obtain it from the configured harvester's `document-policy-status`
 command and review its provider languages, authorities and query routes before
@@ -214,6 +214,7 @@ without replacing the combined catalogue:
 ./update --config publisher.local.toml publish-provider-catalogue \
   --archive path/to/provider-catalogue.tar.gz \
   --provider PROVIDER_ID \
+  --config-name VIEWER_NAME \
   --destination providers/PROVIDER_ID \
   --minimum-datasets EXPECTED_MINIMUM \
   --readme-template README.provider.md \
@@ -224,6 +225,11 @@ The command validates the provider scope against the full installed document
 contract, projects a directly browsable `catalogue.jsonl`, uploads only the
 provider directory and verifies every uploaded file at the immutable commit.
 It never replaces the combined `open-data-catalogue.tar.gz`.
+
+`--config-name` explicitly names the provider's Hub viewer subset. It starts
+with a lowercase letter and contains lowercase letters, digits or underscores.
+Provider identifiers retain their source identity, including hyphens; for
+example, provider `milano-pgt` can declare viewer `milano_pgt_catalogue`.
 
 | Command | Provider/database work | Upload |
 | --- | --- | --- |
@@ -264,6 +270,23 @@ required structures/documents, missing licences for served datasets, legacy
 vocabulary scopes and missing structure-to-vocabulary mappings. Its minimum
 dataset count is an explicit release baseline of current datasets. Intentional
 coverage reductions require policy review.
+
+Configuration schema 6 requires `vocabulary_scopes` for every provider.
+`prefixed` checks scopes against the declared `term_scopes` prefixes.
+`arcgis_structure` requires vocabulary and binds each scope to a successful
+archived spatial structure: its layer URL must match the provider's base URL,
+encoded dataset identity and catalogue service source. Field concepts use that
+URL with `#fields`; classification scopes use the same URL with the native field
+identity. Every dimension, code, label and native language must match that
+structure, and every expected projection must be present. Arbitrary URLs,
+unknown fields and invented terms are rejected.
+
+Native null-only domains and domains whose values are not enumerated retain
+their declared classification scopes without fabricated terms. Null values stay
+in the structure; vocabulary contains only non-null codes and preserves their
+source text, including spaces. Enumerated non-null codes must match the native
+`non_null_distinct_count`. This rule does not relax structure, document or
+licence requirements.
 
 A rejected preparation retains its archive and `quality.json` for inspection.
 The published catalogue may predate this policy and fail it; that is not permission
@@ -708,7 +731,7 @@ parser, database transaction, upload or readback. Expired evidence still fails
 admission. Sleeping computers, source outages and missed jobs can leave expired
 evidence; the consumer must keep refusing it.
 
-Publisher configuration schema 5 requires `deployment.stop_grace_seconds` for
+Publisher configuration schema 6 requires `deployment.stop_grace_seconds` for
 command shutdown after cancellation, owner death or an unclosed child process.
 Each harvester, upload and offline-verification command has a supervisor with an
 owner-lifetime pipe and a separate process group. Owner shutdown closes the pipe;
@@ -739,7 +762,11 @@ unlinking would permit concurrent locks on different inodes. An obsolete lock
 directory is rejected and requires explicit operator reconciliation.
 
 A later failure does not undo a verified upload or a successful activation of an
-earlier independent index. There is no automatic retry or resume. Inspect the
+earlier independent index. Discovery publishes only its archive, manifest,
+checksum and quality report. The complete Hub card and viewer tables change
+together in the final documentation phase, after all declared index updates and
+consumer checks pass. An intervening failure preserves their existing pins.
+There is no automatic retry or resume. Inspect the
 phase receipts and actual consumer status before starting a new run. A crash
 between consumer activation and saving its state requires explicit receipt
 reconciliation; the next preflight refuses the mismatched pin. A process killed
@@ -832,3 +859,27 @@ column type. Only those JSONL files are selected by the dataset card; manifests
 and quality reports are not loaded as data. Nested fields retain their JSON
 content without provider-dependent column inference. `viewer-manifest.json`
 records exact row counts, source archive hashes and output checksums.
+
+Viewer configuration schema 4 requires an explicit `groups` list alongside
+`tables`, `column_sets` and `published`. A group has a canonical `name` and a
+nonempty list of unique provider identities from `published`. For example, after
+publishing and reading back both provider snapshots, the release configuration
+can declare:
+
+```json
+{"name": "planning", "providers": ["milano-pgt", "lombardia-pgt"]}
+```
+
+The documentation builder verifies each pinned provider receipt and JSONL file,
+including byte count, digest, row count, dataset identity and typed projection.
+It emits one group subset whose `data` split explicitly lists those provider
+files in the declared order. Other providers remain outside the group. The
+individual provider views remain available with the same features. Group names
+cannot collide with existing subsets, and shared paths cannot declare conflicting
+features. This uses the Hub's documented [list of paths per split](https://huggingface.co/docs/hub/en/datasets-manual-configuration#splits).
+
+The committed configuration declares `groups: []`: the planning snapshots have
+not been published and have no immutable receipts yet. Supplying invented pins
+or silently omitting an unavailable group member is an error. The national
+planning census remains a separate artifact and viewer contract, backed by its
+actual source captures; provider grouping does not create or attest that census.

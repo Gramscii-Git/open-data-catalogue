@@ -1,4 +1,4 @@
-schema = 5
+schema = 6
 
 [deployment]
 harvester = "../harvester"
@@ -35,36 +35,47 @@ term_scopes = ["codelist", "conceptscheme"]
 [quality.providers.istat]
 languages = ["it", "en"]
 vocabulary = true
+vocabulary_scopes = "prefixed"
 [quality.providers.eurostat]
 languages = ["en"]
 vocabulary = true
+vocabulary_scopes = "prefixed"
 [quality.providers.oecd]
 languages = ["en"]
 vocabulary = true
+vocabulary_scopes = "prefixed"
 [quality.providers.ilo]
 languages = ["en"]
 vocabulary = true
+vocabulary_scopes = "prefixed"
 [quality.providers.dvns]
 languages = ["it", "en"]
 vocabulary = false
+vocabulary_scopes = "prefixed"
 [quality.providers.cruscotto]
 languages = ["it"]
 vocabulary = false
+vocabulary_scopes = "prefixed"
 [quality.providers.milano]
 languages = ["it"]
 vocabulary = false
+vocabulary_scopes = "prefixed"
 [quality.providers.napoli]
 languages = ["it"]
 vocabulary = false
+vocabulary_scopes = "prefixed"
 [quality.providers.roma]
 languages = ["it"]
 vocabulary = false
+vocabulary_scopes = "prefixed"
 [quality.providers.bologna]
 languages = ["it"]
 vocabulary = false
+vocabulary_scopes = "prefixed"
 [quality.providers.torino]
 languages = ["it"]
 vocabulary = false
+vocabulary_scopes = "prefixed"
 
 [schedule]
 label = "it.gramscii.open-data-catalogue"

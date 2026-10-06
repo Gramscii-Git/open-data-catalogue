@@ -12,4 +12,4 @@ args = parser.parse_args()
 observed = ("DATABASE_URL", "OPENDATA_PACING", "HTTP_HOSTS", "AUTH_TOKEN", "PYTHONPATH", "NATIVE_CONTEXT", "UNDECLARED_PARENT")
 print(json.dumps({"environment": {key: os.environ[key] for key in observed if key in os.environ},
                   "environment_keys": sorted(os.environ), "environment_file": str(args.env_file),
-                  "file_content": args.env_file.read_text(), "prefix": sys.prefix}))
+                  "file_content": args.env_file.read_text(), "prefix": sys.prefix, "module_path": str(Path(__file__).resolve())}))

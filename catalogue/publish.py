@@ -65,9 +65,6 @@ def verify_download(url: str, sha256: str, size: int, timeout: float | None) -> 
 
 
 def upload(directory: Path, config: dict, report: dict) -> dict:
-    """Publish the catalogue; the archive's one readback is also its verification receipt."""
-    from .receipts import verify_catalogue  # receipts reads the Hub through this module
-
     hub = config["hub"]
     viewer_manifest = json.loads((directory / "viewer-manifest.json").read_bytes())
     files = (
@@ -79,6 +76,19 @@ def upload(directory: Path, config: dict, report: dict) -> dict:
         "viewer-manifest.json",
         *(entry["path"] for entry in viewer_manifest["files"]),
     )
+    return _upload_catalogue(directory, config, report, files)
+
+
+def upload_archive(directory: Path, config: dict, report: dict) -> dict:
+    """Publish discovery evidence while the complete Hub card keeps its current pins."""
+    files = (config["hub"]["archive"], "manifest.json", "SHA256SUMS", "quality.json")
+    return _upload_catalogue(directory, config, report, files)
+
+
+def _upload_catalogue(directory: Path, config: dict, report: dict, files) -> dict:
+    from .receipts import verify_catalogue  # receipts reads the Hub through this module
+
+    hub = config["hub"]
     publication = send_files(directory, config, files, hub["archive"], report)
     verify_catalogue(config, directory / hub["archive"], publication["revision"], publication["sha256"],
                      publication["bytes"], directory / "verification.json")

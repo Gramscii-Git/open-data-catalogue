@@ -21,6 +21,8 @@ class HarvesterEnvironmentTests(unittest.TestCase):
         self.root = Path(directory.name)
         package = self.root / "core/server/sdg/plugins/opendata"
         package.mkdir(parents=True)
+        for directory in (package, package.parent, package.parent.parent):
+            (directory / "__init__.py").touch()
         (package / "__main__.py").write_bytes((ROOT / "tests/fixtures/harvester_environment.py").read_bytes())
         environment = self.root / "deployment.env"
         environment.write_text('DATABASE_URL="declared database"\nOPENDATA_PACING="declared pacing"\n')
@@ -41,6 +43,7 @@ class HarvesterEnvironmentTests(unittest.TestCase):
         self.assertEqual(observed["environment_file"], str(self.config["deployment"]["environment_file"]))
         self.assertEqual(observed["file_content"], self.config["deployment"]["environment_file"].read_text())
         self.assertEqual(observed["prefix"], sys.prefix)
+        self.assertEqual(observed["module_path"], str((self.root / "core/server/sdg/plugins/opendata/__main__.py").resolve()))
 
     def test_a_declared_process_setting_is_passed_exactly(self):
         self.config["deployment"]["process_environment"]["DATABASE_URL"] = "explicit process override"

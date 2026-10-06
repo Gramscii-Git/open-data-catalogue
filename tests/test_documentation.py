@@ -37,7 +37,7 @@ class DocumentationTests(unittest.TestCase):
             'providers = ["dvns", "cruscotto"]', 'providers = ["source"]',
         ))
         self.config = load(ROOT / "publisher.example.toml")
-        self.config["quality"].update(minimum_datasets=1, providers={"sample": {"languages": ["en"], "vocabulary": True}})
+        self.config["quality"].update(minimum_datasets=1, providers={"sample": {"languages": ["en"], "vocabulary": True, "vocabulary_scopes": "prefixed"}})
         self.config["quality"]["document_contract_sha256"] = digest(DOCUMENT_CONTRACT)
         viewer = json.loads((ROOT / "viewer.json").read_text())
         viewer["published"] = []
