@@ -18,8 +18,8 @@ $viewer_metadata
 
 This repository publishes independently versioned metadata and licensed source snapshots:
 
-- A **discovery catalogue** with **$catalogue_datasets dataset entries** from
-  ISTAT, Eurostat, OECD, ILO, DoveVannoINostriSoldi (DVNS) and Cruscotto Italia.
+- A **discovery catalogue** with **$catalogue_datasets dataset entries**,
+  covering the providers listed in the discovery table below.
 - **$availability_indexes independently pinned availability indexes** with
   **$availability_combinations joint combinations across $availability_datasets datasets**, built from complete
   source responses within the explicitly declared scope.
@@ -29,6 +29,10 @@ This repository publishes independently versioned metadata and licensed source s
 The metadata archives contain no observation values. Availability indexes add evidence
 about existing source datasets; its combinations are not additional datasets.
 The archives include no search vectors or credentials.
+
+## Acknowledgements: Vincenzo Patruno and onData
+
+Special thanks to [Vincenzo Patruno](https://www.linkedin.com/in/vincenzopatruno/) and [onData](https://github.com/ondata) for their work making official statistics easier to discover and use. Our catalogue-building workflow draws on the `istat_lookup.duckdb` territorial lookup from [onData's ISTAT MCP Server](https://github.com/ondata/istat_mcp_server) to connect ISTAT territory codes, names and geographic levels. We also use the [opensdmx](https://github.com/ondata/opensdmx) constraint archive as a source of previously collected dimension codes for ISTAT and Eurostat. These contributions helped us build territorial mappings and dataset selection tools while reducing repeated requests to the statistical services. We retain their attribution and the MIT licence of the reused artifacts. The statistical data remain attributable to their original publishers, whose dataset-specific terms continue to apply; territorial mappings and individual dimension codes do not establish that every combination of territory, period and indicator contains observations.
 
 ## Browse the tables
 
@@ -148,13 +152,14 @@ queryable structured data.
 | [Browsable catalogue rows](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/blob/80586f06a9d9c58053589ad932f2ff07f7b40600/providers/milano/catalogue.jsonl) | 3,292 JSONL rows |
 | [Validation report](https://huggingface.co/datasets/Gramscii-IT/european-open-data-catalogue/blob/80586f06a9d9c58053589ad932f2ff07f7b40600/providers/milano/quality.json) | No quality issues |
 
-Milano enters the combined discovery archive only with the coordinated release
-that follows completion and validation of Eurostat and the other providers.
+The standalone provider snapshot and the combined catalogue retain independent
+inventories and source timestamps. The provider table below records the scope
+of the pinned combined release.
 
 ## Discovery catalogue
 
 Snapshot: **$catalogue_taken_at**. The discovery archive is a separate release;
-publishing the availability index does not refresh its eleven tables or certify
+publishing the availability index does not refresh its discovery tables or certify
 that every catalogue entry is ready for acquisition.
 
 | Provider | Catalogue entries |
@@ -172,10 +177,9 @@ in the catalogue alone does not prove observation availability or permission to
 reuse a dataset.
 
 `opendata_held_codes` records, for each dataset and dimension, the codes its source
-publishes and the day they were checked. Its first rows come from the constraints
-archive of [ondata/opensdmx](https://github.com/ondata/opensdmx) (MIT) and from the
-providers' own constraints; the codes are the providers' (ISTAT and Eurostat under
-CC BY 4.0).
+publishes and the day they were checked, from the providers' own constraints and
+the opensdmx archive acknowledged above; the codes are the providers' (ISTAT and
+Eurostat under CC BY 4.0).
 
 [Download the pinned discovery archive]($catalogue_url).
 Size: **$catalogue_bytes bytes**. SHA-256: `$catalogue_sha256`.

@@ -10,10 +10,12 @@ import tarfile
 import tempfile
 import zlib
 from collections import Counter
+from datetime import date
 from pathlib import Path
 
 from .documents import inspect_contract, inspect_membership
 from .structure_errors import declared_permanent
+from .vocabulary import Vocabulary
 
 SCHEMA_VERSION = 5
 
@@ -146,6 +148,7 @@ def _inspect_archive(
         ):
             raise ValueError("snapshot schema_version must be 5 with native evidence, held codes and explicit document provenance")
         document_contract = inspect_contract(manifest, policy)
+        vocabulary = Vocabulary(policy, document_contract)
         if not isinstance(manifest.get("taken_at"), str) or not manifest["taken_at"]:
             raise ValueError("snapshot taken_at is required")
         if not isinstance(manifest.get("tables"), dict) or set(
@@ -225,24 +228,33 @@ def _inspect_archive(
                     metrics["structure_errors"] += row["error"] is not None and not permanent
                     if row["harvested_at"] is not None:
                         structures.add(identity)
+                    vocabulary.add_structure(row, catalog.get(identity))
                 elif table == "opendata_documents":
                     if not isinstance(row.get("text"), str) or not row["text"].strip():
                         raise ValueError(f"document {identity!r} has no text")
                     documents[identity] = row
+                elif table == "opendata_held_codes":
+                    codes, origin = row.get("codes"), row.get("origin")
+                    if (not isinstance(codes, list) or not codes
+                            or any(not isinstance(code, str) or not code for code in codes)
+                            or not isinstance(origin, str) or not origin.strip()):
+                        raise ValueError(f"held codes {identity!r} require nonempty source codes and origin")
+                    if not isinstance(row.get("checked_on"), str):
+                        raise ValueError(f"held codes {identity!r} require their source check date")
+                    date.fromisoformat(row["checked_on"])
                 elif table == "opendata_terms":
-                    prefix, separator, code = row["scope"].partition(":")
-                    metrics["unscoped_terms"] += (
-                        not separator or not code or prefix not in policy["term_scopes"]
-                    )
+                    metrics["unscoped_terms"] += not vocabulary.term(row)
                     terms.add((provider, row["scope"]))
                 elif table == "opendata_structure_dims":
                     dimensions.add(provider)
+                    if vocabulary.native(provider):
+                        vocabulary.dimension(row)
                     for name in ("concept_scope", "codelist_scope"):
                         if not isinstance(row.get(name), str):
                             raise TypeError(
                                 f"dimension {identity!r} must declare {name}"
                             )
-                        if row[name]:
+                        if row[name] and not vocabulary.native(provider):
                             references.add((provider, row[name]))
                 elif table == "opendata_native_objects":
                     try:
@@ -283,6 +295,7 @@ def _inspect_archive(
         issues.append(
             f"{len(related_datasets - catalog.keys())} dataset references have no catalogue row"
         )
+    issues.extend(vocabulary.issues())
     if references - terms:
         issues.append(
             f"{len(references - terms)} dimension vocabulary references have no terms"

@@ -26,6 +26,8 @@ class CollectionTests(unittest.TestCase):
         self.core = self.root / "core"
         package = self.core / "server/sdg/plugins/opendata"
         package.mkdir(parents=True)
+        for directory in (package, package.parent, package.parent.parent):
+            (directory / "__init__.py").touch()
         (package / "__main__.py").write_bytes((ROOT / "tests/fixtures/collection_command.py").read_bytes())
         self.git("init", "-q")
         self.git("add", ".")

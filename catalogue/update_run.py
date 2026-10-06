@@ -10,7 +10,7 @@ from pathlib import Path
 
 from . import availability_build, availability_publish, documentation, snapshots
 from .documentation_evidence import read as read_evidence
-from .publish import upload
+from .publish import upload_archive
 from .receipts import (
     read_verification,
     verify_local_archive,
@@ -170,7 +170,7 @@ def discovery_release(directory, config, action, harvester, prepare_catalogue):
         harvester(config, "enrich")
         harvester(config, "verify")
     report = prepare_catalogue(directory, config, harvester)
-    return upload(directory, config, report)
+    return upload_archive(directory, config, report)
 
 
 def activate(config, harvester, name, publication_path, expected, snapshot_paths):

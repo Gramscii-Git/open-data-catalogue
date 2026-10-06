@@ -49,8 +49,8 @@ def load(path: Path) -> dict:
     fields(
         data, {"schema", "deployment", "hub", "quality", "schedule"}, "configuration"
     )
-    if type(data["schema"]) is not int or data["schema"] != 5:
-        raise ValueError("configuration schema must be 5")
+    if type(data["schema"]) is not int or data["schema"] != 6:
+        raise ValueError("configuration schema must be 6")
     deployment = data["deployment"]
     fields(
         deployment,
@@ -139,12 +139,16 @@ def load(path: Path) -> dict:
         raise ValueError("quality.providers is required")
     for name, provider in policy["providers"].items():
         text(name, "provider identity")
-        fields(provider, {"languages", "vocabulary"}, f"provider {name}")
+        fields(provider, {"languages", "vocabulary", "vocabulary_scopes"}, f"provider {name}")
         provider["languages"] = strings(
             provider["languages"], f"provider {name} languages"
         )
         if type(provider["vocabulary"]) is not bool:
             raise ValueError(f"provider {name} vocabulary must be boolean")
+        if provider["vocabulary_scopes"] not in {"prefixed", "arcgis_structure"}:
+            raise ValueError(f"provider {name} vocabulary_scopes must be prefixed or arcgis_structure")
+        if provider["vocabulary_scopes"] == "arcgis_structure" and not provider["vocabulary"]:
+            raise ValueError(f"provider {name} native vocabulary must be required")
     schedule = data["schedule"]
     if not isinstance(schedule, dict) or "action" not in schedule:
         raise ValueError("schedule.action is required")
