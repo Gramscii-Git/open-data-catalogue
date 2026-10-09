@@ -273,11 +273,13 @@ coverage reductions require policy review.
 
 Configuration schema 6 requires `vocabulary_scopes` for every provider.
 `prefixed` checks scopes against the declared `term_scopes` prefixes.
-`arcgis_structure` requires vocabulary and binds each scope to a successful
-archived spatial structure: its layer URL must match the provider's base URL,
-encoded dataset identity and catalogue service source. Field concepts use that
-URL with `#fields`; classification scopes use the same URL with the native field
-identity. Every dimension, code, label and native language must match that
+`arcgis_structure` and `wfs_structure` require vocabulary and bind each scope
+to a successful archived spatial structure of an `arcgis` or `wfs` source: its
+layer URL must match the catalogue service source and the URL the source driver
+writes, the provider's base URL with the encoded dataset identity for ArcGIS, or
+the service's `DescribeFeatureType` request for the dataset's feature type for
+WFS. Field concepts use that URL with `#fields`; classification scopes use the
+same URL with the native field identity. Every dimension, code, label and native language must match that
 structure, and every expected projection must be present. Arbitrary URLs,
 unknown fields and invented terms are rejected.
 

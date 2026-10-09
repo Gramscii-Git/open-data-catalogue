@@ -1,7 +1,10 @@
 """Bind native vocabulary projections to their archived layer structures."""
 
 import math
-from urllib.parse import quote, urlsplit
+from urllib.parse import quote, urlencode, urlsplit
+
+# The source driver whose layers each native strategy binds its scopes to.
+NATIVE = {"arcgis_structure": "arcgis", "wfs_structure": "wfs"}
 
 
 class Vocabulary:
@@ -14,27 +17,44 @@ class Vocabulary:
         self.seen_terms = set()
         self.seen_dimensions = set()
         for provider, declaration in policy["providers"].items():
-            if declaration["vocabulary_scopes"] not in {"prefixed", "arcgis_structure"}:
+            strategy = declaration["vocabulary_scopes"]
+            if strategy not in {"prefixed", *NATIVE}:
                 raise ValueError(f"{provider}: unknown vocabulary scope strategy")
             if self.native(provider):
                 source = self.providers[provider]
                 origin = urlsplit(source.get("base_url", ""))
                 language = source.get("extra", {}).get("catalog_language")
-                if (source.get("driver") != "arcgis" or origin.scheme != "https" or not origin.hostname
+                if (source.get("driver") != NATIVE[strategy] or origin.scheme != "https" or not origin.hostname
                         or origin.username or origin.password or origin.query or origin.fragment
                         or not isinstance(language, str) or not language
                         or not declaration["vocabulary"]):
-                    raise ValueError(f"{provider}: native vocabulary requires its ArcGIS source and language")
+                    raise ValueError(f"{provider}: native vocabulary requires its {NATIVE[strategy]} source and language")
+                service = source["extra"].get("wfs_policy", {}).get("service") if strategy == "wfs_structure" else None
+                if strategy == "wfs_structure" and (
+                        not isinstance(service, dict) or not isinstance(service.get("path"), str)
+                        or any(part in {"", ".", ".."} for part in service["path"].split("/"))
+                        or not isinstance(service.get("version"), str) or not service["version"]):
+                    raise ValueError(f"{provider}: native vocabulary requires its WFS service path and version")
 
     def native(self, provider):
-        return self.policy["providers"][provider]["vocabulary_scopes"] == "arcgis_structure"
+        return self.policy["providers"][provider]["vocabulary_scopes"] in NATIVE
+
+    def layer(self, provider, dataset):
+        """The URL a layer's structure is described at, written as the provider's source driver writes it."""
+        source = self.providers[provider]
+        base = source["base_url"].rstrip("/") + "/"
+        if self.policy["providers"][provider]["vocabulary_scopes"] == "arcgis_structure":
+            return base + quote(dataset, safe="/")
+        service = source["extra"]["wfs_policy"]["service"]
+        query = {"service": "WFS", "version": service["version"], "request": "DescribeFeatureType", "typeNames": dataset}
+        return base + quote(service["path"], safe="/") + "?" + urlencode(query, safe=":,")
 
     def add_structure(self, row, catalog):
         provider = row["provider"]
         if not self.native(provider) or row["error"] is not None or row["harvested_at"] is None:
             return
         source = self.providers[provider]
-        reference = source["base_url"].rstrip("/") + "/" + quote(row["dataset_id"], safe="/")
+        reference = self.layer(provider, row["dataset_id"])
         services = catalog.get("sources") if catalog is not None else None
         services = [item for item in services if isinstance(item, dict) and item.get("role") == "service"] if isinstance(services, list) else []
         fields = row.get("dimensions")

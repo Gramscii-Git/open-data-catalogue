@@ -145,9 +145,9 @@ def load(path: Path) -> dict:
         )
         if type(provider["vocabulary"]) is not bool:
             raise ValueError(f"provider {name} vocabulary must be boolean")
-        if provider["vocabulary_scopes"] not in {"prefixed", "arcgis_structure"}:
-            raise ValueError(f"provider {name} vocabulary_scopes must be prefixed or arcgis_structure")
-        if provider["vocabulary_scopes"] == "arcgis_structure" and not provider["vocabulary"]:
+        if provider["vocabulary_scopes"] not in {"prefixed", "arcgis_structure", "wfs_structure"}:
+            raise ValueError(f"provider {name} vocabulary_scopes must be prefixed, arcgis_structure or wfs_structure")
+        if provider["vocabulary_scopes"] != "prefixed" and not provider["vocabulary"]:
             raise ValueError(f"provider {name} native vocabulary must be required")
     schedule = data["schedule"]
     if not isinstance(schedule, dict) or "action" not in schedule:
