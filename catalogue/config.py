@@ -119,7 +119,8 @@ def load(path: Path) -> dict:
     }
     fields(
         policy,
-        limits | {"structure_fields", "document_fields", "term_scopes", "providers", "document_contract_sha256", "query_languages"},
+        limits | {"structure_fields", "document_fields", "term_scopes", "providers", "document_contract_sha256", "query_languages",
+                  "unarchived_providers"},
         "quality",
     )
     for key in limits:
@@ -149,6 +150,15 @@ def load(path: Path) -> dict:
             raise ValueError(f"provider {name} vocabulary_scopes must be prefixed, arcgis_structure or wfs_structure")
         if provider["vocabulary_scopes"] != "prefixed" and not provider["vocabulary"]:
             raise ValueError(f"provider {name} native vocabulary must be required")
+    unarchived = policy["unarchived_providers"]
+    if (not isinstance(unarchived, list) or any(not isinstance(name, str) for name in unarchived)
+            or len(set(unarchived)) != len(unarchived)):
+        raise ValueError("quality.unarchived_providers must be a list of distinct provider identities")
+    for name in unarchived:
+        if name not in policy["providers"]:
+            raise ValueError(f"unarchived provider {name} is not a declared provider")
+        if policy["providers"][name]["vocabulary"]:
+            raise ValueError(f"unarchived provider {name} cannot require vocabulary")
     schedule = data["schedule"]
     if not isinstance(schedule, dict) or "action" not in schedule:
         raise ValueError("schedule.action is required")
