@@ -481,6 +481,20 @@ class Releases(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "no release policy"):
             self.inspect(data)
 
+    def test_an_unarchived_provider_must_have_no_datasets_and_any_other_at_least_one(self):
+        # A provider whose rows are discovery entries without a structure, which the harvester's export leaves out.
+        self.policy.update(minimum_datasets=0, unarchived_providers=["sample"])
+        self.policy["providers"]["sample"]["vocabulary"] = False
+        empty = {table: [] for table in rows()}
+        self.assertEqual(self.inspect(empty)["issues"], [])
+        with self.assertRaises(QualityError) as caught:
+            self.inspect(rows())
+        self.assertIn("unarchived provider 'sample' has 1 datasets in the archive", caught.exception.report["issues"])
+        self.policy["unarchived_providers"] = []
+        with self.assertRaises(QualityError) as caught:
+            self.inspect(empty)
+        self.assertIn("required provider 'sample' has no datasets", caught.exception.report["issues"])
+
     def test_table_set_and_manifest_counts_are_not_advisory(self):
         data = rows()
         del data["opendata_labels"]
@@ -577,6 +591,10 @@ class Releases(unittest.TestCase):
                 'archive = "../archive.tar.gz"',
             ),
             original.replace("interval_seconds = 86400", "interval_seconds = 0"),
+            original.replace("unarchived_providers = []\n", ""),
+            original.replace("unarchived_providers = []", 'unarchived_providers = ["absent"]'),
+            original.replace("unarchived_providers = []", 'unarchived_providers = ["istat"]'),
+            original.replace("unarchived_providers = []", 'unarchived_providers = ["dvns", "dvns"]'),
         ):
             with self.subTest(source=source[:30]):
                 self.assertNotEqual(source, original)

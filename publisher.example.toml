@@ -31,6 +31,7 @@ maximum_unscoped_terms = 0
 structure_fields = ["active", "served"]
 document_fields = ["active", "searchable"]
 term_scopes = ["codelist", "conceptscheme"]
+unarchived_providers = []
 
 [quality.providers.istat]
 languages = ["it", "en"]

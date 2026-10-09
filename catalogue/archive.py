@@ -313,7 +313,10 @@ def _inspect_archive(
         issues.append(f"{len(missing_native_objects)} native binding objects are missing")
     for provider in sorted(selected_providers):
         contract = policy["providers"][provider]
-        if not providers[provider]:
+        if provider in policy["unarchived_providers"]:
+            if providers[provider]:
+                issues.append(f"unarchived provider {provider!r} has {providers[provider]} datasets in the archive")
+        elif not providers[provider]:
             issues.append(f"required provider {provider!r} has no datasets")
         if contract["vocabulary"] and (
             provider not in dimensions or not any(key[0] == provider for key in terms)

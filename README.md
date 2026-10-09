@@ -271,6 +271,12 @@ vocabulary scopes and missing structure-to-vocabulary mappings. Its minimum
 dataset count is an explicit release baseline of current datasets. Intentional
 coverage reductions require policy review.
 
+Every declared provider must hold datasets in the archive, except those listed in
+`unarchived_providers`: providers whose rows are discovery entries without a
+structure, which the harvester's export leaves out. Such a provider keeps its
+document contract and must hold no dataset in the archive; it cannot require
+vocabulary. The example lists none.
+
 Configuration schema 6 requires `vocabulary_scopes` for every provider.
 `prefixed` checks scopes against the declared `term_scopes` prefixes.
 `arcgis_structure` and `wfs_structure` require vocabulary and bind each scope
