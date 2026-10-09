@@ -1,4 +1,4 @@
-"""Validate source-bound ArcGIS vocabulary in complete release archives."""
+"""Validate source-bound ArcGIS and WFS vocabulary in complete release archives."""
 
 import copy
 import tempfile
@@ -23,9 +23,11 @@ class NativeVocabulary(unittest.TestCase):
             "languages": ["en"], "vocabulary": True, "vocabulary_scopes": "arcgis_structure",
         }})
         self.contract = copy.deepcopy(DOCUMENT_CONTRACT)
+        self.driver = "arcgis"
         self.base = "https://source.example/arcgis/rest/services"
         self.dataset = "Plan A/MapServer/2"
         self.reference = self.base + "/Plan%20A/MapServer/2"
+        self.other = self.base + "/Plan%20A/MapServer/3"
         self.contract["rendering"]["providers"]["sample"].update(
             driver="arcgis", base_url=self.base, extra={"catalog_language": "en"},
         )
@@ -87,7 +89,7 @@ class NativeVocabulary(unittest.TestCase):
 
     def test_arbitrary_url_scope_unknown_field_and_other_layer_are_rejected(self):
         for scope in ("https://unrelated.example/fields", self.reference + "#absent",
-                      self.base + "/Plan%20A/MapServer/3#TYPE", "codelist:TYPE"):
+                      self.other + "#TYPE", "codelist:TYPE"):
             with self.subTest(scope=scope):
                 data = self.data()
                 data["opendata_terms"][-1]["scope"] = scope
@@ -150,16 +152,16 @@ class NativeVocabulary(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "native classification"):
                     self.inspect(data)
 
-    def test_native_strategy_requires_arcgis_source_language_and_vocabulary(self):
+    def test_native_strategy_requires_its_source_language_and_vocabulary(self):
         for update in ({"driver": "sdmx"}, {"base_url": "https://source.example/path?query"}, {"extra": {}}):
             with self.subTest(update=update):
                 held = copy.deepcopy(self.contract["rendering"]["providers"]["sample"])
                 self.contract["rendering"]["providers"]["sample"].update(update)
-                with self.assertRaisesRegex(ValueError, "requires its ArcGIS source"):
+                with self.assertRaisesRegex(ValueError, f"requires its {self.driver} source"):
                     self.inspect(self.data())
                 self.contract["rendering"]["providers"]["sample"] = held
         self.policy["providers"]["sample"]["vocabulary"] = False
-        with self.assertRaisesRegex(ValueError, "requires its ArcGIS source"):
+        with self.assertRaisesRegex(ValueError, f"requires its {self.driver} source"):
             self.inspect(self.data())
 
     def test_scope_strategy_is_required_explicit_configuration(self):
@@ -172,3 +174,28 @@ class NativeVocabulary(unittest.TestCase):
                 path.write_text(invalid)
                 with self.assertRaises(ValueError):
                     load(path)
+
+
+class WfsVocabulary(NativeVocabulary):
+    """The same rules for a layer a WFS describes: its URL is the service's DescribeFeatureType request."""
+
+    def setUp(self):
+        super().setUp()
+        self.policy["providers"]["sample"]["vocabulary_scopes"] = "wfs_structure"
+        self.driver = "wfs"
+        self.base = "https://source.example"
+        self.dataset = "plans:Zoning Plan"
+        describe = self.base + "/geoserver/plans/ows?service=WFS&version=2.0.0&request=DescribeFeatureType&typeNames="
+        self.reference = describe + "plans:Zoning+Plan"
+        self.other = describe + "plans:Other"
+        self.contract["rendering"]["providers"]["sample"].update(
+            driver="wfs", base_url=self.base, extra={"catalog_language": "en", "wfs_policy": {
+                "service": {"path": "geoserver/plans/ows", "version": "2.0.0"}}},
+        )
+
+    def test_wfs_strategy_requires_a_canonical_service_path_and_version(self):
+        for service in ({"path": "geoserver/../ows", "version": "2.0.0"}, {"path": "geoserver/ows"}, None):
+            with self.subTest(service=service):
+                self.contract["rendering"]["providers"]["sample"]["extra"]["wfs_policy"] = {"service": service}
+                with self.assertRaisesRegex(ValueError, "WFS service path and version"):
+                    self.inspect(self.data())
