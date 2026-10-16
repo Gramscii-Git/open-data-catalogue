@@ -8,10 +8,12 @@ import threading
 import unittest
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest import mock
 
 from test_availability import archive_at, tables
 from test_release import DOCUMENT_CONTRACT, digest, rows, write_archive
 
+from catalogue.archive import QualityError, inspect_archive
 from catalogue.config import load
 from catalogue.documentation import prepare
 from catalogue.documentation_releases import load as load_releases
@@ -101,13 +103,22 @@ class DocumentationTests(unittest.TestCase):
         self.server.server_close()
         self.thread.join()
 
-    def prepare(self):
+    def prepare(self, quality=None):
         directory = self.root / "publication"
-        directory.mkdir()
+        directory.mkdir(exist_ok=True)
         prepare(directory, self.config, self.catalogue, "a" * 40, self.releases,
                 ROOT / "README.hub.md", self.viewer,
-                catalogue_verification=self.verification)
+                catalogue_verification=self.verification, catalogue_quality=quality)
         return directory
+
+    def gate_report(self):
+        try:
+            report = inspect_archive(self.catalogue, self.config["quality"])
+        except QualityError as error:
+            report = error.report
+        path = self.root / "quality.json"
+        path.write_text(json.dumps(report))
+        return path
 
     def test_failed_catalogue_policy_remains_visible_beside_independent_availability(self):
         directory = self.prepare()
@@ -119,6 +130,28 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn("across 3 datasets", text)
         self.assertEqual(len(self.requests), 3)
         self.assertEqual({path.name for path in directory.iterdir()}, {"README.md", "catalogue-quality.json", "viewer-manifest.json", "viewer"})
+
+    def test_the_gate_report_of_the_same_bytes_and_policy_is_documented_without_a_second_inspection(self):
+        quality = self.gate_report()
+        with mock.patch("catalogue.documentation.inspect_archive", side_effect=AssertionError("inspected again")):
+            directory = self.prepare(quality)
+        report = json.loads((directory / "catalogue-quality.json").read_bytes())
+        self.assertFalse(report["accepted"])
+        self.assertEqual(report["report"], json.loads(quality.read_bytes()))
+        self.assertIn("**does not pass**", (directory / "README.md").read_text())
+
+    def test_a_gate_report_of_another_policy_or_other_bytes_is_refused(self):
+        quality = self.gate_report()
+        report = json.loads(quality.read_bytes())
+        for change, message in (
+            ({"policy": {**report["policy"], "minimum_datasets": 2}}, "different policy"),
+            ({"sha256": "0" * 64}, "does not identify the archive"),
+            ({"issues": [], "scope": {}}, "must contain exactly"),
+        ):
+            quality.write_text(json.dumps({**report, **change}))
+            with self.subTest(message), self.assertRaisesRegex(ValueError, message):
+                self.prepare(quality)
+        self.assertEqual(self.requests, [])
 
     def test_catalogue_readback_must_match_the_inspected_archive(self):
         receipt = json.loads(self.verification.read_text())

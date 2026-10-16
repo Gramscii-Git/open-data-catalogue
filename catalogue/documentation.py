@@ -8,8 +8,9 @@ from collections import Counter, defaultdict
 from string import Template
 
 from . import viewer
-from .archive import QualityError, inspect_archive
+from .archive import QualityError, digest, inspect_archive
 from .availability import inspect_availability, policy_from
+from .config import fields
 from .documentation_evidence import current_status, status_path
 from .documentation_evidence import read as read_evidence
 from .documentation_releases import load as load_releases
@@ -18,12 +19,9 @@ from .receipts import read_verification
 
 
 def prepare(directory, config, catalogue_path, catalogue_revision, releases_path, template_path, viewer_path,
-            *, catalogue_verification):
-    try:
-        catalogue = inspect_archive(catalogue_path, config["quality"])
-        accepted = True
-    except QualityError as error:
-        catalogue, accepted = error.report, False
+            *, catalogue_verification, catalogue_quality=None):
+    catalogue = measured(catalogue_path, config["quality"], catalogue_quality)
+    accepted = not catalogue["issues"]
     hub = config["hub"]
     verified = read_verification(catalogue_verification, hub, hub["archive"])
     expected = {"revision": catalogue_revision, "sha256": catalogue["sha256"],
@@ -34,6 +32,23 @@ def prepare(directory, config, catalogue_path, catalogue_revision, releases_path
     quality = json.dumps({"accepted": accepted, "policy": config["quality"], "report": catalogue}, indent=2).encode()
     return _prepare(directory, config, catalogue_path, catalogue_revision, releases_path, template_path,
                     viewer_path, catalogue, accepted, quality, {}, None)
+
+
+def measured(path, policy, report_path):
+    """The archive's quality report under `policy`: inspected now, or the release gate's report of the same bytes."""
+    if report_path is None:
+        try:
+            return inspect_archive(path, policy)
+        except QualityError as error:
+            return error.report
+    report = json.loads(report_path.read_bytes())
+    fields(report, {"manifest", "tables", "providers", "metrics", "issues", "sha256", "bytes", "policy"},
+           "catalogue quality report")
+    if report["policy"] != policy:
+        raise ValueError("catalogue quality report was measured under a different policy")
+    if report["bytes"] != path.stat().st_size or report["sha256"] != digest(path):
+        raise ValueError("catalogue quality report does not identify the archive")
+    return report
 
 
 def prepare_reported(directory, config, evidence_path, status_artifact, releases_path, template_path, viewer_path):
