@@ -1,6 +1,7 @@
 """Bind native vocabulary projections to their archived layer structures."""
 
 import math
+import re
 from urllib.parse import quote, urlencode, urlsplit
 
 # The source driver whose layers each native strategy binds its scopes to.
@@ -29,12 +30,15 @@ class Vocabulary:
                         or not isinstance(language, str) or not language
                         or not declaration["vocabulary"]):
                     raise ValueError(f"{provider}: native vocabulary requires its {NATIVE[strategy]} source and language")
-                service = source["extra"].get("wfs_policy", {}).get("service") if strategy == "wfs_structure" else None
-                if strategy == "wfs_structure" and (
-                        not isinstance(service, dict) or not isinstance(service.get("path"), str)
-                        or any(part in {"", ".", ".."} for part in service["path"].split("/"))
-                        or not isinstance(service.get("version"), str) or not service["version"]):
-                    raise ValueError(f"{provider}: native vocabulary requires its WFS service path and version")
+                groups = source["extra"].get("wfs_policy", {}).get("groups") if strategy == "wfs_structure" else []
+                if strategy == "wfs_structure" and (not isinstance(groups, list) or not groups or any(
+                        not isinstance(group, dict) or not isinstance(group.get("service"), dict)
+                        or not isinstance(group["service"].get("path"), str)
+                        or any(part in {"", ".", ".."} for part in group["service"]["path"].split("/"))
+                        or not isinstance(group["service"].get("version"), str) or not group["service"]["version"]
+                        or not isinstance(group.get("type_pattern"), str)
+                        or not isinstance(group.get("excluded_types"), list) for group in groups)):
+                    raise ValueError(f"{provider}: native vocabulary requires its WFS groups' service paths and versions")
 
     def native(self, provider):
         return self.policy["providers"][provider]["vocabulary_scopes"] in NATIVE
@@ -45,8 +49,13 @@ class Vocabulary:
         base = source["base_url"].rstrip("/") + "/"
         if self.policy["providers"][provider]["vocabulary_scopes"] == "arcgis_structure":
             return base + quote(dataset, safe="/")
-        service = source["extra"]["wfs_policy"]["service"]
-        query = {"service": "WFS", "version": service["version"], "request": "DescribeFeatureType", "typeNames": dataset}
+        # The one group that catalogues the type names its service; WFS 2.0 names the type by TYPENAME there.
+        groups = [group for group in source["extra"]["wfs_policy"]["groups"]
+                  if dataset not in group["excluded_types"] and re.fullmatch(group["type_pattern"], dataset)]
+        if len(groups) != 1:
+            raise ValueError(f"{provider}: WFS type {dataset!r} belongs to {len(groups)} groups, not one")
+        service = groups[0]["service"]
+        query = {"service": "WFS", "version": service["version"], "request": "DescribeFeatureType", "typeName": dataset}
         return base + quote(service["path"], safe="/") + "?" + urlencode(query, safe=":,")
 
     def add_structure(self, row, catalog):

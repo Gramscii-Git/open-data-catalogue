@@ -185,17 +185,34 @@ class WfsVocabulary(NativeVocabulary):
         self.driver = "wfs"
         self.base = "https://source.example"
         self.dataset = "plans:Zoning Plan"
-        describe = self.base + "/geoserver/plans/ows?service=WFS&version=2.0.0&request=DescribeFeatureType&typeNames="
+        describe = self.base + "/geoserver/plans/ows?service=WFS&version=2.0.0&request=DescribeFeatureType&typeName="
         self.reference = describe + "plans:Zoning+Plan"
         self.other = describe + "plans:Other"
         self.contract["rendering"]["providers"]["sample"].update(
-            driver="wfs", base_url=self.base, extra={"catalog_language": "en", "wfs_policy": {
-                "service": {"path": "geoserver/plans/ows", "version": "2.0.0"}}},
+            driver="wfs", base_url=self.base, extra={"catalog_language": "en", "wfs_policy": {"groups": [
+                self.group("plans:.+")]}},
         )
 
-    def test_wfs_strategy_requires_a_canonical_service_path_and_version(self):
-        for service in ({"path": "geoserver/../ows", "version": "2.0.0"}, {"path": "geoserver/ows"}, None):
-            with self.subTest(service=service):
-                self.contract["rendering"]["providers"]["sample"]["extra"]["wfs_policy"] = {"service": service}
-                with self.assertRaisesRegex(ValueError, "WFS service path and version"):
+    @staticmethod
+    def group(pattern, path="geoserver/plans/ows", excluded=()):
+        return {"service": {"path": path, "version": "2.0.0"}, "type_pattern": pattern, "excluded_types": list(excluded)}
+
+    def test_wfs_strategy_requires_canonical_service_paths_and_versions(self):
+        for groups in ([{"service": {"path": "geoserver/../ows", "version": "2.0.0"}, "type_pattern": ".+",
+                         "excluded_types": []}],
+                       [{"service": {"path": "geoserver/ows"}, "type_pattern": ".+", "excluded_types": []}], [], None):
+            with self.subTest(groups=groups):
+                self.contract["rendering"]["providers"]["sample"]["extra"]["wfs_policy"] = {"groups": groups}
+                with self.assertRaisesRegex(ValueError, "WFS groups' service paths and versions"):
                     self.inspect(self.data())
+
+    def test_a_layer_is_described_by_the_one_group_that_catalogues_it(self):
+        other = self.base + "/geoserver/other/wfs?service=WFS&version=2.0.0&request=DescribeFeatureType&typeName="
+        self.contract["rendering"]["providers"]["sample"]["extra"]["wfs_policy"] = {"groups": [
+            self.group("plans:Zoning Plan", path="geoserver/other/wfs"), self.group("plans:.+", excluded=["plans:Zoning Plan"])]}
+        self.reference = other + "plans:Zoning+Plan"
+        self.inspect(self.data())
+        self.contract["rendering"]["providers"]["sample"]["extra"]["wfs_policy"] = {"groups": [
+            self.group("plans:Zoning Plan", path="geoserver/other/wfs"), self.group("plans:.+")]}
+        with self.assertRaisesRegex(ValueError, "belongs to 2 groups, not one"):
+            self.inspect(self.data())
