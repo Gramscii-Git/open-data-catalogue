@@ -553,6 +553,7 @@ The main Hub card is generated independently from the exact published artifacts:
   --catalogue-archive path/to/published-catalogue.tar.gz \
   --catalogue-revision FULL_CATALOGUE_COMMIT \
   --catalogue-verification path/to/successful-catalogue-verification.json \
+  --catalogue-quality path/to/release/quality.json \
   --availability-releases documentation-releases.local.json \
   --readme-template README.hub.md \
   --viewer-config viewer.json
@@ -564,8 +565,13 @@ Local file paths are resolved relative to that configuration. The viewer must
 explicitly cover exactly the same set of archives.
 
 The catalogue verification receipt must identify the inspected local archive
-and immutable revision. Availability archives are read back at their supplied
-revisions before the new card is uploaded. This command publishes `README.md`,
+and immutable revision. `--catalogue-quality` names the release gate's
+`quality.json` for that archive: the card then documents that report instead of
+inspecting the archive again, and refuses it unless it holds exactly the report's
+fields, was measured under the current quality policy and identifies the archive's
+bytes and SHA-256. Without it, the archive is inspected under the current policy.
+Availability archives are read back at their supplied revisions before the new
+card is uploaded. This command publishes `README.md`,
 `catalogue-quality.json`, the configured viewer tables and their integrity
 manifest. It records whether the existing catalogue passes the current strict
 policy; a failed catalogue policy remains visible and does not authorize

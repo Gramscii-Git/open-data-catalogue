@@ -212,6 +212,9 @@ def _inspect_archive(
                         raise ValueError(
                             f"catalogue row {identity!r} is retired; a published archive holds current datasets"
                         )
+                    # Only a registry source role reads inventory memberships, the largest catalogue field.
+                    if document_contract["source_roles"][provider]["mode"] == "catalogue_fields":
+                        row.pop("inventory_memberships", None)
                     catalog[identity] = row
                     providers[provider] += 1
                     # A licence governs data the harvester serves; an unserved dataset is never given an inferred one.
