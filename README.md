@@ -692,8 +692,10 @@ The export refuses a row whose columns differ from the declaration, a value Duck
 cannot read as its declared type, and a table whose rows, bytes or SHA-256 differ
 from the archive manifest; it then reads every table back and compares its rows and
 column types. `manifest.json` beside the tables records the snapshot time, the
-source archive's SHA-256 and size, the document contract, every table's rows and
-columns, and every file's size and SHA-256. A failed export leaves no directory.
+source archive's SHA-256 and size, the whole document contract with its SHA-256,
+every table's rows and columns, and every file's size, SHA-256 and rows, so a reader
+installing one provider checks that provider's files alone. A failed export leaves
+no directory.
 
 ## Scheduling on macOS
 

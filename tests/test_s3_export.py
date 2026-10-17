@@ -66,6 +66,9 @@ class S3Export(unittest.TestCase):
         self.assertIn("opendata_native_objects/data_0.parquet", result["files"])
         for path, receipt in result["files"].items():
             self.assertEqual(receipt["sha256"], hashlib.sha256((output / path).read_bytes()).hexdigest())
+        self.assertEqual(result["files"]["opendata_catalog/provider=istat/data_0.parquet"]["rows"], 1)
+        self.assertEqual(result["files"]["opendata_native_objects/data_0.parquet"]["rows"], 2)
+        self.assertEqual(result["document_contract"], json.loads((ROOT / "tests/fixtures/document-contract.json").read_text()))
         catalogue = self.query(f"SELECT provider, dataset_id, names, synced_at FROM read_parquet("
                                f"'{output}/opendata_catalog/*/*.parquet', hive_partitioning=true) ORDER BY provider")
         self.assertEqual([row["provider"] for row in catalogue], ["istat", "veneto-ptrc"])

@@ -89,18 +89,19 @@ def write_table(lines, name: str, table: dict, duckdb: list[str], target: Path) 
     return rows, checksum.hexdigest(), size
 
 
-def read_back(duckdb: list[str], target: Path, table: dict) -> tuple[int, dict]:
-    """The rows and the column types DuckDB reads from a written table."""
+def read_back(duckdb: list[str], target: Path, table: dict) -> tuple[dict[str, int], dict]:
+    """The rows of each written file of a table and the column types DuckDB reads from it."""
     pattern = target / ("*/*.parquet" if table["partition"] else "data_0.parquet")
-    source = f"read_parquet('{pattern}', hive_partitioning={'true' if table['partition'] else 'false'})"
-    result = subprocess.run(
-        [*duckdb, "-json", "-c", f"SELECT count(*) AS rows FROM {source}; DESCRIBE SELECT * FROM {source}"],
-        check=True, capture_output=True, text=True,
-    )
+    partitioned = "true" if table["partition"] else "false"
+    source = f"read_parquet('{pattern}', hive_partitioning={partitioned}, filename=true)"
+    query = (f"SELECT filename, count(*) AS rows FROM {source} GROUP BY filename; "
+             f"DESCRIBE SELECT * EXCLUDE (filename) FROM {source}")
+    result = subprocess.run([*duckdb, "-json", "-c", query], check=True, capture_output=True, text=True)
     decoder = json.JSONDecoder()
     counted, end = decoder.raw_decode(result.stdout.strip())
     described, _ = decoder.raw_decode(result.stdout[end:].strip())
-    return counted[0]["rows"], {column["column_name"]: column["column_type"] for column in described}
+    return ({row["filename"]: row["rows"] for row in counted},
+            {column["column_name"]: column["column_type"] for column in described})
 
 
 def sha256_file(path: Path) -> str:
@@ -132,17 +133,22 @@ def export(archive: Path, expected_sha256: str, tables: dict, duckdb: list[str],
                 written[name] = write_table(source.extractfile(member), name, tables[name], duckdb, output / name)
         if manifest is None or set(written) != set(tables):
             raise ValueError("archive must hold every declared table and its manifest")
+        counted = {}
         for name, (rows, digest, size) in written.items():
             if manifest["tables"][name] != rows or manifest["members"][f"{name}.jsonl"] != {"sha256": digest, "bytes": size}:
                 raise ValueError(f"{name}: rows or bytes differ from the archive manifest")
-            if read_back(duckdb, output / name, tables[name]) != (rows, tables[name]["columns"]):
+            per_file, columns = read_back(duckdb, output / name, tables[name])
+            if sum(per_file.values()) != rows or columns != tables[name]["columns"]:
                 raise ValueError(f"{name}: Parquet read-back differs from the archive")
-        files = {str(path.relative_to(output)): {"bytes": path.stat().st_size, "sha256": sha256_file(path)}
+            counted.update({str(Path(path).resolve()): value for path, value in per_file.items()})
+        files = {str(path.relative_to(output)): {"bytes": path.stat().st_size, "sha256": sha256_file(path),
+                                                 "rows": counted[str(path.resolve())]}
                  for path in sorted(output.rglob("*.parquet"))}
         result = {
             "schema": 1,
             "taken_at": manifest["taken_at"],
             "archive": {"sha256": expected_sha256, "bytes": archive.stat().st_size},
+            "document_contract": manifest["document_contract"],
             "document_contract_sha256": manifest["document_contract_sha256"],
             "tables": {name: {"rows": written[name][0], **tables[name]} for name in tables},
             "files": files,
