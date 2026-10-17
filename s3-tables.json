@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "tables": {
+    "opendata_catalog": {
+      "partition": "provider",
+      "columns": {
+        "provider": "VARCHAR",
+        "dataset_id": "VARCHAR",
+        "version": "VARCHAR",
+        "title": "VARCHAR",
+        "title_en": "VARCHAR",
+        "description": "VARCHAR",
+        "category_path": "VARCHAR",
+        "structure_id": "VARCHAR",
+        "territorial_level": "VARCHAR",
+        "last_update": "VARCHAR",
+        "active": "BOOLEAN",
+        "searchable": "BOOLEAN",
+        "served": "BOOLEAN",
+        "retired": "BOOLEAN",
+        "text_hash": "VARCHAR",
+        "synced_at": "TIMESTAMP WITH TIME ZONE",
+        "agency": "VARCHAR",
+        "names": "JSON",
+        "descriptions": "JSON",
+        "category_paths": "JSON",
+        "keywords": "JSON",
+        "report_key": "VARCHAR",
+        "period_start": "VARCHAR",
+        "period_end": "VARCHAR",
+        "in_hub": "BOOLEAN",
+        "seen_hub_at": "TIMESTAMP WITH TIME ZONE",
+        "seen_registry_at": "TIMESTAMP WITH TIME ZONE",
+        "match_text": "VARCHAR",
+        "freshness": "VARCHAR",
+        "caveat": "VARCHAR",
+        "filters": "JSON",
+        "sources": "JSON",
+        "licence": "VARCHAR",
+        "attribution": "VARCHAR",
+        "inventory_memberships": "JSON",
+        "structure_available": "BOOLEAN"
+      }
+    },
+    "opendata_structures": {
+      "partition": "provider",
+      "columns": {
+        "provider": "VARCHAR",
+        "dataset_id": "VARCHAR",
+        "harvested_at": "TIMESTAMP WITH TIME ZONE",
+        "dimensions": "JSON",
+        "time": "JSON",
+        "obs_count": "BIGINT",
+        "error": "VARCHAR",
+        "key_order": "VARCHAR",
+        "source_reference": "VARCHAR",
+        "metadata_updated_at": "TIMESTAMP WITH TIME ZONE",
+        "projection": "JSON",
+        "source_constraint": "JSON",
+        "source_domain": "JSON",
+        "spatial": "JSON"
+      }
+    },
+    "opendata_structure_dims": {
+      "partition": "provider",
+      "columns": {
+        "provider": "VARCHAR",
+        "structure_id": "VARCHAR",
+        "dimension_id": "VARCHAR",
+        "concept_scope": "VARCHAR",
+        "concept_id": "VARCHAR",
+        "codelist_scope": "VARCHAR"
+      }
+    },
+    "opendata_terms": {
+      "partition": "provider",
+      "columns": {
+        "provider": "VARCHAR",
+        "language": "VARCHAR",
+        "scope": "VARCHAR",
+        "code": "VARCHAR",
+        "name": "VARCHAR"
+      }
+    },
+    "opendata_labels": {
+      "partition": "provider",
+      "columns": {
+        "provider": "VARCHAR",
+        "dataset_id": "VARCHAR",
+        "language": "VARCHAR",
+        "labels": "JSON",
+        "fetched_at": "TIMESTAMP WITH TIME ZONE"
+      }
+    },
+    "opendata_meta_reports": {
+      "partition": "provider",
+      "columns": {
+        "provider": "VARCHAR",
+        "report_key": "VARCHAR",
+        "metadata_set_id": "VARCHAR",
+        "source_url": "VARCHAR",
+        "texts": "JSON",
+        "fetched_at": "TIMESTAMP WITH TIME ZONE",
+        "last_error": "VARCHAR",
+        "last_attempt_at": "TIMESTAMP WITH TIME ZONE",
+        "permanent": "BOOLEAN"
+      }
+    },
+    "opendata_documents": {
+      "partition": "provider",
+      "columns": {
+        "provider": "VARCHAR",
+        "dataset_id": "VARCHAR",
+        "language": "VARCHAR",
+        "text": "VARCHAR",
+        "text_hash": "VARCHAR",
+        "built_at": "TIMESTAMP WITH TIME ZONE",
+        "projection": "JSON"
+      }
+    },
+    "opendata_native_objects": {
+      "partition": null,
+      "columns": {
+        "sha256": "VARCHAR",
+        "body": "BLOB"
+      }
+    },
+    "opendata_native_bindings": {
+      "partition": "provider",
+      "columns": {
+        "provider": "VARCHAR",
+        "dataset_id": "VARCHAR",
+        "projection_sha256": "VARCHAR",
+        "graph_sha256": "VARCHAR",
+        "flow_sha256": "VARCHAR",
+        "receipts": "JSON",
+        "harvested_at": "TIMESTAMP WITH TIME ZONE"
+      }
+    },
+    "opendata_native_exclusions": {
+      "partition": "provider",
+      "columns": {
+        "provider": "VARCHAR",
+        "reference": "VARCHAR",
+        "dataset_ids": "JSON",
+        "reason": "VARCHAR",
+        "harvested_at": "TIMESTAMP WITH TIME ZONE"
+      }
+    },
+    "opendata_held_codes": {
+      "partition": "provider",
+      "columns": {
+        "provider": "VARCHAR",
+        "dataset_id": "VARCHAR",
+        "dimension_id": "VARCHAR",
+        "codes": "VARCHAR[]",
+        "checked_on": "DATE",
+        "origin": "VARCHAR"
+      }
+    }
+  }
+}

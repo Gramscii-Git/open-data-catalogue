@@ -104,6 +104,14 @@ def main(argv=None) -> int:
     verify_catalogue_command.add_argument("--expect-sha256", required=True)
     verify_catalogue_command.add_argument("--expect-bytes", type=int, required=True)
     verify_catalogue_command.add_argument("--output", type=Path, required=True)
+    export_s3 = commands.add_parser(
+        "export-s3", help="write a verified discovery archive as Parquet tables for S3; no upload"
+    )
+    export_s3.add_argument("--archive", type=Path, required=True)
+    export_s3.add_argument("--expect-sha256", required=True)
+    export_s3.add_argument("--tables", type=Path, required=True)
+    export_s3.add_argument("--duckdb", type=Path, required=True)
+    export_s3.add_argument("--output", type=Path, required=True)
     availability = commands.add_parser(
         "check-availability",
         help="validate a joint-availability artifact; no source reads or upload",
@@ -195,6 +203,12 @@ def main(argv=None) -> int:
 
             print(json.dumps(verify_catalogue(config, args.archive, args.revision, args.expect_sha256,
                                              args.expect_bytes, args.output), indent=2))
+            return 0
+        if args.command == "export-s3":
+            from .s3_export import export, load_tables
+
+            print(json.dumps(export(args.archive.resolve(), args.expect_sha256, load_tables(args.tables.resolve()),
+                                    [str(args.duckdb)], args.output.resolve()), indent=2))
             return 0
         if args.command in {"check-update", "run-update"}:
             from .update_plan import load as load_plan
