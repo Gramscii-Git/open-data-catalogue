@@ -666,6 +666,37 @@ The receipt is local because its commit identity exists only after the upload.
 Pin the verified immutable URL, SHA-256 and size in consuming deployments. Updating
 a mutable branch must not break deployments pinned to an earlier release.
 
+### S3 export
+
+`export-s3` writes a published discovery archive as Apache Parquet for the
+catalogue's S3 bucket. It reads only an archive whose SHA-256 matches the one the
+Hub read-back verified, and makes no upload:
+
+```sh
+./update --config publisher.local.toml export-s3 \
+  --archive build/release-…/open-data-catalogue.tar.gz \
+  --expect-sha256 <the verified archive SHA-256> \
+  --tables s3-tables.json --duckdb /opt/homebrew/bin/duckdb \
+  --output build/s3-<release>/catalogue
+```
+
+`s3-tables.json` declares every archive table's columns with the DuckDB type each
+is written as, and its partition column. Each table becomes a directory; a table
+keyed by provider is partitioned Hive-style (`provider=<id>/data_0.parquet`), and
+`opendata_native_objects` is one file. JSON columns keep their content as Parquet
+JSON, base64 bodies become binary, and timestamps are UTC instants. Rows stream
+from the archive into the [DuckDB command line](https://duckdb.org/docs/stable/clients/cli/overview),
+one table at a time, with nothing extracted to disk.
+
+The export refuses a row whose columns differ from the declaration, a value DuckDB
+cannot read as its declared type, and a table whose rows, bytes or SHA-256 differ
+from the archive manifest; it then reads every table back and compares its rows and
+column types. `manifest.json` beside the tables records the snapshot time, the
+source archive's SHA-256 and size, the whole document contract with its SHA-256,
+every table's rows and columns, and every file's size, SHA-256 and rows, so a reader
+installing one provider checks that provider's files alone. A failed export leaves
+no directory.
+
 ## Scheduling on macOS
 
 ### Complete local update plans
