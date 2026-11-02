@@ -150,7 +150,7 @@ class UpdateTests(unittest.TestCase):
         if action == "--availability-contract":
             return "1"
         if action == "--release-contract":
-            return "3"
+            return "4"
         if action == "index-availability":
             source = Path(arguments[arguments.index("--to") + 1])
             source.mkdir()
@@ -434,7 +434,7 @@ class UpdateTests(unittest.TestCase):
             calls.append(arguments)
             return "1"
 
-        with self.assertRaisesRegex(ValueError, "release contract must be 3"):
+        with self.assertRaisesRegex(ValueError, "release contract must be 4"):
             discovery_release(self.root / "incompatible", self.config, "refresh", incompatible, prepare_catalogue)
         self.assertEqual(calls, [("--release-contract",)])
 

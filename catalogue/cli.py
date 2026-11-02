@@ -11,6 +11,7 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
+from . import series
 from .archive import QualityError, inspect_archive
 from .availability import inspect_availability, policy_from
 from .config import child_environment, load
@@ -96,6 +97,8 @@ def main(argv=None) -> int:
         help="validate and publish an existing complete catalogue archive without harvesting",
     )
     publish_archive.add_argument("--archive", type=Path, required=True)
+    publish_archive.add_argument("--series", type=Path, required=True,
+                                 help="the series inventory the harvester's series-export wrote with that archive")
     verify_catalogue_command = commands.add_parser(
         "verify-catalogue", help="record a new immutable discovery readback; no upload or quality waiver"
     )
@@ -320,6 +323,7 @@ def main(argv=None) -> int:
                 ))
                 print(f"publication directory: {directory}", file=sys.stderr, flush=True)
                 report = prepare_archive(directory, config, args.archive.resolve())
+                series.stage(directory, args.series.resolve(), report["providers"])
                 print(json.dumps(upload(directory, config, report), indent=2))
             return 0
         if args.command == "build-availability":
@@ -338,9 +342,9 @@ def main(argv=None) -> int:
             return 0
         with publication_lock(config["deployment"]["build"]):
             contract = harvester(config, "--release-contract", capture=True).strip()
-            if contract != "3":
+            if contract != "4":
                 raise ValueError(
-                    "harvester release contract must be 3 with document provenance; update the harvester checkout"
+                    "harvester release contract must be 4 with the series inventory; update the harvester checkout"
                 )
             if args.command in ("refresh", "release"):
                 harvester(config, "sync")
@@ -352,6 +356,7 @@ def main(argv=None) -> int:
             )
             print(f"release directory: {directory}", file=sys.stderr, flush=True)
             report = prepare(directory, config, harvester)
+            series.export(directory, config, harvester, report["providers"])
             if args.command in ("publish", "release"):
                 print(json.dumps(upload(directory, config, report), indent=2))
             else:

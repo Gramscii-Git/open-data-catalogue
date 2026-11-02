@@ -9,6 +9,7 @@ import urllib.request
 from pathlib import Path
 from urllib.parse import quote, urlsplit
 
+from . import series
 from .runtime import run_command
 
 
@@ -75,6 +76,7 @@ def upload(directory: Path, config: dict, report: dict) -> dict:
         "README.md",
         "viewer-manifest.json",
         *(entry["path"] for entry in viewer_manifest["files"]),
+        *series.files(directory, report["providers"]),
     )
     return _upload_catalogue(directory, config, report, files)
 
