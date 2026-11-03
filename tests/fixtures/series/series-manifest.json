@@ -1,0 +1,35 @@
+{
+  "providers": {
+    "bis": {
+      "blocks": {
+        "file": "bis/series-blocks.parquet",
+        "rows": 1,
+        "sha256": "8e197c1c74a1f007ec71afd8d5ee647c7a4ac7f666cb35d52a7d1982d3213983"
+      },
+      "left_out": [],
+      "tables": {
+        "file": "bis/series-tables.parquet",
+        "rows": 1,
+        "sha256": "196d044fdbd4b54e1276d5b03643232524acf728333a375f6315d695a5b6aa3b"
+      }
+    },
+    "ecb": {
+      "blocks": {
+        "file": "ecb/series-blocks.parquet",
+        "rows": 5,
+        "sha256": "b5bc285006d145c65e5bf1389783a8980ccb5706bb940bf8567a7ff78d88af87"
+      },
+      "left_out": [
+        {
+          "dataset_id": "YC",
+          "reason": "not collected yet"
+        }
+      ],
+      "tables": {
+        "file": "ecb/series-tables.parquet",
+        "rows": 2,
+        "sha256": "a0191cc4db4de41e275fcbe7e182345c8e6e01104698aa4ad4c74d2469831eab"
+      }
+    }
+  }
+}

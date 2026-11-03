@@ -9,6 +9,7 @@ import urllib.request
 from pathlib import Path
 from urllib.parse import quote, urlsplit
 
+from . import series
 from .runtime import run_command
 
 
@@ -75,13 +76,15 @@ def upload(directory: Path, config: dict, report: dict) -> dict:
         "README.md",
         "viewer-manifest.json",
         *(entry["path"] for entry in viewer_manifest["files"]),
+        *series.files(directory, report["providers"]),
     )
     return _upload_catalogue(directory, config, report, files)
 
 
 def upload_archive(directory: Path, config: dict, report: dict) -> dict:
-    """Publish discovery evidence while the complete Hub card keeps its current pins."""
-    files = (config["hub"]["archive"], "manifest.json", "SHA256SUMS", "quality.json")
+    """Publish discovery evidence, the series inventory with it, while the complete Hub card keeps its current pins."""
+    files = (config["hub"]["archive"], "manifest.json", "SHA256SUMS", "quality.json",
+             *series.files(directory, report["providers"]))
     return _upload_catalogue(directory, config, report, files)
 
 

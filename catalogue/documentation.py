@@ -7,7 +7,7 @@ import tarfile
 from collections import Counter, defaultdict
 from string import Template
 
-from . import viewer
+from . import series, viewer
 from .archive import QualityError, digest, inspect_archive
 from .availability import inspect_availability, policy_from
 from .config import fields
@@ -19,7 +19,7 @@ from .receipts import read_verification
 
 
 def prepare(directory, config, catalogue_path, catalogue_revision, releases_path, template_path, viewer_path,
-            *, catalogue_verification, catalogue_quality=None):
+            *, catalogue_verification, series_directory, catalogue_quality=None):
     catalogue = measured(catalogue_path, config["quality"], catalogue_quality)
     accepted = not catalogue["issues"]
     hub = config["hub"]
@@ -30,8 +30,31 @@ def prepare(directory, config, catalogue_path, catalogue_revision, releases_path
     if verified != expected:
         raise ValueError("catalogue verification does not identify the inspected archive")
     quality = json.dumps({"accepted": accepted, "policy": config["quality"], "report": catalogue}, indent=2).encode()
+    inventory = series_values(hub, catalogue_revision, series_directory, catalogue["providers"])
     return _prepare(directory, config, catalogue_path, catalogue_revision, releases_path, template_path,
-                    viewer_path, catalogue, accepted, quality, {}, None)
+                    viewer_path, catalogue, accepted, quality, inventory, None)
+
+
+def series_values(hub, revision, directory, providers):
+    """The card's series inventory: the release's manifest, checked whole against its files and against the bytes
+    published at the archive's revision, with each provider's tables and blocks and its tables left out by reason."""
+    series.check(directory, providers)
+    manifest = directory / series.MANIFEST
+    url = file_url(hub, revision, f"{series.DIRECTORY}/{series.MANIFEST}")
+    verify_download(url, digest(manifest), manifest.stat().st_size, hub["timeout_seconds"])
+    counts, reasons = [], []
+    for provider, entry in sorted(json.loads(manifest.read_bytes())["providers"].items()):
+        counts.append(f"| {provider} | {entry['tables']['rows']:,} | {entry['blocks']['rows']:,} "
+                      f"| {len(entry['left_out']):,} |")
+        held = Counter(table["reason"] for table in entry["left_out"])
+        reasons.extend(f"| {provider} | {_cell(reason)} | {count:,} |"
+                       for reason, count in sorted(held.items(), key=lambda item: (-item[1], item[0])))
+    return {"series_url": url, "series_providers": "\n".join(counts), "series_left_out": "\n".join(reasons)}
+
+
+def _cell(text):
+    """Text that stays inside one Markdown table cell."""
+    return html.escape(" ".join(text.split())).replace("|", "&#124;")
 
 
 def measured(path, policy, report_path):

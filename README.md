@@ -192,8 +192,8 @@ contract change.
 
 All fields are required and validated. Paths are resolved relative to the
 configuration file. There are no implicit deployment paths or release thresholds.
-The harvester must implement publication contract 3; an incompatible checkout is
-refused before any catalogue mutation. Its embedder must be available for indexing.
+The harvester must implement publication contract 4, which includes the series
+inventory export; an incompatible checkout is refused before any catalogue mutation. Its embedder must be available for indexing.
 
 ## Commands
 
@@ -248,6 +248,34 @@ Preparation writes to a unique directory under the configured build directory.
 A kernel-held lock refuses overlapping publisher runs; the harvester also owns its database
 job guard. The persistent lock file is not proof of a live owner and must not be
 unlinked. Inspect the recorded owner and phase receipts after an interrupted run.
+
+## Series inventory
+
+`prepare`, `refresh`, `publish` and `release` also write the harvester's series
+inventory into the release's `series/` directory with `series-export`. For each
+provider it holds that provider's tables and blocks as Parquet files.
+`series-manifest.json` names each file's rows and SHA-256, and the tables left
+out with their reason.
+
+The release is refused unless:
+
+- the export's report matches the manifest;
+- every file matches its SHA-256;
+- the rows each Parquet footer declares match the manifest;
+- the directory holds no other file;
+- every provider is one the catalogue archive holds.
+
+The footer is read with the standard library, independently of the writer that
+produced it. `publish` and `release` upload the inventory with the archive.
+`publish-archive` publishes an existing archive together with the inventory
+exported beside it, named by `--series`. An update run's discovery exports it
+the same way and uploads it with the archive.
+
+The Hub card of a release reads the inventory from the release's `series/`
+directory, beside its `verification.json`. It counts each provider's tables and
+blocks, and groups the tables left out by reason. A card written from a
+published report documents that archive as it was published, without an
+inventory.
 
 ## Release checks
 

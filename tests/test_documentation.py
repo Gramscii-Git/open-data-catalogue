@@ -10,6 +10,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest import mock
 
+from sample_series import sample_series
 from test_availability import archive_at, tables
 from test_release import DOCUMENT_CONTRACT, digest, rows, write_archive
 
@@ -61,6 +62,8 @@ class DocumentationTests(unittest.TestCase):
             release.update(archive=path.name, policy=self.policy.name, revision="b" * 40)
             self.payloads[f"{release['destination']}/availability.tar.gz"] = path.read_bytes()
         self.releases.write_text(json.dumps(releases))
+        self.series = sample_series(self.root / "series")
+        self.payloads["series/series-manifest.json"] = (self.series / "series-manifest.json").read_bytes()
         self.requests = []
         owner = self
 
@@ -108,7 +111,7 @@ class DocumentationTests(unittest.TestCase):
         directory.mkdir(exist_ok=True)
         prepare(directory, self.config, self.catalogue, "a" * 40, self.releases,
                 ROOT / "README.hub.md", self.viewer,
-                catalogue_verification=self.verification, catalogue_quality=quality)
+                catalogue_verification=self.verification, series_directory=self.series, catalogue_quality=quality)
         return directory
 
     def gate_report(self):
@@ -128,8 +131,20 @@ class DocumentationTests(unittest.TestCase):
         text = (directory / "README.md").read_text()
         self.assertIn("**does not pass**", text)
         self.assertIn("across 3 datasets", text)
-        self.assertEqual(len(self.requests), 3)
+        self.assertEqual(len(self.requests), 4)
         self.assertEqual({path.name for path in directory.iterdir()}, {"README.md", "catalogue-quality.json", "viewer-manifest.json", "viewer"})
+
+    def test_the_card_counts_the_published_series_inventory_and_groups_what_it_leaves_out(self):
+        text = (self.prepare() / "README.md").read_text()
+        self.assertIn(f"/resolve/{'a' * 40}/series/series-manifest.json", text)
+        self.assertIn("| sample | 2 | 5 | 2 |", text)
+        self.assertIn("| sample | HTTP 413 &#124; too large | 1 |", text)
+        self.assertIn("| sample | not collected yet | 1 |", text)
+
+    def test_a_series_manifest_other_than_the_published_one_is_refused(self):
+        self.payloads["series/series-manifest.json"] = b'{"providers": {}}'
+        with self.assertRaisesRegex(RuntimeError, "published download size/SHA-256 differs"):
+            self.prepare()
 
     def test_the_gate_report_of_the_same_bytes_and_policy_is_documented_without_a_second_inspection(self):
         quality = self.gate_report()
@@ -195,7 +210,8 @@ class DocumentationTests(unittest.TestCase):
         self.payloads["availability/availability.tar.gz"] = self.availability.read_bytes()
         directory = self.prepare()
         card = (directory / "README.md").read_text()
-        self.assertLess(len(card), 20000)
+        # Shorter than the periods' identifiers alone: the summary never lists them all.
+        self.assertLess(len(card), sum(len(row["period"]["id"]) for row in combinations))
         self.assertIn("| snapshot | 1,200 |", card)
         evidence = content["datasets.jsonl"][0]
         self.assertIn(f"| {evidence['verified_at']} | {evidence['valid_until']} |", card)
