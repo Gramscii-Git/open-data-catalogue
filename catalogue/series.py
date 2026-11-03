@@ -48,6 +48,12 @@ def files(directory: Path, providers) -> list[str]:
     return check(directory / DIRECTORY, providers)["files"]
 
 
+def beside(verification: Path) -> Path:
+    """The inventory of the release whose archive `verification` verifies: the release's directory holds both, as
+    `export` writes it there."""
+    return verification.parent / DIRECTORY
+
+
 def check(target: Path, providers) -> dict:
     """Each provider's counts and the files to upload, once the manifest, the files and their footers agree."""
     manifest = json.loads((target / MANIFEST).read_bytes())

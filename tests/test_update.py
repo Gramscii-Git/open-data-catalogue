@@ -15,6 +15,7 @@ import unittest
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from sample_series import sample_series
 from test_availability import archive_at, tables
 from test_release import DOCUMENT_CONTRACT, digest, rows, write_archive
 
@@ -24,6 +25,7 @@ from catalogue.cli import schedule
 from catalogue.config import load as load_config
 from catalogue.publish import file_url
 from catalogue.receipts import read_verification, verify_catalogue, write_json
+from catalogue.series import check as check_series
 from catalogue.update_plan import load as load_plan
 from catalogue.update_plan import load_state
 from catalogue.update_run import (
@@ -35,6 +37,11 @@ from catalogue.update_run import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+# The series inventory a discovery release uploads with its archive, as the fake harvester's series-export writes it.
+DISCOVERED_SERIES = ("series/series-manifest.json", "series/sample/series-tables.parquet",
+                     "series/sample/series-blocks.parquet")
 
 
 class UpdateTests(unittest.TestCase):
@@ -96,6 +103,11 @@ class UpdateTests(unittest.TestCase):
         self.verification = self.root / "catalogue-verification.json"
         verify_catalogue(self.config, self.catalogue, catalogue_pub["revision"], catalogue_pub["sha256"],
                          catalogue_pub["bytes"], self.verification)
+        # The catalogue release's series inventory beside its verification, its manifest published with the archive.
+        manifest = sample_series(self.root / "series") / "series-manifest.json"
+        published = self.hub / "datasets" / self.config["hub"]["repository"] / "resolve" / catalogue_pub["revision"]
+        (published / "series").mkdir()
+        shutil.copyfile(manifest, published / "series" / "series-manifest.json")
         availability_pub = self.initial_publication(self.archive, "availability/availability.tar.gz", "b" * 40)
         self.active = {"indexes": {"national": {"artifact": self.pin(availability_pub), "snapshots": {}}}}
         self.activation = self.root / "initial-activation.json"
@@ -186,6 +198,9 @@ class UpdateTests(unittest.TestCase):
                 snapshots = {provider: self.pin(json.loads(Path(path).read_bytes())) for provider, path in paths.items()}
             self.active["indexes"][name] = {"artifact": self.pin(published), "snapshots": snapshots}
             return json.dumps({"activated": True, "index": name, "previous": previous, **self.active["indexes"][name]})
+        if action == "series-export":
+            target = sample_series(Path(arguments[arguments.index("--to") + 1]))
+            return json.dumps(check_series(target, ["sample"])["providers"])
         if action == "export":
             target = Path(arguments[arguments.index("--to") + 1])
             shutil.copyfile(self.catalogue, target)
@@ -401,9 +416,11 @@ class UpdateTests(unittest.TestCase):
         archive = f"/{publication['revision']}/{self.config['hub']['archive']}"
         self.assertEqual(sum(path.endswith(archive) for path in self.requests), 1)
         self.assertTrue(any(call[0] == "export" for call in self.harvester_calls))
+        self.assertTrue(any(call[0] == "series-export" for call in self.harvester_calls))
         uploads = [json.loads(line) for line in (self.hub / "uploads.jsonl").read_text().splitlines()]
         self.assertEqual(len(uploads), 3)
-        self.assertEqual(set(uploads[0]["files"]), {self.config["hub"]["archive"], "manifest.json", "SHA256SUMS", "quality.json"})
+        self.assertEqual(set(uploads[0]["files"]), {self.config["hub"]["archive"], "manifest.json", "SHA256SUMS", "quality.json",
+                                                    *DISCOVERED_SERIES})
         self.assertIn("README.md", uploads[-1]["files"])
         self.assertIn("viewer/national_combinations.jsonl", uploads[-1]["files"])
 
@@ -421,7 +438,8 @@ class UpdateTests(unittest.TestCase):
         self.assertEqual(state["catalogue"]["verification"], str(directory / "discovery/verification.json"))
         uploads = [json.loads(line) for line in (self.hub / "uploads.jsonl").read_text().splitlines()]
         self.assertEqual(len(uploads), 2)
-        self.assertEqual(set(uploads[0]["files"]), {self.config["hub"]["archive"], "manifest.json", "SHA256SUMS", "quality.json"})
+        self.assertEqual(set(uploads[0]["files"]), {self.config["hub"]["archive"], "manifest.json", "SHA256SUMS", "quality.json",
+                                                    *DISCOVERED_SERIES})
         self.assertTrue(all("README.md" not in upload["files"] and "viewer-manifest.json" not in upload["files"]
                             for upload in uploads))
         self.assertFalse((directory / "documentation").exists())

@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from . import availability_build, availability_publish, documentation, snapshots
+from . import availability_build, availability_publish, documentation, series, snapshots
 from .documentation_evidence import read as read_evidence
 from .publish import upload_archive
 from .receipts import (
@@ -170,6 +170,7 @@ def discovery_release(directory, config, action, harvester, prepare_catalogue):
         harvester(config, "enrich")
         harvester(config, "verify")
     report = prepare_catalogue(directory, config, harvester)
+    series.export(directory, config, harvester, report["providers"])
     return upload_archive(directory, config, report)
 
 
@@ -195,7 +196,7 @@ def verify_documentation_evidence(config, source):
 def document_release(directory, config, archive, revision, verification, releases, template, viewer, source):
     if source["mode"] == "current_validation":
         documentation.prepare(directory, config, archive, revision, releases, template, viewer,
-                              catalogue_verification=verification)
+                              catalogue_verification=verification, series_directory=series.beside(verification))
         status_artifact = None
     else:
         status_artifact = source["status_artifact"]

@@ -82,8 +82,9 @@ def upload(directory: Path, config: dict, report: dict) -> dict:
 
 
 def upload_archive(directory: Path, config: dict, report: dict) -> dict:
-    """Publish discovery evidence while the complete Hub card keeps its current pins."""
-    files = (config["hub"]["archive"], "manifest.json", "SHA256SUMS", "quality.json")
+    """Publish discovery evidence, the series inventory with it, while the complete Hub card keeps its current pins."""
+    files = (config["hub"]["archive"], "manifest.json", "SHA256SUMS", "quality.json",
+             *series.files(directory, report["providers"]))
     return _upload_catalogue(directory, config, report, files)
 
 

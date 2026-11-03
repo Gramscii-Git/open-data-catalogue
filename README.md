@@ -268,7 +268,14 @@ The release is refused unless:
 The footer is read with the standard library, independently of the writer that
 produced it. `publish` and `release` upload the inventory with the archive.
 `publish-archive` publishes an existing archive together with the inventory
-exported beside it, named by `--series`.
+exported beside it, named by `--series`. An update run's discovery exports it
+the same way and uploads it with the archive.
+
+The Hub card of a release reads the inventory from the release's `series/`
+directory, beside its `verification.json`. It counts each provider's tables and
+blocks, and groups the tables left out by reason. A card written from a
+published report documents that archive as it was published, without an
+inventory.
 
 ## Release checks
 

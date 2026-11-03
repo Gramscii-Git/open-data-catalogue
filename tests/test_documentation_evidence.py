@@ -92,7 +92,7 @@ class PublishedDocumentationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "schema_version must be 5"):
             prepare(self.target, self.config, self.catalogue, "a" * 40, self.releases,
                     ROOT / "README.hub.md", self.viewer,
-                    catalogue_verification=self.verification)
+                    catalogue_verification=self.verification, series_directory=self.target / "series")
         self.assertFalse(list(self.target.iterdir()))
 
     def test_different_current_policy_never_relabels_historical_metrics(self):

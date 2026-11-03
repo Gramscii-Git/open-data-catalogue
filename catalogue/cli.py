@@ -171,6 +171,8 @@ def main(argv=None) -> int:
             documentation.add_argument("--catalogue-verification", type=Path, required=True)
             documentation.add_argument("--catalogue-quality", type=Path,
                                        help="the release gate's quality.json for this archive, read instead of inspecting it again")
+            documentation.add_argument("--series", type=Path, required=True,
+                                       help="the release's series inventory directory, published with the archive")
         else:
             documentation.add_argument("--catalogue-evidence", type=Path, required=True)
             documentation.add_argument("--catalogue-status-artifact", required=True)
@@ -241,6 +243,7 @@ def main(argv=None) -> int:
                     prepare_documentation(directory, config, args.catalogue_archive, args.catalogue_revision,
                                           args.availability_releases, args.readme_template, args.viewer_config,
                                           catalogue_verification=args.catalogue_verification,
+                                          series_directory=args.series.resolve(),
                                           catalogue_quality=args.catalogue_quality)
                 else:
                     status_artifact = args.catalogue_status_artifact
