@@ -99,11 +99,32 @@ def inspect_contract(manifest, policy):
             for name, value in implementation["files"].items()
         ):
             raise ValueError("document implementation files require explicit SHA-256 identities")
-    fields(contract["rendering"]["source_fields"], {"catalogue", "structure", "terms", "dimensions"}, "document source fields")
+    fields(contract["rendering"]["source_fields"], {"catalogue", "structure", "terms", "dimensions", "document_codes"}, "document source fields")
+    if contract["rendering"]["source_fields"]["document_codes"] != ["dimension_id", "codes"]:
+        raise ValueError("document codes must be read as each dimension's codes")
     for names in contract["rendering"]["source_fields"].values():
         if not isinstance(names, list) or not names or len(set(names)) != len(names) or any(not isinstance(name, str) or not name.isidentifier() for name in names):
             raise ValueError("document source fields must be unique explicit identifiers")
     return contract
+
+
+def provider_contracts(contract):
+    """What each provider's documents are built from, as the harvester reads it: the parts every provider shares, and
+    its own declaration, rendering, implementation and workspace definitions."""
+    shared = {**{field: contract[field] for field in ("schema_version", "eligibility_fields", "retrieval_sections")},
+              "source_fields": contract["rendering"]["source_fields"]}
+    return {provider: {
+        **shared,
+        "provider": provider,
+        "languages": languages,
+        "language_membership": contract["language_membership"][provider],
+        "source_role": contract["source_roles"][provider],
+        "localization_languages": contract["localization_languages"][provider],
+        "rendering": contract["rendering"]["providers"][provider],
+        "implementation": contract["rendering"]["implementations"][provider],
+        "definitions": {language: contract["definitions"][language]
+                        for language, authority in languages.items() if authority == "workspace_definition"},
+    } for provider, languages in contract["providers"].items()}
 
 
 def inspect_membership(catalogue, documents, contract, manifest, source_tables, *, structure_lookup=None):
@@ -128,6 +149,8 @@ def inspect_membership(catalogue, documents, contract, manifest, source_tables, 
     metrics["missing_documents"] = len(expected - held)
     metrics["undeclared_documents"] = len(held - expected)
     sha256 = digest(contract)
+    # Each document carries its own provider's contract: a change to another provider's reader leaves it current.
+    contracts = {provider: digest(value) for provider, value in provider_contracts(contract).items()}
     inputs = Inputs(source_tables, contract, digest, structure_lookup=structure_lookup)
     for identity, document in documents.items():
         if identity not in expected:
@@ -154,7 +177,7 @@ def inspect_membership(catalogue, documents, contract, manifest, source_tables, 
         text = document["text"]
         text_sha256 = hashlib.sha256(text.encode()).hexdigest()
         proof = {
-            "contract_sha256": sha256, "authority": authority, "source_language": language,
+            "contract_sha256": contracts[provider], "authority": authority, "source_language": language,
             "source_sha256": digest(inputs.envelope(prepared, language, source)), "text_sha256": text_sha256,
         }
         if (

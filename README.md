@@ -171,9 +171,13 @@ eleven-provider OpenData contract; a changed installation requires its own verif
 The snapshot also carries native provider objects, dataset bindings and explicit
 native exclusions. The contract includes an explicit renderer manifest and hashes of its executed
 modules, provider configuration, external words and input schema. Each document
-binds its actual catalogue fields, structure, metadata report, localization
-vocabulary, content and declared language authority to that contract. A change
-to one of those inputs requires rebuilding its affected projections.
+binds its actual catalogue fields, structure with the codes its build listed in
+each dimension (`opendata_document_codes`), metadata report, localization
+vocabulary, content and declared language authority to its own provider's part
+of that contract: the parts every provider shares, and the provider's languages,
+source role, rendering, implementation and workspace definitions. A change to
+one of those inputs requires rebuilding its affected projections; a change to
+another provider's part leaves them current.
 
 Native metadata documents retain their source language. Eurostat, OECD and ILO
 require English documents; Italian discovery searches the explicitly declared

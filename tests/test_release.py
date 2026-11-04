@@ -20,7 +20,7 @@ from catalogue.cli import publication_lock, schedule
 from catalogue.config import load
 from catalogue.discovery import dataset_readme, prepare_archive
 from catalogue.document_inputs import Inputs
-from catalogue.documents import digest
+from catalogue.documents import digest, provider_contracts
 from catalogue.provider_catalogue import prepare as prepare_provider
 from catalogue.publish import file_url, revision_from_result, verify_download
 from catalogue.structure_errors import permanent_structure_errors
@@ -84,12 +84,18 @@ def rows(contract=DOCUMENT_CONTRACT):
             "codelist_scope": "codelist:AREA",
         }
     ]
+    return prove(result, contract)
+
+
+def prove(result, contract=DOCUMENT_CONTRACT):
+    """The tables with their one document's proof written from them, as the harvester writes it."""
     document = result["opendata_documents"][0]
     document["text_hash"] = hashlib.sha256(document["text"].encode()).hexdigest()
     row = result["opendata_catalog"][0]
     inputs = Inputs(result, contract, digest)
     document["projection"] = {
-        "contract_sha256": digest(contract), "authority": "native_metadata", "source_language": "en",
+        "contract_sha256": digest(provider_contracts(contract)[row["provider"]]), "authority": "native_metadata",
+        "source_language": "en",
         "source_sha256": digest(inputs.envelope(inputs.prepare(row), "en", {"title": row["title"], "metadata": {
             field: row.get(field) for field in (
                 "names", "descriptions", "category_paths", "keywords", "caveat",
@@ -348,6 +354,30 @@ class Releases(unittest.TestCase):
                 with self.assertRaises(QualityError) as caught:
                     self.inspect(data)
                 self.assertEqual(caught.exception.report["metrics"]["invalid_document_projections"], 1)
+
+    def test_a_document_proof_covers_the_codes_its_build_listed(self):
+        data = rows()
+        data["opendata_document_codes"] = [{"provider": "sample", "dataset_id": "a", "dimension_id": "D",
+                                            "codes": ["A"]}]
+        prove(data, self.contract)
+        self.assertEqual(self.inspect(data)["issues"], [])
+        data["opendata_document_codes"][0]["codes"] = ["A", "B"]
+        with self.assertRaises(QualityError) as caught:
+            self.inspect(data)
+        self.assertEqual(caught.exception.report["metrics"]["invalid_document_projections"], 1)
+
+    def test_a_document_proof_under_the_whole_contract_is_not_its_providers(self):
+        data = rows()
+        data["opendata_documents"][0]["projection"]["contract_sha256"] = digest(self.contract)
+        with self.assertRaises(QualityError) as caught:
+            self.inspect(data)
+        self.assertEqual(caught.exception.report["metrics"]["invalid_document_projections"], 1)
+
+    def test_an_archive_without_the_document_codes_is_rejected(self):
+        data = rows()
+        del data["opendata_document_codes"]
+        with self.assertRaisesRegex(ValueError, "exactly the declared JSONL tables"):
+            self.inspect(data)
 
     def test_changed_renderer_implementation_rejects_held_document_proofs(self):
         self.contract["rendering"]["implementations"]["sample"]["files"]["tests/test_release.py"] = "0" * 64

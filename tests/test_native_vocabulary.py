@@ -10,7 +10,7 @@ from test_release import DOCUMENT_CONTRACT, ROOT, rows, write_archive
 from catalogue.archive import QualityError, inspect_archive
 from catalogue.config import load
 from catalogue.document_inputs import Inputs
-from catalogue.documents import digest
+from catalogue.documents import digest, provider_contracts
 
 
 class NativeVocabulary(unittest.TestCase):
@@ -74,7 +74,7 @@ class NativeVocabulary(unittest.TestCase):
             "names", "descriptions", "category_paths", "keywords", "caveat", "filters",
             "sources", "period_start", "period_end", "freshness",
         )}}
-        document["projection"].update(contract_sha256=digest(self.contract),
+        document["projection"].update(contract_sha256=digest(provider_contracts(self.contract)["sample"]),
                                       source_sha256=digest(inputs.envelope(inputs.prepare(catalog), "en", authority)))
         write_archive(self.archive, data, contract=self.contract)
         return inspect_archive(self.archive, self.policy)
