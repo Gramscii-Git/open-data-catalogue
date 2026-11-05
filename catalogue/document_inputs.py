@@ -21,6 +21,10 @@ class Inputs:
         structures = {(row["provider"], row["dataset_id"]): row for row in tables["opendata_structures"]}
         self.structure_lookup = structures.get if structure_lookup is None else structure_lookup
         self.reports = {(row["provider"], row["report_key"]): row["texts"] for row in tables["opendata_meta_reports"]}
+        # The codes each dataset's document lists in each dimension, fixed by its provider's last build.
+        self.codes = defaultdict(dict)
+        for row in tables["opendata_document_codes"]:
+            self.codes[(row["provider"], row["dataset_id"])][row["dimension_id"]] = list(row["codes"])
         self.terms = defaultdict(list)
         self.dimensions = defaultdict(list)
         schema = contract["rendering"]["source_fields"]
@@ -41,13 +45,24 @@ class Inputs:
         provider, dataset = row["provider"], row["dataset_id"]
         effective, role = resolve(row, self.contract["source_roles"][provider], self.contract["rendering"]["providers"][provider])
         schema = self.contract["rendering"]["source_fields"]
-        held = self.structure_lookup((provider, dataset))
-        structure = {field: held.get(field) for field in schema["structure"]} if held is not None and role is None else None
+        structure = self.structure(row) if role is None else None
         catalogue = {"provider": provider, "dataset_id": dataset, "title": effective["title"],
                      "fields": {field: effective.get(field) for field in schema["catalogue"]} | {
                          "report_texts": self.reports.get((provider, effective.get("report_key"))),
                      }}
         return Prepared(effective, catalogue, structure, role)
+
+    def structure(self, row):
+        """The stored structure with the codes its document lists in each dimension, or none when the catalogue says it
+        has none or none is stored."""
+        if type(row["structure_available"]) is not bool:
+            raise ValueError("document structure availability requires an explicit catalogue boolean")
+        identity = (row["provider"], row["dataset_id"])
+        held = self.structure_lookup(identity) if row["structure_available"] else None
+        if held is None:
+            return None
+        fields = self.contract["rendering"]["source_fields"]["structure"]
+        return {field: held.get(field) for field in fields} | {"document_codes": self.codes.get(identity, {})}
 
     def envelope(self, prepared, language, authority):
         provider = prepared.row["provider"]

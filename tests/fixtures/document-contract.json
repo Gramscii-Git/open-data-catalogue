@@ -66,6 +66,10 @@
         "concept_scope",
         "concept_id",
         "codelist_scope"
+      ],
+      "document_codes": [
+        "dimension_id",
+        "codes"
       ]
     },
     "providers": {

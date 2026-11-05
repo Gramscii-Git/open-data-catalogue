@@ -26,6 +26,7 @@ TABLE_KEYS = {
     "opendata_terms": ("provider", "language", "scope", "code"),
     "opendata_labels": ("provider", "dataset_id", "language"),
     "opendata_meta_reports": ("provider", "report_key"),
+    "opendata_document_codes": ("provider", "dataset_id", "dimension_id"),
     "opendata_documents": ("provider", "dataset_id", "language"),
     "opendata_native_objects": ("sha256",),
     "opendata_native_bindings": ("provider", "dataset_id"),
@@ -128,7 +129,7 @@ def _inspect_archive(
     native_bindings = {}
     providers = Counter()
     issues = []
-    source_tables = {name: [] for name in ("opendata_structures", "opendata_terms", "opendata_structure_dims", "opendata_meta_reports")}
+    source_tables = {name: [] for name in ("opendata_structures", "opendata_terms", "opendata_structure_dims", "opendata_meta_reports", "opendata_document_codes")}
     with tarfile.open(path, "r:gz") as archive:
         members = archive.getmembers()
         expected = {f"{table}.jsonl" for table in TABLE_KEYS} | {"manifest.json"}
