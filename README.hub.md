@@ -201,6 +201,27 @@ Defects are not made acceptable by publishing the availability index. A correcte
 replaces the current archive. Counts above describe this published archive,
 not an unpublished working database.
 
+## Series inventory
+
+For each provider, `series/` holds two Parquet files:
+
+- the tables a reader may be offered whose inventory is complete and read against
+  the table's present structure, each with the order of its dimensions;
+- their blocks: one code list per dimension, the series those codes make, and
+  their first and last periods.
+
+[The manifest]($series_url) names every file's rows and SHA-256, and the tables
+left out with their reason. Before upload, every file was checked against it and
+against the rows its own Parquet footer declares.
+
+| Provider | Tables | Blocks | Tables left out |
+| --- | ---: | ---: | ---: |
+$series_providers
+
+| Provider | Why tables are left out | Tables |
+| --- | --- | ---: |
+$series_left_out
+
 ## Integrity and updates
 
 Use the full commit hashes in the download links above. Branch names such as

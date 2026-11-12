@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from catalogue.document_inputs import Inputs
-from catalogue.documents import digest, inspect_contract, inspect_membership
+from catalogue.documents import digest, inspect_contract, inspect_membership, provider_contracts
 
 FIXTURE = Path(__file__).parent / "fixtures/native-document-role-readback.json.gz"
 
@@ -32,7 +32,11 @@ class NativeDocumentRole(unittest.TestCase):
             }
             for language in self.contract["searches"]
         }
+        # Read back before the harvester listed each document's codes: its documents list none.
+        self.contract["rendering"]["source_fields"]["document_codes"] = ["dimension_id", "codes"]
+        self.tables["opendata_document_codes"] = []
         contract_sha256 = digest(self.contract)
+        contracts = {provider: digest(value) for provider, value in provider_contracts(self.contract).items()}
         self.manifest["document_contract_sha256"] = contract_sha256
         self.manifest["document_membership"]["contract_sha256"] = contract_sha256
         catalogue = {
@@ -56,7 +60,7 @@ class NativeDocumentRole(unittest.TestCase):
                               )
                           }}
             document["projection"] = {
-                "contract_sha256": contract_sha256,
+                "contract_sha256": contracts[document["provider"]],
                 "authority": authority,
                 "source_language": document["language"],
                 "source_sha256": digest(inputs.envelope(prepared, document["language"], source)),
