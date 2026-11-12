@@ -106,6 +106,15 @@
         "permanent": "BOOLEAN"
       }
     },
+    "opendata_document_codes": {
+      "partition": "provider",
+      "columns": {
+        "provider": "VARCHAR",
+        "dataset_id": "VARCHAR",
+        "dimension_id": "VARCHAR",
+        "codes": "VARCHAR[]"
+      }
+    },
     "opendata_documents": {
       "partition": "provider",
       "columns": {
