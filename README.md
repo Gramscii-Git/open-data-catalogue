@@ -461,8 +461,8 @@ original capture `manifest` and its relative `responses` directory. Each entry
 in `graphs` identifies `provider`, `dataset_id`, and pinned `receipt` and `body`
 assets. Each entry in `definitions` declares those dataset identities and the
 exact `original` and `candidate` definition digests. `core` declares its full
-commit `revision` and a `files` mapping of every `server/sdg/**/*.py` file,
-relative to `server/sdg`, to its digest. Verification has no elapsed-work
+commit `revision` and a `files` mapping of every Python file of the harvester's
+package, relative to the package, to its digest. Verification has no elapsed-work
 deadline. These are required inputs; the command infers no missing version,
 scope, timestamp or digest.
 
