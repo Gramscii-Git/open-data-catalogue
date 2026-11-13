@@ -1,5 +1,6 @@
 """Write a verified discovery archive as Parquet tables for S3: one directory per table, partitioned as declared."""
 
+import gzip
 import hashlib
 import json
 import re
@@ -13,9 +14,15 @@ from .archive import TABLE_KEYS
 
 # DuckDB's own type names, as its DESCRIBE reads them back from Parquet.
 TYPES = frozenset({"VARCHAR", "BOOLEAN", "BIGINT", "DATE", "TIMESTAMP WITH TIME ZONE", "JSON", "VARCHAR[]", "BLOB"})
-# The largest object DuckDB's JSON reader asks for in one read of a pipe, which macOS caps at INT_MAX; its buffers
-# grow only as far as a row needs, and a refused row fails the export.
-LARGEST_OBJECT = 2**31 - 1
+# The longest row DuckDB's JSON reader may be told of, which macOS caps at INT_MAX for one read. Every reader thread
+# holds two buffers of the declared length, so the declaration is the archive's longest row, not this cap.
+LONGEST_READ = 2**31 - 1
+# DuckDB reads each file's rows from a staged file, never from a pipe: rows read from a pipe stay in memory until
+# the COPY ends, and one provider's structures reach 20 GB of rows of several MB. One thread reads them, and Parquet
+# row groups close at this size.
+ROW_GROUP_BYTES = "64MB"
+# A partition value names a directory: lowercase letters, digits, hyphens and underscores.
+PARTITION_VALUE = re.compile(r"[a-z0-9][a-z0-9_-]*")
 
 
 def load_tables(path: Path) -> dict:
@@ -42,50 +49,74 @@ def load_tables(path: Path) -> dict:
     return tables
 
 
-def copy_statement(table: dict, target: Path) -> str:
-    """DuckDB's COPY of newline-delimited rows on standard input into Parquet; BLOB columns arrive as base64."""
-    if "'" in str(target):
+def copy_statement(table: dict, source: Path, target: Path, *, memory_limit: str, longest_row: int) -> str:
+    """DuckDB's COPY of the newline-delimited rows staged in `source` into the Parquet file `target`, without the
+    partition column its directory names; BLOB columns arrive as base64. DuckDB reads rows of at most `longest_row`
+    bytes with one thread, holds at most `memory_limit` and spills the rest to disk."""
+    if "'" in str(source) or "'" in str(target):
         raise ValueError("S3 export path cannot contain a quote")
+    if not re.fullmatch(r"[1-9][0-9]*(MB|GB)", memory_limit):
+        raise ValueError(f"DuckDB memory limit {memory_limit!r} is not a size in MB or GB")
+    if not 0 < longest_row <= LONGEST_READ:
+        raise ValueError(f"longest row {longest_row} is not between 1 and {LONGEST_READ} bytes")
     columns = table["columns"]
     read = ", ".join(f"'{column}': '{'VARCHAR' if kind == 'BLOB' else kind}'" for column, kind in columns.items())
     select = ", ".join(f"from_base64({column}) AS {column}" if kind == "BLOB" else column
-                       for column, kind in columns.items())
-    source = (f"read_json('/dev/stdin', format='newline_delimited', maximum_object_size={LARGEST_OBJECT}, "
-              f"columns={{{read}}})")
-    if table["partition"] is None:
-        return f"COPY (SELECT {select} FROM {source}) TO '{target / 'data_0.parquet'}' (FORMAT parquet, COMPRESSION zstd)"
-    return (f"COPY (SELECT {select} FROM {source}) TO '{target}' "
-            f"(FORMAT parquet, COMPRESSION zstd, PARTITION_BY ({table['partition']}))")
+                       for column, kind in columns.items() if column != table["partition"])
+    return (f"SET memory_limit='{memory_limit}'; SET threads=1; SET preserve_insertion_order=false; "
+            f"COPY (SELECT {select} FROM read_json('{source}', format='newline_delimited', "
+            f"maximum_object_size={longest_row}, columns={{{read}}})) "
+            f"TO '{target}' (FORMAT parquet, COMPRESSION zstd, ROW_GROUP_SIZE_BYTES '{ROW_GROUP_BYTES}')")
 
 
-def write_table(lines, name: str, table: dict, duckdb: list[str], target: Path) -> tuple[int, str, int]:
-    """Stream one archive member into DuckDB, refusing a row whose columns differ from the declaration; answer
-    with its rows, SHA-256 and bytes."""
-    columns = set(table["columns"])
+def write_table(lines, name: str, table: dict, duckdb: list[str], target: Path, *,
+                memory_limit: str, longest_row: int) -> tuple[int, str, int]:
+    """Stream one archive member into Parquet through DuckDB: one file, or one file for each partition value of a
+    partitioned table, whose rows the archive carries grouped by that value. A row longer than `longest_row`, whose
+    columns differ from the declaration, or whose partition value a directory cannot hold or that arrives again after
+    another's, is refused. Answer with its rows, SHA-256 and bytes."""
+    columns, partition = set(table["columns"]), table["partition"]
     checksum, rows, size = hashlib.sha256(), 0, 0
     target.mkdir()
-    with tempfile.TemporaryFile() as errors:
-        process = subprocess.Popen([*duckdb, "-c", copy_statement(table, target)],
-                                   stdin=subprocess.PIPE, stdout=errors, stderr=errors)
-        try:
-            for line in lines:
-                row = json.loads(line)
-                if not isinstance(row, dict) or set(row) != columns:
-                    raise ValueError(f"{name}: row {rows + 1} does not hold exactly the declared columns")
-                checksum.update(line)
-                size += len(line)
-                rows += 1
-                process.stdin.write(line)
-            process.stdin.close()
-        except BrokenPipeError:
-            pass
-        except BaseException:
-            process.kill()
-            process.wait()
-            raise
-        if process.wait() != 0 or not process.stdin.closed:
-            errors.seek(0)
-            raise RuntimeError(f"{name}: DuckDB did not write the table: {errors.read().decode(errors='replace').strip()}")
+    with tempfile.TemporaryDirectory(dir=target.parent, prefix=f".{name}-") as staging:
+        staged = Path(staging) / "rows.jsonl.gz"
+        written, value, sink = set(), None, None
+
+        def copy() -> None:
+            sink.close()
+            directory = target / f"{partition}={value}" if partition is not None else target
+            directory.mkdir(exist_ok=partition is None)
+            statement = copy_statement(table, staged, directory / "data_0.parquet", memory_limit=memory_limit,
+                                       longest_row=longest_row)
+            result = subprocess.run([*duckdb, "-c", statement], capture_output=True, text=True)
+            if result.returncode != 0:
+                raise RuntimeError(f"{name}: DuckDB did not write the table: {(result.stderr or result.stdout).strip()}")
+            written.add(value)
+
+        for line in lines:
+            if len(line) > longest_row:
+                raise ValueError(f"{name}: row {rows + 1} holds {len(line)} bytes, past the longest row "
+                                 f"declared ({longest_row})")
+            row = json.loads(line)
+            if not isinstance(row, dict) or set(row) != columns:
+                raise ValueError(f"{name}: row {rows + 1} does not hold exactly the declared columns")
+            held = row[partition] if partition is not None else None
+            if partition is not None and not (isinstance(held, str) and PARTITION_VALUE.fullmatch(held)):
+                raise ValueError(f"{name}: row {rows + 1} names no {partition} a path can hold: {held!r}")
+            if sink is None or held != value:
+                if sink is not None:
+                    copy()
+                if held in written:
+                    raise ValueError(f"{name}: rows of {partition} {held!r} arrive after another {partition}'s")
+                value, sink = held, gzip.open(staged, "wb", compresslevel=1)
+            checksum.update(line)
+            size += len(line)
+            rows += 1
+            sink.write(line if line.endswith(b"\n") else line + b"\n")
+        if sink is None and partition is None:
+            sink = gzip.open(staged, "wb", compresslevel=1)
+        if sink is not None:
+            copy()
     return rows, checksum.hexdigest(), size
 
 
@@ -112,7 +143,8 @@ def sha256_file(path: Path) -> str:
     return checksum.hexdigest()
 
 
-def export(archive: Path, expected_sha256: str, tables: dict, duckdb: list[str], output: Path) -> dict:
+def export(archive: Path, expected_sha256: str, tables: dict, duckdb: list[str], output: Path, *,
+           memory_limit: str, longest_row: int) -> dict:
     """Write every table of the archive whose bytes match the verified SHA-256 under `output`, check each against
     the archive manifest and its own read-back, and write `output/manifest.json` naming every file."""
     if output.exists():
@@ -130,13 +162,16 @@ def export(archive: Path, expected_sha256: str, tables: dict, duckdb: list[str],
                 name = member.name.removesuffix(".jsonl")
                 if not member.isfile() or member.name != f"{name}.jsonl" or name not in tables or name in written:
                     raise ValueError(f"archive member {member.name!r} is not a declared table")
-                written[name] = write_table(source.extractfile(member), name, tables[name], duckdb, output / name)
+                written[name] = write_table(source.extractfile(member), name, tables[name], duckdb, output / name,
+                                            memory_limit=memory_limit, longest_row=longest_row)
         if manifest is None or set(written) != set(tables):
             raise ValueError("archive must hold every declared table and its manifest")
         counted = {}
         for name, (rows, digest, size) in written.items():
             if manifest["tables"][name] != rows or manifest["members"][f"{name}.jsonl"] != {"sha256": digest, "bytes": size}:
                 raise ValueError(f"{name}: rows or bytes differ from the archive manifest")
+            if tables[name]["partition"] is not None and rows == 0:
+                continue  # a partitioned table without rows writes no file to read back
             per_file, columns = read_back(duckdb, output / name, tables[name])
             if sum(per_file.values()) != rows or columns != tables[name]["columns"]:
                 raise ValueError(f"{name}: Parquet read-back differs from the archive")

@@ -115,6 +115,8 @@ def main(argv=None) -> int:
     export_s3.add_argument("--tables", type=Path, required=True)
     export_s3.add_argument("--duckdb", type=Path, required=True)
     export_s3.add_argument("--output", type=Path, required=True)
+    export_s3.add_argument("--memory-limit", required=True, help="what DuckDB may hold before it spills, e.g. 8GB")
+    export_s3.add_argument("--longest-row", type=int, required=True, help="bytes of the archive's longest row")
     availability = commands.add_parser(
         "check-availability",
         help="validate a joint-availability artifact; no source reads or upload",
@@ -213,7 +215,8 @@ def main(argv=None) -> int:
             from .s3_export import export, load_tables
 
             print(json.dumps(export(args.archive.resolve(), args.expect_sha256, load_tables(args.tables.resolve()),
-                                    [str(args.duckdb)], args.output.resolve()), indent=2))
+                                    [str(args.duckdb)], args.output.resolve(), memory_limit=args.memory_limit,
+                                    longest_row=args.longest_row), indent=2))
             return 0
         if args.command in {"check-update", "run-update"}:
             from .update_plan import load as load_plan
