@@ -162,8 +162,12 @@ configuration does not admit provider traffic or attest that coordination.
 Archived configurations remain historical evidence and are not upgraded
 automatically.
 
-Discovery snapshots use schema 5, retain dated held codes, and carry the validated document-language
-contract and projection provenance. `quality.document_contract_sha256` pins that
+Discovery snapshots use schema 6, retain dated held codes, and carry the validated document-language
+contract and projection provenance. They also carry each document's search passages
+(`opendata_passages.jsonl`): every passage's place in its document, its text, and the vector
+the embedder named in the manifest (`passages.embedder`, the SHA-256 of each artifact it pins and
+its dimensions) made of that text. A passage must be of its document's own text and projection,
+and its vector of the declared dimensions with finite values, or the release is refused. `quality.document_contract_sha256` pins that
 exact contract; obtain it from the configured harvester's `document-policy-status`
 command and review its provider languages, authorities and query routes before
 changing the deployment configuration. The example pin matches the current
@@ -716,17 +720,19 @@ Hub read-back verified, and makes no upload:
 is written as, and its partition column. Each table becomes a directory; a table
 keyed by provider is partitioned Hive-style (`provider=<id>/data_0.parquet`), and
 `opendata_native_objects` is one file. JSON columns keep their content as Parquet
-JSON, base64 bodies become binary, and timestamps are UTC instants. Rows stream
+JSON, base64 bodies become binary, a passage's vector becomes its list of float32
+values (`FLOAT[]`), and timestamps are UTC instants. Rows stream
 from the archive into the [DuckDB command line](https://duckdb.org/docs/stable/clients/cli/overview),
 one table at a time, with nothing extracted to disk.
 
 The export refuses a row whose columns differ from the declaration, a value DuckDB
 cannot read as its declared type, and a table whose rows, bytes or SHA-256 differ
 from the archive manifest; it then reads every table back and compares its rows and
-column types. `manifest.json` beside the tables records the snapshot time, the
+column types. `manifest.json` (schema 2) beside the tables records the snapshot time, the
 source archive's SHA-256 and size, the whole document contract with its SHA-256,
-every table's rows and columns, and every file's size, SHA-256 and rows, so a reader
-installing one provider checks that provider's files alone. A failed export leaves
+every table's rows and columns, the embedder the passages come from, and every file's
+size, SHA-256 and rows, so a reader installing one provider checks that provider's files
+alone, and lays its passages only when that embedder is its own. A failed export leaves
 no directory.
 
 ## Scheduling on macOS

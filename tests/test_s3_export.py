@@ -5,12 +5,13 @@ import copy
 import hashlib
 import json
 import shutil
+import struct
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from test_release import write_archive
+from test_release import EMBEDDER, write_archive
 
 from catalogue.s3_export import copy_statement, export, load_tables, sha256_file
 
@@ -19,6 +20,7 @@ DUCKDB = shutil.which("duckdb")
 VALUES = {
     "VARCHAR": "text", "BOOLEAN": True, "BIGINT": 7, "DATE": "2026-10-01", "TIMESTAMP WITH TIME ZONE": "2026-10-17T08:10:12+02:00",
     "JSON": {"nested": [1, "two"]}, "VARCHAR[]": ["A", "B"], "BLOB": base64.b64encode(b"\x00native").decode(),
+    "FLOAT[]": base64.b64encode(struct.pack("<3f", 0.1, -2.5, 3e-7)).decode(),
 }
 
 
@@ -129,6 +131,12 @@ class S3Export(unittest.TestCase):
         self.assertEqual(native["size"], len(b"\x00native"))
         codes = self.query(f"SELECT codes FROM read_parquet('{output}/opendata_held_codes/*/*.parquet') LIMIT 1")[0]
         self.assertEqual(codes["codes"], ["A", "B"])
+        # A passage's vector is its float32 values, exactly as the archive carries them.
+        self.assertIn("opendata_passages/provider=istat/data_0.parquet", result["files"])
+        vector = self.query(f"SELECT embedding FROM read_parquet('{output}/opendata_passages/*/*.parquet') LIMIT 1")[0]
+        self.assertEqual(struct.pack("<3f", *vector["embedding"]), base64.b64decode(VALUES["FLOAT[]"]))
+        self.assertEqual(result["schema"], 2)
+        self.assertEqual(result["passages"], {"embedder": EMBEDDER})
 
     def test_a_row_outside_the_declared_columns_leaves_nothing(self):
         rows = copy.deepcopy(self.rows)
@@ -149,6 +157,23 @@ class S3Export(unittest.TestCase):
         archive, digest = self.archive(self.rows, declared)
         output = self.directory / "catalogue"
         with self.assertRaisesRegex(ValueError, "opendata_documents: rows or bytes differ from the archive manifest"):
+            export(archive, digest, self.tables, [DUCKDB], output, memory_limit="1GB", longest_row=2**20)
+        self.assertFalse(output.exists())
+
+    def test_passages_must_match_the_archive_manifest(self):
+        declared = {name: 2 for name in self.tables} | {"opendata_passages": 3}
+        archive, digest = self.archive(self.rows, declared)
+        output = self.directory / "catalogue"
+        with self.assertRaisesRegex(ValueError, "opendata_passages: rows or bytes differ from the archive manifest"):
+            export(archive, digest, self.tables, [DUCKDB], output, memory_limit="1GB", longest_row=2**20)
+        self.assertFalse(output.exists())
+
+    def test_a_vector_that_is_no_float32_list_leaves_nothing(self):
+        rows = copy.deepcopy(self.rows)
+        rows["opendata_passages"][0]["embedding"] = base64.b64encode(b"\x00\x01\x02").decode()
+        archive, digest = self.archive(rows)
+        output = self.directory / "catalogue"
+        with self.assertRaisesRegex(ValueError, "opendata_passages: row 1 holds no float32 vector in embedding"):
             export(archive, digest, self.tables, [DUCKDB], output, memory_limit="1GB", longest_row=2**20)
         self.assertFalse(output.exists())
 
@@ -174,6 +199,10 @@ class S3Tables(unittest.TestCase):
 
     def test_the_declaration_covers_exactly_the_archive_tables(self):
         del self.spec["tables"]["opendata_labels"]
+        self.refused("exactly the archive tables")
+
+    def test_the_declaration_covers_the_passages(self):
+        del self.spec["tables"]["opendata_passages"]
         self.refused("exactly the archive tables")
 
     def test_a_column_needs_a_declared_type(self):

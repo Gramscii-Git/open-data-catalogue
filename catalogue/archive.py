@@ -4,8 +4,10 @@ import base64
 import binascii
 import hashlib
 import json
+import math
 import re
 import sqlite3
+import struct
 import tarfile
 import tempfile
 import zlib
@@ -17,7 +19,7 @@ from .documents import inspect_contract, inspect_membership
 from .structure_errors import declared_permanent
 from .vocabulary import Vocabulary
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 TABLE_KEYS = {
     "opendata_catalog": ("provider", "dataset_id"),
@@ -33,6 +35,14 @@ TABLE_KEYS = {
     "opendata_native_exclusions": ("provider", "reference"),
     "opendata_held_codes": ("provider", "dataset_id", "dimension_id"),
 }
+# The search passages of the archive's documents, counted apart from the tables: each passage's place in its document,
+# its text and its vector, which the embedder the manifest names made of that text (little-endian float32, base64).
+PASSAGES = "opendata_passages"
+PASSAGE_KEY = ("provider", "node_id")
+PASSAGE_FIELDS = frozenset({"provider", "dataset_id", "language", "position", "node_id", "text", "text_hash",
+                            "projection", "embedding"})
+# Every member of an archive but its manifest.
+MEMBERS = frozenset({*(f"{table}.jsonl" for table in TABLE_KEYS), f"{PASSAGES}.jsonl"})
 
 
 class QualityError(ValueError):
@@ -98,6 +108,55 @@ class StructureStore:
         return None if held is None else json.loads(zlib.decompress(held[0]))
 
 
+def _inspect_passages(archive, manifest: dict, documents: dict) -> int:
+    """Check the archive's search passages against the documents it holds: each one of a document's text and
+    projection, at its place in that document, its vector one of the declared embedder's space with finite values;
+    their count and bytes as the manifest declares them. Answer with their count."""
+    declared = manifest.get("passages")
+    if not isinstance(declared, dict) or set(declared) != {"rows", "embedder"} or type(declared["rows"]) is not int:
+        raise ValueError("manifest must count the search passages and name their embedder")
+    embedder = declared["embedder"]
+    if (not isinstance(embedder, dict) or set(embedder) != {"artifacts", "dimensions"}
+            or type(embedder["dimensions"]) is not int or embedder["dimensions"] <= 0
+            or not isinstance(embedder["artifacts"], dict) or not embedder["artifacts"]
+            or any(not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value)
+                   for value in embedder["artifacts"].values())):
+        raise ValueError("passages embedder must name each artifact's sha256 and the dimensions of its space")
+    dimensions, member = embedder["dimensions"], f"{PASSAGES}.jsonl"
+    seen, count, checksum, size = set(), 0, hashlib.sha256(), 0
+    for line in archive.extractfile(member):
+        checksum.update(line)
+        size += len(line)
+        row = json.loads(line)
+        if not isinstance(row, dict) or set(row) != PASSAGE_FIELDS:
+            raise ValueError(f"{PASSAGES}: row {count + 1} does not hold exactly the passage fields")
+        texts = ("provider", "dataset_id", "language", "node_id", "text", "text_hash", "embedding")
+        if (any(not isinstance(row[field], str) for field in texts) or type(row["position"]) is not int
+                or row["position"] < 0 or not row["text"].strip()
+                or row["node_id"] != f"{row['provider']}:{row['dataset_id']}:{row['language']}:{row['position']}"):
+            raise ValueError(f"passage {row.get('node_id')!r} is not at its place in its document")
+        identity = tuple(row[key] for key in PASSAGE_KEY)
+        if identity in seen:
+            raise ValueError(f"{PASSAGES}: duplicate key {identity!r}")
+        seen.add(identity)
+        document = documents.get((row["provider"], row["dataset_id"], row["language"]))
+        if document is None or (document.get("text_hash"), document.get("projection")) != (
+                row["text_hash"], row["projection"]):
+            raise ValueError(f"passage {row['node_id']!r} is not of its document's text and projection")
+        try:
+            raw = base64.b64decode(row["embedding"], validate=True)
+        except (binascii.Error, ValueError):
+            raw = b""
+        if len(raw) != 4 * dimensions or not all(map(math.isfinite, struct.unpack(f"<{dimensions}f", raw))):
+            raise ValueError(f"passage {row['node_id']!r} is not a vector of {dimensions} finite float32")
+        count += 1
+    if declared["rows"] != count:
+        raise ValueError(f"{PASSAGES}: manifest count {declared['rows']!r} does not match {count}")
+    if manifest["members"][member] != {"sha256": checksum.hexdigest(), "bytes": size}:
+        raise ValueError(f"{member}: manifest member receipt differs from its content")
+    return count
+
+
 def _inspect_archive(
     path: Path,
     policy: dict,
@@ -132,7 +191,7 @@ def _inspect_archive(
     source_tables = {name: [] for name in ("opendata_structures", "opendata_terms", "opendata_structure_dims", "opendata_meta_reports", "opendata_document_codes")}
     with tarfile.open(path, "r:gz") as archive:
         members = archive.getmembers()
-        expected = {f"{table}.jsonl" for table in TABLE_KEYS} | {"manifest.json"}
+        expected = MEMBERS | {"manifest.json"}
         if (
             len(members) != len(expected)
             or {member.name for member in members} != expected
@@ -147,7 +206,8 @@ def _inspect_archive(
             or type(manifest.get("schema_version")) is not int
             or manifest["schema_version"] != SCHEMA_VERSION
         ):
-            raise ValueError("snapshot schema_version must be 5 with native evidence, held codes and explicit document provenance")
+            raise ValueError("snapshot schema_version must be 6 with native evidence, held codes, explicit document "
+                             "provenance and search passages")
         document_contract = inspect_contract(manifest, policy)
         vocabulary = Vocabulary(policy, document_contract)
         if not isinstance(manifest.get("taken_at"), str) or not manifest["taken_at"]:
@@ -156,8 +216,7 @@ def _inspect_archive(
             manifest["tables"]
         ) != set(TABLE_KEYS):
             raise ValueError("manifest must count every snapshot table")
-        jsonl_members = {f"{table}.jsonl" for table in TABLE_KEYS}
-        if not isinstance(manifest.get("members"), dict) or set(manifest["members"]) != jsonl_members:
+        if not isinstance(manifest.get("members"), dict) or set(manifest["members"]) != MEMBERS:
             raise ValueError("manifest must identify every snapshot table member")
         for table, keys in TABLE_KEYS.items():
             seen = set()
@@ -295,6 +354,7 @@ def _inspect_archive(
             declared_member = manifest["members"][member_name]
             if declared_member != {"sha256": checksum.hexdigest(), "bytes": size}:
                 raise ValueError(f"{member_name}: manifest member receipt differs from its content")
+        _inspect_passages(archive, manifest, documents)
     if related_datasets - catalog.keys():
         issues.append(
             f"{len(related_datasets - catalog.keys())} dataset references have no catalogue row"

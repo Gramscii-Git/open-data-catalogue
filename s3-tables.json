@@ -166,6 +166,20 @@
         "checked_on": "DATE",
         "origin": "VARCHAR"
       }
+    },
+    "opendata_passages": {
+      "partition": "provider",
+      "columns": {
+        "provider": "VARCHAR",
+        "dataset_id": "VARCHAR",
+        "language": "VARCHAR",
+        "position": "BIGINT",
+        "node_id": "VARCHAR",
+        "text": "VARCHAR",
+        "text_hash": "VARCHAR",
+        "projection": "JSON",
+        "embedding": "FLOAT[]"
+      }
     }
   }
 }

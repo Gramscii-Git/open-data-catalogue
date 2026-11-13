@@ -1,19 +1,26 @@
 """Write a verified discovery archive as Parquet tables for S3: one directory per table, partitioned as declared."""
 
+import base64
+import binascii
 import gzip
 import hashlib
 import json
 import re
 import shutil
+import struct
 import subprocess
 import tarfile
 import tempfile
 from pathlib import Path
 
-from .archive import TABLE_KEYS
+from .archive import PASSAGE_KEY, PASSAGES, TABLE_KEYS
 
-# DuckDB's own type names, as its DESCRIBE reads them back from Parquet.
-TYPES = frozenset({"VARCHAR", "BOOLEAN", "BIGINT", "DATE", "TIMESTAMP WITH TIME ZONE", "JSON", "VARCHAR[]", "BLOB"})
+# Every table the export writes, with its key: the archive's tables and its search passages.
+KEYS = {**TABLE_KEYS, PASSAGES: PASSAGE_KEY}
+# DuckDB's own type names, as its DESCRIBE reads them back from Parquet. A BLOB arrives as base64; a FLOAT[] arrives as
+# base64 of little-endian float32 and is staged as its values.
+TYPES = frozenset({"VARCHAR", "BOOLEAN", "BIGINT", "DATE", "TIMESTAMP WITH TIME ZONE", "JSON", "VARCHAR[]", "BLOB",
+                   "FLOAT[]"})
 # The longest row DuckDB's JSON reader may be told of, which macOS caps at INT_MAX for one read. Every reader thread
 # holds two buffers of the declared length, so the declaration is the archive's longest row, not this cap.
 LONGEST_READ = 2**31 - 1
@@ -31,7 +38,7 @@ def load_tables(path: Path) -> dict:
     if not isinstance(spec, dict) or set(spec) != {"schema", "tables"} or spec["schema"] != 1:
         raise ValueError("S3 table declaration must be schema 1 with tables")
     tables = spec["tables"]
-    if not isinstance(tables, dict) or set(tables) != set(TABLE_KEYS):
+    if not isinstance(tables, dict) or set(tables) != set(KEYS):
         raise ValueError("S3 table declaration must declare exactly the archive tables")
     for name, table in tables.items():
         if not isinstance(table, dict) or set(table) != {"partition", "columns"}:
@@ -41,10 +48,10 @@ def load_tables(path: Path) -> dict:
             raise ValueError(f"{name}: every column needs one of {sorted(TYPES)}")
         if any(re.fullmatch(r"[a-z_][a-z0-9_]*", column) is None for column in columns):
             raise ValueError(f"{name}: column names must be lowercase identifiers")
-        if set(TABLE_KEYS[name]) - set(columns):
+        if set(KEYS[name]) - set(columns):
             raise ValueError(f"{name}: declared columns lack the table key")
         partition = table["partition"]
-        if partition is not None and (partition not in TABLE_KEYS[name] or columns[partition] != "VARCHAR"):
+        if partition is not None and (partition not in KEYS[name] or columns[partition] != "VARCHAR"):
             raise ValueError(f"{name}: a partition must be a text column of the table key")
     return tables
 
@@ -76,6 +83,7 @@ def write_table(lines, name: str, table: dict, duckdb: list[str], target: Path, 
     columns differ from the declaration, or whose partition value a directory cannot hold or that arrives again after
     another's, is refused. Answer with its rows, SHA-256 and bytes."""
     columns, partition = set(table["columns"]), table["partition"]
+    vectors = [column for column, kind in table["columns"].items() if kind == "FLOAT[]"]
     checksum, rows, size = hashlib.sha256(), 0, 0
     target.mkdir()
     with tempfile.TemporaryDirectory(dir=target.parent, prefix=f".{name}-") as staging:
@@ -112,12 +120,30 @@ def write_table(lines, name: str, table: dict, duckdb: list[str], target: Path, 
             checksum.update(line)
             size += len(line)
             rows += 1
-            sink.write(line if line.endswith(b"\n") else line + b"\n")
+            if vectors:
+                # The archive's bytes are checked as they are; DuckDB reads each vector as its float32 values.
+                for column in vectors:
+                    row[column] = floats(row[column], f"{name}: row {rows} holds no float32 vector in {column}")
+                staged_line = json.dumps(row, ensure_ascii=False, allow_nan=False).encode() + b"\n"
+            else:
+                staged_line = line if line.endswith(b"\n") else line + b"\n"
+            sink.write(staged_line)
         if sink is None and partition is None:
             sink = gzip.open(staged, "wb", compresslevel=1)
         if sink is not None:
             copy()
     return rows, checksum.hexdigest(), size
+
+
+def floats(value, refusal: str) -> list[float]:
+    """The values of a vector carried as base64 of little-endian float32; refused with `refusal` for anything else."""
+    try:
+        raw = base64.b64decode(value, validate=True)
+    except (TypeError, binascii.Error, ValueError):
+        raw = b""
+    if not raw or len(raw) % 4:
+        raise ValueError(refusal)
+    return list(struct.unpack(f"<{len(raw) // 4}f", raw))
 
 
 def read_back(duckdb: list[str], target: Path, table: dict) -> tuple[dict[str, int], dict]:
@@ -168,7 +194,8 @@ def export(archive: Path, expected_sha256: str, tables: dict, duckdb: list[str],
             raise ValueError("archive must hold every declared table and its manifest")
         counted = {}
         for name, (rows, digest, size) in written.items():
-            if manifest["tables"][name] != rows or manifest["members"][f"{name}.jsonl"] != {"sha256": digest, "bytes": size}:
+            declared = manifest["passages"]["rows"] if name == PASSAGES else manifest["tables"][name]
+            if declared != rows or manifest["members"][f"{name}.jsonl"] != {"sha256": digest, "bytes": size}:
                 raise ValueError(f"{name}: rows or bytes differ from the archive manifest")
             if tables[name]["partition"] is not None and rows == 0:
                 continue  # a partitioned table without rows writes no file to read back
@@ -180,12 +207,14 @@ def export(archive: Path, expected_sha256: str, tables: dict, duckdb: list[str],
                                                  "rows": counted[str(path.resolve())]}
                  for path in sorted(output.rglob("*.parquet"))}
         result = {
-            "schema": 1,
+            "schema": 2,
             "taken_at": manifest["taken_at"],
             "archive": {"sha256": expected_sha256, "bytes": archive.stat().st_size},
             "document_contract": manifest["document_contract"],
             "document_contract_sha256": manifest["document_contract_sha256"],
             "tables": {name: {"rows": written[name][0], **tables[name]} for name in tables},
+            # The embedder the passages' vectors come from: a reader lays them only when it embeds with the same.
+            "passages": {"embedder": manifest["passages"]["embedder"]},
             "files": files,
         }
         (output / "manifest.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

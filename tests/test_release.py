@@ -3,10 +3,12 @@
 import base64
 import copy
 import hashlib
+import math
 import http.server
 import io
 import json
 import plistlib
+import struct
 import subprocess
 import sys
 import tarfile
@@ -15,7 +17,7 @@ import threading
 import unittest
 from pathlib import Path
 
-from catalogue.archive import TABLE_KEYS, QualityError, inspect_archive
+from catalogue.archive import PASSAGES, TABLE_KEYS, QualityError, inspect_archive
 from catalogue.cli import publication_lock, schedule
 from catalogue.config import load
 from catalogue.discovery import dataset_readme, prepare_archive
@@ -27,6 +29,18 @@ from catalogue.structure_errors import permanent_structure_errors
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCUMENT_CONTRACT = json.loads((ROOT / "tests/fixtures/document-contract.json").read_text())
+# The embedder an archive's passages come from: the sha256 of each artifact it pins and the dimensions of its space.
+EMBEDDER = {"artifacts": {"weights": "e" * 64, "dense2": "f" * 64}, "dimensions": 4}
+
+
+def passage(document, position=0, vector=(0.5, -0.25, 0.125, 1.0)):
+    """A search passage of `document`, as the harvester carries it: its vector as little-endian float32, base64."""
+    return {"provider": document["provider"], "dataset_id": document["dataset_id"], "language": document["language"],
+            "position": position, "node_id": f"{document['provider']}:{document['dataset_id']}:"
+                                             f"{document['language']}:{position}",
+            "text": f"{document['text']} {position}", "text_hash": document["text_hash"],
+            "projection": document["projection"],
+            "embedding": base64.b64encode(struct.pack(f"<{len(vector)}f", *vector)).decode()}
 TEMPLATE = ("An error occured while trying to retrieve mapping set for dataflow: {agency}+{id}+{version}: \n"
             " Dataflow 'urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow={agency}:{id}({version})' doesn't contain a mapping set")
 BODY = ("An error occured while trying to retrieve mapping set for dataflow: IT1+115_362+1.0: \n"
@@ -107,17 +121,21 @@ def prove(result, contract=DOCUMENT_CONTRACT):
     return result
 
 
-def write_archive(path, tables, declared=None, *, contract=DOCUMENT_CONTRACT, snapshot_schema=5):
+def write_archive(path, tables, declared=None, *, contract=DOCUMENT_CONTRACT, snapshot_schema=6, embedder=EMBEDDER):
+    """An archive of `tables`, its search passages the rows under `PASSAGES` (none when absent), counted apart from
+    the tables as the harvester counts them; `declared` overrides the counts, the passages' too."""
+    passages = tables.get(PASSAGES, [])
+    tables = {name: body for name, body in tables.items() if name != PASSAGES}
+    counts = {name: len(body) for name, body in tables.items()} if declared is None else dict(declared)
     payloads = {
         f"{name}.jsonl": "".join(json.dumps(row) + "\n" for row in body).encode()
-        for name, body in tables.items()
+        for name, body in {**tables, PASSAGES: passages}.items()
     }
     manifest = {
         "schema_version": snapshot_schema,
         "taken_at": "2026-01-01T00:00:00Z",
-        "tables": {name: len(body) for name, body in tables.items()}
-        if declared is None
-        else declared,
+        "tables": {name: count for name, count in counts.items() if name != PASSAGES},
+        "passages": {"rows": counts.get(PASSAGES, len(passages)), "embedder": embedder},
         "document_contract": contract,
         "document_contract_sha256": digest(contract),
         "document_membership": {"documents": len(tables["opendata_documents"]), "missing": 0, "undeclared": 0, "contract_sha256": digest(contract)},
@@ -166,12 +184,58 @@ class Releases(unittest.TestCase):
                                         "codes": ["2024", "2025"], "checked_on": "2026-01-01", "origin": "source"}]
         report = self.inspect(data)
         self.assertEqual(report["tables"]["opendata_held_codes"], 1)
-        self.assertEqual(report["manifest"]["schema_version"], 5)
+        self.assertEqual(report["manifest"]["schema_version"], 6)
 
     def test_snapshot_without_the_current_schema_is_rejected(self):
-        write_archive(self.archive, rows(), snapshot_schema=4)
-        with self.assertRaisesRegex(ValueError, "schema_version must be 5"):
+        write_archive(self.archive, rows(), snapshot_schema=5)
+        with self.assertRaisesRegex(ValueError, "schema_version must be 6"):
             inspect_archive(self.archive, self.policy)
+
+    def test_passages_of_the_documents_travel_with_the_embedder_that_made_them(self):
+        data = rows(self.contract)
+        data[PASSAGES] = [passage(data["opendata_documents"][0], position) for position in (0, 1)]
+        report = self.inspect(data)
+        self.assertEqual(report["issues"], [])
+        self.assertEqual(report["manifest"]["passages"], {"rows": 2, "embedder": EMBEDDER})
+        self.assertNotIn(PASSAGES, report["tables"])
+
+    def test_a_passage_that_is_not_its_documents_or_not_a_vector_of_its_space_is_refused(self):
+        def changed(**fields):
+            data = rows(self.contract)
+            data[PASSAGES] = [{**passage(data["opendata_documents"][0]), **fields}]
+            return data
+
+        document = rows(self.contract)["opendata_documents"][0]
+        for case, data, message in (
+            ("older text", changed(text_hash="0" * 64), "not of its document's text and projection"),
+            ("other projection", changed(projection={**document["projection"], "text_sha256": "0" * 64}),
+             "not of its document's text and projection"),
+            ("no document", changed(dataset_id="b", node_id="sample:b:en:0"), "not of its document's text"),
+            ("not at its place", changed(node_id="sample:a:en:7"), "not at its place in its document"),
+            ("another space", changed(embedding=base64.b64encode(struct.pack("<3f", 0, 0, 1)).decode()),
+             "not a vector of 4 finite float32"),
+            ("not finite", changed(embedding=base64.b64encode(struct.pack("<4f", 0, 0, 1, math.nan)).decode()),
+             "not a vector of 4 finite float32"),
+            ("not base64", changed(embedding="!"), "not a vector of 4 finite float32"),
+            ("more fields", changed(extra=1), "does not hold exactly the passage fields"),
+        ):
+            with self.subTest(case):
+                with self.assertRaisesRegex(ValueError, message):
+                    self.inspect(data)
+
+    def test_passages_must_match_their_manifest_count_and_name_their_embedder(self):
+        data = rows(self.contract)
+        data[PASSAGES] = [passage(data["opendata_documents"][0])]
+        declared = {name: len(body) for name, body in data.items() if name != PASSAGES} | {PASSAGES: 2}
+        write_archive(self.archive, data, declared, contract=self.contract)
+        with self.assertRaisesRegex(ValueError, "opendata_passages: manifest count 2 does not match 1"):
+            inspect_archive(self.archive, self.policy)
+        for embedder in ({"artifacts": {}, "dimensions": 4}, {"artifacts": {"weights": "e" * 64}, "dimensions": 0},
+                         {"artifacts": {"weights": "short"}, "dimensions": 4}):
+            with self.subTest(embedder=embedder):
+                write_archive(self.archive, data, contract=self.contract, embedder=embedder)
+                with self.assertRaisesRegex(ValueError, "embedder must name"):
+                    inspect_archive(self.archive, self.policy)
 
     def test_held_codes_require_their_source_codes_date_and_origin(self):
         row = {"provider": "sample", "dataset_id": "a", "dimension_id": "TIME_PERIOD",
