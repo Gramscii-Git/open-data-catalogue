@@ -96,6 +96,20 @@ class S3ReadmeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "other tables"):
             s3_readme.written(TEMPLATE, manifest, DECLARED)
 
+    def test_the_snapshot_time_is_written_in_utc(self):
+        manifest = copy.deepcopy(MANIFEST)
+        manifest["taken_at"] = "2026-11-11T20:00:06.024185+01:00"
+        self.assertIn("snapshot taken 2026-11-11T19:00:06Z", s3_readme.written(TEMPLATE, manifest, DECLARED))
+
+    def test_a_group_without_its_notes_refuses(self):
+        declared = json.loads((ROOT / "s3-readme.json").read_text(encoding="utf-8"))
+        del declared["groups"][0]["notes"]
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "s3-readme.json"
+            path.write_text(json.dumps(declared), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "its notes"):
+                s3_readme.load(path)
+
     def test_a_provider_in_two_groups_refuses(self):
         declared = json.loads((ROOT / "s3-readme.json").read_text(encoding="utf-8"))
         declared["groups"][1]["providers"].append("istat")

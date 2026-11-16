@@ -5,7 +5,7 @@ the tables described as `s3-readme.json` declares. A provider or a table of the 
 or one it names the release does not hold, refuses the README rather than leave it wrong."""
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from string import Template
 
@@ -21,6 +21,8 @@ def load(path: Path) -> dict:
     declared = json.loads(path.read_text(encoding="utf-8"))
     if set(declared) != {"groups", "tables"} or not declared["groups"] or not declared["tables"]:
         raise ValueError("the S3 README declaration names its provider groups and its tables")
+    if any(not isinstance(group, dict) or set(group) != {"label", "providers", "notes"} for group in declared["groups"]):
+        raise ValueError("an S3 README group names its label, its providers and its notes, empty when it has none")
     named = [provider for group in declared["groups"] for provider in group["providers"]]
     if len(named) != len(set(named)):
         raise ValueError("a provider belongs to one group of the S3 README")
@@ -68,7 +70,7 @@ def written(template: str, manifest: dict, declared: dict) -> str:
     for name, description in declared["tables"].items():
         rows = f"{manifest['tables'][name]['rows']:,}"
         tables.extend(_hanging(name + " " + rows.rjust(ROWS_END - len(name) - 1), description.split(), DESCRIPTION_COLUMN))
-    taken = datetime.fromisoformat(manifest["taken_at"])
+    taken = datetime.fromisoformat(manifest["taken_at"]).astimezone(UTC)
     return Template(template).substitute(
         datasets=f"{manifest['tables']['opendata_catalog']['rows']:,}", providers=len(held),
         taken_at=taken.strftime("%Y-%m-%dT%H:%M:%SZ"), archive_sha256=manifest["archive"]["sha256"],
