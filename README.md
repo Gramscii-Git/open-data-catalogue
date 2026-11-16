@@ -735,6 +735,23 @@ size, SHA-256 and rows, so a reader installing one provider checks that provider
 alone, and lays its passages only when that embedder is its own. A failed export leaves
 no directory.
 
+`s3-readme` writes the `README.txt` a reader of the bucket finds beside the
+catalogue, from `s3-readme.txt` and the export's own `manifest.json`, and makes no
+upload:
+
+```sh
+./update --config publisher.local.toml s3-readme \
+  --manifest build/s3-<release>/catalogue/manifest.json \
+  --template s3-readme.txt --declaration s3-readme.json \
+  --output build/s3-<release>/README.txt
+```
+
+The datasets, the providers, the snapshot time, the archive SHA-256 and every
+table's rows come from the manifest. `s3-readme.json` groups the providers and
+describes the tables; a provider the release holds and no group names, a group's
+provider the release does not hold, or a table described and not held (or held and
+not described) refuses the README.
+
 ## Scheduling on macOS
 
 ### Complete local update plans

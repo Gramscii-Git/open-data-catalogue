@@ -117,6 +117,13 @@ def main(argv=None) -> int:
     export_s3.add_argument("--output", type=Path, required=True)
     export_s3.add_argument("--memory-limit", required=True, help="what DuckDB may hold before it spills, e.g. 8GB")
     export_s3.add_argument("--longest-row", type=int, required=True, help="bytes of the archive's longest row")
+    s3_readme = commands.add_parser(
+        "s3-readme", help="write the README of an S3 export from its manifest and the declared groups and tables; no upload"
+    )
+    s3_readme.add_argument("--manifest", type=Path, required=True)
+    s3_readme.add_argument("--template", type=Path, required=True)
+    s3_readme.add_argument("--declaration", type=Path, required=True)
+    s3_readme.add_argument("--output", type=Path, required=True)
     availability = commands.add_parser(
         "check-availability",
         help="validate a joint-availability artifact; no source reads or upload",
@@ -217,6 +224,15 @@ def main(argv=None) -> int:
             print(json.dumps(export(args.archive.resolve(), args.expect_sha256, load_tables(args.tables.resolve()),
                                     [str(args.duckdb)], args.output.resolve(), memory_limit=args.memory_limit,
                                     longest_row=args.longest_row), indent=2))
+            return 0
+        if args.command == "s3-readme":
+            from . import s3_readme
+
+            text = s3_readme.written(args.template.read_text(encoding="utf-8"),
+                                     json.loads(args.manifest.read_text(encoding="utf-8")),
+                                     s3_readme.load(args.declaration))
+            args.output.write_text(text, encoding="utf-8")
+            print(json.dumps({"readme": str(args.output.resolve()), "bytes": len(text.encode("utf-8"))}, indent=2))
             return 0
         if args.command in {"check-update", "run-update"}:
             from .update_plan import load as load_plan

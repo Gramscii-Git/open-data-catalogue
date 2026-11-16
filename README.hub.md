@@ -28,7 +28,9 @@ This repository publishes independently versioned metadata and licensed source s
 
 The metadata archives contain no observation values. Availability indexes add evidence
 about existing source datasets; its combinations are not additional datasets.
-The archives include no search vectors or credentials.
+The discovery archive carries its searchable descriptions' passages with their vectors,
+and its manifest pins the embedder that made them by the SHA-256 of each of its files.
+The archives include no credentials.
 
 ## Acknowledgements: Vincenzo Patruno and onData
 

@@ -1,0 +1,98 @@
+{
+ "groups": [
+  {
+   "label": "Official statistics",
+   "providers": [
+    "istat",
+    "eurostat",
+    "eurostat-comext",
+    "ec-empl",
+    "ec-grow",
+    "oecd",
+    "ilo",
+    "ecb",
+    "bis",
+    "bundesbank",
+    "insee",
+    "fao"
+   ],
+   "notes": {}
+  },
+  {
+   "label": "Italian public finance",
+   "providers": [
+    "dvns",
+    "cruscotto"
+   ],
+   "notes": {
+    "dvns": "Dove vanno i nostri soldi",
+    "cruscotto": "AgID's Cruscotto Italia"
+   }
+  },
+  {
+   "label": "National open data",
+   "providers": [
+    "datagouv"
+   ],
+   "notes": {
+    "datagouv": "data.gouv.fr"
+   }
+  },
+  {
+   "label": "Italian cities",
+   "providers": [
+    "milano",
+    "roma",
+    "torino",
+    "bologna",
+    "napoli"
+   ],
+   "notes": {}
+  },
+  {
+   "label": "Urban planning",
+   "providers": [
+    "milano-pgt",
+    "lombardia-pgt",
+    "torino-prgc",
+    "bolzano-puc",
+    "genova-puc",
+    "veneto-ptrc",
+    "sardegna-puc",
+    "sicilia-prg"
+   ],
+   "notes": {}
+  },
+  {
+   "label": "Sardinia",
+   "providers": [
+    "datigov-sardegna",
+    "sardegna-salute",
+    "sardegna-autonomie",
+    "sardegna-geoserver",
+    "gbif-sardegna",
+    "eea-sardegna"
+   ],
+   "notes": {
+    "datigov-sardegna": "Sardinia's datasets on dati.gov.it",
+    "gbif-sardegna": "GBIF occurrences",
+    "eea-sardegna": "EEA map services"
+   }
+  }
+ ],
+ "tables": {
+  "opendata_catalog": "one per dataset: titles and names per language, descriptions, categories, keywords, agency, period covered, last update, links (sources), licence, attribution",
+  "opendata_structures": "one per dataset: dimensions, code lists, time coverage, key order, spatial reference, source",
+  "opendata_structure_dims": "one per dimension of a data structure",
+  "opendata_terms": "one per code of a code list, per language",
+  "opendata_labels": "one per dataset label in one language",
+  "opendata_meta_reports": "one per methodology or quality report",
+  "opendata_document_codes": "one per dimension a searchable description names",
+  "opendata_documents": "one per dataset's searchable description, per language",
+  "opendata_passages": "one per passage of a searchable description: its place, its text and its vector",
+  "opendata_native_objects": "one per provider response kept verbatim, by SHA-256",
+  "opendata_native_bindings": "one per dataset read from native objects",
+  "opendata_native_exclusions": "one per native reference left out, with the reason",
+  "opendata_held_codes": "one per dimension of a dataset: the codes holding data"
+ }
+}
