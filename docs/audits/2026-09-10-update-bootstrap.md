@@ -63,8 +63,8 @@ exactly matches the updater's read-only `availability-status` output.
 
 ## Pacing and runtime resources
 
-The environment uses the explicitly shared PostgreSQL pacing store,
-`semantic_deterministic_graph_opendata_pacing`, egress `roberto-local-egress`,
+The environment uses the explicitly shared PostgreSQL pacing store of the
+harvester's Open Data collection, egress `roberto-local-egress`,
 5-second connection/statement budgets and 604,800-second admission retention.
 All configured provider/channel policies passed the store's non-admitting probe.
 
