@@ -107,6 +107,23 @@ def main(argv=None) -> int:
     verify_catalogue_command.add_argument("--expect-sha256", required=True)
     verify_catalogue_command.add_argument("--expect-bytes", type=int, required=True)
     verify_catalogue_command.add_argument("--output", type=Path, required=True)
+    export_s3 = commands.add_parser(
+        "export-s3", help="write a verified discovery archive as Parquet tables for S3; no upload"
+    )
+    export_s3.add_argument("--archive", type=Path, required=True)
+    export_s3.add_argument("--expect-sha256", required=True)
+    export_s3.add_argument("--tables", type=Path, required=True)
+    export_s3.add_argument("--duckdb", type=Path, required=True)
+    export_s3.add_argument("--output", type=Path, required=True)
+    export_s3.add_argument("--memory-limit", required=True, help="what DuckDB may hold before it spills, e.g. 8GB")
+    export_s3.add_argument("--longest-row", type=int, required=True, help="bytes of the archive's longest row")
+    s3_readme = commands.add_parser(
+        "s3-readme", help="write the README of an S3 export from its manifest and the declared groups and tables; no upload"
+    )
+    s3_readme.add_argument("--manifest", type=Path, required=True)
+    s3_readme.add_argument("--template", type=Path, required=True)
+    s3_readme.add_argument("--declaration", type=Path, required=True)
+    s3_readme.add_argument("--output", type=Path, required=True)
     availability = commands.add_parser(
         "check-availability",
         help="validate a joint-availability artifact; no source reads or upload",
@@ -200,6 +217,22 @@ def main(argv=None) -> int:
 
             print(json.dumps(verify_catalogue(config, args.archive, args.revision, args.expect_sha256,
                                              args.expect_bytes, args.output), indent=2))
+            return 0
+        if args.command == "export-s3":
+            from .s3_export import export, load_tables
+
+            print(json.dumps(export(args.archive.resolve(), args.expect_sha256, load_tables(args.tables.resolve()),
+                                    [str(args.duckdb)], args.output.resolve(), memory_limit=args.memory_limit,
+                                    longest_row=args.longest_row), indent=2))
+            return 0
+        if args.command == "s3-readme":
+            from . import s3_readme
+
+            text = s3_readme.written(args.template.read_text(encoding="utf-8"),
+                                     json.loads(args.manifest.read_text(encoding="utf-8")),
+                                     s3_readme.load(args.declaration))
+            args.output.write_text(text, encoding="utf-8")
+            print(json.dumps({"readme": str(args.output.resolve()), "bytes": len(text.encode("utf-8"))}, indent=2))
             return 0
         if args.command in {"check-update", "run-update"}:
             from .update_plan import load as load_plan

@@ -6,7 +6,7 @@ import re
 import tarfile
 from pathlib import PurePosixPath
 
-from .archive import SCHEMA_VERSION, TABLE_KEYS, digest
+from .archive import MEMBERS, SCHEMA_VERSION, TABLE_KEYS, digest
 from .config import fields, text
 from .publish import file_url, verify_download
 
@@ -72,7 +72,7 @@ def read(path, config, *, verify_remote):
         raise ValueError("published catalogue manifest and measured table/provider counts disagree")
     with tarfile.open(archive["path"], "r:gz") as source:
         members = source.getmembers()
-        expected = {"manifest.json", *(f"{table}.jsonl" for table in TABLE_KEYS)}
+        expected = {"manifest.json", *MEMBERS}
         if (len(members) != len(expected) or {member.name for member in members} != expected
                 or any(not member.isfile() for member in members)):
             raise ValueError("published archive must contain exactly the declared regular tables and manifest")

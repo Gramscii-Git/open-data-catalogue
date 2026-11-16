@@ -1,0 +1,617 @@
+{
+ "archive": {
+  "bytes": 6921291516,
+  "sha256": "bfeb1c787f4f1de993cf2ff98dbfe8ce4d1f41519d6f0884569e44a83d9e9c1a"
+ },
+ "files": {
+  "opendata_catalog/provider=bis/data_0.parquet": {
+   "rows": 28
+  },
+  "opendata_catalog/provider=bologna/data_0.parquet": {
+   "rows": 358
+  },
+  "opendata_catalog/provider=bolzano-puc/data_0.parquet": {
+   "rows": 16
+  },
+  "opendata_catalog/provider=bundesbank/data_0.parquet": {
+   "rows": 72
+  },
+  "opendata_catalog/provider=cruscotto/data_0.parquet": {
+   "rows": 25
+  },
+  "opendata_catalog/provider=datagouv/data_0.parquet": {
+   "rows": 51740
+  },
+  "opendata_catalog/provider=datigov-sardegna/data_0.parquet": {
+   "rows": 274
+  },
+  "opendata_catalog/provider=dvns/data_0.parquet": {
+   "rows": 77
+  },
+  "opendata_catalog/provider=ec-empl/data_0.parquet": {
+   "rows": 74
+  },
+  "opendata_catalog/provider=ec-grow/data_0.parquet": {
+   "rows": 18
+  },
+  "opendata_catalog/provider=ecb/data_0.parquet": {
+   "rows": 104
+  },
+  "opendata_catalog/provider=eea-sardegna/data_0.parquet": {
+   "rows": 151
+  },
+  "opendata_catalog/provider=eurostat-comext/data_0.parquet": {
+   "rows": 11
+  },
+  "opendata_catalog/provider=eurostat/data_0.parquet": {
+   "rows": 8155
+  },
+  "opendata_catalog/provider=fao/data_0.parquet": {
+   "rows": 26
+  },
+  "opendata_catalog/provider=gbif-sardegna/data_0.parquet": {
+   "rows": 414
+  },
+  "opendata_catalog/provider=genova-puc/data_0.parquet": {
+   "rows": 8
+  },
+  "opendata_catalog/provider=ilo/data_0.parquet": {
+   "rows": 1214
+  },
+  "opendata_catalog/provider=insee/data_0.parquet": {
+   "rows": 225
+  },
+  "opendata_catalog/provider=istat/data_0.parquet": {
+   "rows": 4526
+  },
+  "opendata_catalog/provider=lombardia-pgt/data_0.parquet": {
+   "rows": 32
+  },
+  "opendata_catalog/provider=milano-pgt/data_0.parquet": {
+   "rows": 686
+  },
+  "opendata_catalog/provider=milano/data_0.parquet": {
+   "rows": 3295
+  },
+  "opendata_catalog/provider=napoli/data_0.parquet": {
+   "rows": 320
+  },
+  "opendata_catalog/provider=oecd/data_0.parquet": {
+   "rows": 1506
+  },
+  "opendata_catalog/provider=roma/data_0.parquet": {
+   "rows": 3088
+  },
+  "opendata_catalog/provider=sardegna-autonomie/data_0.parquet": {
+   "rows": 9
+  },
+  "opendata_catalog/provider=sardegna-geoserver/data_0.parquet": {
+   "rows": 289
+  },
+  "opendata_catalog/provider=sardegna-puc/data_0.parquet": {
+   "rows": 1
+  },
+  "opendata_catalog/provider=sardegna-salute/data_0.parquet": {
+   "rows": 21
+  },
+  "opendata_catalog/provider=sicilia-prg/data_0.parquet": {
+   "rows": 9
+  },
+  "opendata_catalog/provider=torino-prgc/data_0.parquet": {
+   "rows": 26
+  },
+  "opendata_catalog/provider=torino/data_0.parquet": {
+   "rows": 1112
+  },
+  "opendata_catalog/provider=veneto-ptrc/data_0.parquet": {
+   "rows": 240
+  },
+  "opendata_document_codes/provider=bis/data_0.parquet": {
+   "rows": 186
+  },
+  "opendata_document_codes/provider=bundesbank/data_0.parquet": {
+   "rows": 457
+  },
+  "opendata_document_codes/provider=ec-empl/data_0.parquet": {
+   "rows": 371
+  },
+  "opendata_document_codes/provider=ec-grow/data_0.parquet": {
+   "rows": 54
+  },
+  "opendata_document_codes/provider=ecb/data_0.parquet": {
+   "rows": 812
+  },
+  "opendata_document_codes/provider=eurostat-comext/data_0.parquet": {
+   "rows": 48
+  },
+  "opendata_document_codes/provider=eurostat/data_0.parquet": {
+   "rows": 38225
+  },
+  "opendata_document_codes/provider=fao/data_0.parquet": {
+   "rows": 286
+  },
+  "opendata_document_codes/provider=ilo/data_0.parquet": {
+   "rows": 5316
+  },
+  "opendata_document_codes/provider=insee/data_0.parquet": {
+   "rows": 1822
+  },
+  "opendata_document_codes/provider=istat/data_0.parquet": {
+   "rows": 26273
+  },
+  "opendata_document_codes/provider=oecd/data_0.parquet": {
+   "rows": 11868
+  },
+  "opendata_documents/provider=bis/data_0.parquet": {
+   "rows": 28
+  },
+  "opendata_documents/provider=bologna/data_0.parquet": {
+   "rows": 358
+  },
+  "opendata_documents/provider=bolzano-puc/data_0.parquet": {
+   "rows": 16
+  },
+  "opendata_documents/provider=bundesbank/data_0.parquet": {
+   "rows": 72
+  },
+  "opendata_documents/provider=cruscotto/data_0.parquet": {
+   "rows": 25
+  },
+  "opendata_documents/provider=datigov-sardegna/data_0.parquet": {
+   "rows": 274
+  },
+  "opendata_documents/provider=dvns/data_0.parquet": {
+   "rows": 154
+  },
+  "opendata_documents/provider=ec-empl/data_0.parquet": {
+   "rows": 74
+  },
+  "opendata_documents/provider=ec-grow/data_0.parquet": {
+   "rows": 18
+  },
+  "opendata_documents/provider=ecb/data_0.parquet": {
+   "rows": 104
+  },
+  "opendata_documents/provider=eea-sardegna/data_0.parquet": {
+   "rows": 151
+  },
+  "opendata_documents/provider=eurostat-comext/data_0.parquet": {
+   "rows": 11
+  },
+  "opendata_documents/provider=eurostat/data_0.parquet": {
+   "rows": 7608
+  },
+  "opendata_documents/provider=fao/data_0.parquet": {
+   "rows": 26
+  },
+  "opendata_documents/provider=gbif-sardegna/data_0.parquet": {
+   "rows": 414
+  },
+  "opendata_documents/provider=genova-puc/data_0.parquet": {
+   "rows": 8
+  },
+  "opendata_documents/provider=ilo/data_0.parquet": {
+   "rows": 1214
+  },
+  "opendata_documents/provider=insee/data_0.parquet": {
+   "rows": 225
+  },
+  "opendata_documents/provider=istat/data_0.parquet": {
+   "rows": 9049
+  },
+  "opendata_documents/provider=lombardia-pgt/data_0.parquet": {
+   "rows": 32
+  },
+  "opendata_documents/provider=milano-pgt/data_0.parquet": {
+   "rows": 686
+  },
+  "opendata_documents/provider=milano/data_0.parquet": {
+   "rows": 2901
+  },
+  "opendata_documents/provider=napoli/data_0.parquet": {
+   "rows": 320
+  },
+  "opendata_documents/provider=oecd/data_0.parquet": {
+   "rows": 1506
+  },
+  "opendata_documents/provider=roma/data_0.parquet": {
+   "rows": 3088
+  },
+  "opendata_documents/provider=sardegna-autonomie/data_0.parquet": {
+   "rows": 9
+  },
+  "opendata_documents/provider=sardegna-geoserver/data_0.parquet": {
+   "rows": 289
+  },
+  "opendata_documents/provider=sardegna-puc/data_0.parquet": {
+   "rows": 1
+  },
+  "opendata_documents/provider=sardegna-salute/data_0.parquet": {
+   "rows": 21
+  },
+  "opendata_documents/provider=sicilia-prg/data_0.parquet": {
+   "rows": 9
+  },
+  "opendata_documents/provider=torino-prgc/data_0.parquet": {
+   "rows": 26
+  },
+  "opendata_documents/provider=torino/data_0.parquet": {
+   "rows": 1112
+  },
+  "opendata_documents/provider=veneto-ptrc/data_0.parquet": {
+   "rows": 240
+  },
+  "opendata_held_codes/provider=bis/data_0.parquet": {
+   "rows": 212
+  },
+  "opendata_held_codes/provider=bundesbank/data_0.parquet": {
+   "rows": 485
+  },
+  "opendata_held_codes/provider=ec-empl/data_0.parquet": {
+   "rows": 445
+  },
+  "opendata_held_codes/provider=ec-grow/data_0.parquet": {
+   "rows": 72
+  },
+  "opendata_held_codes/provider=ecb/data_0.parquet": {
+   "rows": 911
+  },
+  "opendata_held_codes/provider=eurostat-comext/data_0.parquet": {
+   "rows": 59
+  },
+  "opendata_held_codes/provider=eurostat/data_0.parquet": {
+   "rows": 53618
+  },
+  "opendata_held_codes/provider=fao/data_0.parquet": {
+   "rows": 312
+  },
+  "opendata_held_codes/provider=ilo/data_0.parquet": {
+   "rows": 6530
+  },
+  "opendata_held_codes/provider=insee/data_0.parquet": {
+   "rows": 2047
+  },
+  "opendata_held_codes/provider=istat/data_0.parquet": {
+   "rows": 39489
+  },
+  "opendata_held_codes/provider=oecd/data_0.parquet": {
+   "rows": 13361
+  },
+  "opendata_meta_reports/provider=ecb/data_0.parquet": {
+   "rows": 105
+  },
+  "opendata_meta_reports/provider=eurostat/data_0.parquet": {
+   "rows": 558
+  },
+  "opendata_meta_reports/provider=istat/data_0.parquet": {
+   "rows": 630
+  },
+  "opendata_native_bindings/provider=eurostat/data_0.parquet": {
+   "rows": 8117
+  },
+  "opendata_native_bindings/provider=istat/data_0.parquet": {
+   "rows": 4526
+  },
+  "opendata_native_exclusions/provider=bologna/data_0.parquet": {
+   "rows": 348
+  },
+  "opendata_native_exclusions/provider=datigov-sardegna/data_0.parquet": {
+   "rows": 499
+  },
+  "opendata_native_exclusions/provider=datigov/data_0.parquet": {
+   "rows": 44910
+  },
+  "opendata_native_exclusions/provider=eurostat/data_0.parquet": {
+   "rows": 13
+  },
+  "opendata_native_exclusions/provider=govdata/data_0.parquet": {
+   "rows": 202037
+  },
+  "opendata_native_exclusions/provider=ilo/data_0.parquet": {
+   "rows": 215
+  },
+  "opendata_native_exclusions/provider=istat/data_0.parquet": {
+   "rows": 4
+  },
+  "opendata_native_exclusions/provider=milano/data_0.parquet": {
+   "rows": 3070
+  },
+  "opendata_native_exclusions/provider=napoli/data_0.parquet": {
+   "rows": 3
+  },
+  "opendata_native_exclusions/provider=oecd/data_0.parquet": {
+   "rows": 6
+  },
+  "opendata_native_exclusions/provider=roma/data_0.parquet": {
+   "rows": 4136
+  },
+  "opendata_native_exclusions/provider=torino/data_0.parquet": {
+   "rows": 2279
+  },
+  "opendata_native_objects/data_0.parquet": {
+   "rows": 21556
+  },
+  "opendata_structure_dims/provider=bis/data_0.parquet": {
+   "rows": 201
+  },
+  "opendata_structure_dims/provider=bolzano-puc/data_0.parquet": {
+   "rows": 220
+  },
+  "opendata_structure_dims/provider=bundesbank/data_0.parquet": {
+   "rows": 650
+  },
+  "opendata_structure_dims/provider=ec-empl/data_0.parquet": {
+   "rows": 103
+  },
+  "opendata_structure_dims/provider=ec-grow/data_0.parquet": {
+   "rows": 8
+  },
+  "opendata_structure_dims/provider=ecb/data_0.parquet": {
+   "rows": 719
+  },
+  "opendata_structure_dims/provider=eurostat-comext/data_0.parquet": {
+   "rows": 118
+  },
+  "opendata_structure_dims/provider=eurostat/data_0.parquet": {
+   "rows": 57987
+  },
+  "opendata_structure_dims/provider=fao/data_0.parquet": {
+   "rows": 12
+  },
+  "opendata_structure_dims/provider=genova-puc/data_0.parquet": {
+   "rows": 58
+  },
+  "opendata_structure_dims/provider=ilo/data_0.parquet": {
+   "rows": 6541
+  },
+  "opendata_structure_dims/provider=insee/data_0.parquet": {
+   "rows": 2047
+  },
+  "opendata_structure_dims/provider=istat/data_0.parquet": {
+   "rows": 12597
+  },
+  "opendata_structure_dims/provider=lombardia-pgt/data_0.parquet": {
+   "rows": 513
+  },
+  "opendata_structure_dims/provider=milano-pgt/data_0.parquet": {
+   "rows": 3972
+  },
+  "opendata_structure_dims/provider=oecd/data_0.parquet": {
+   "rows": 4946
+  },
+  "opendata_structure_dims/provider=sardegna-geoserver/data_0.parquet": {
+   "rows": 2272
+  },
+  "opendata_structure_dims/provider=sardegna-puc/data_0.parquet": {
+   "rows": 12
+  },
+  "opendata_structure_dims/provider=sicilia-prg/data_0.parquet": {
+   "rows": 128
+  },
+  "opendata_structure_dims/provider=torino-prgc/data_0.parquet": {
+   "rows": 234
+  },
+  "opendata_structure_dims/provider=veneto-ptrc/data_0.parquet": {
+   "rows": 613
+  },
+  "opendata_structures/provider=bis/data_0.parquet": {
+   "rows": 28
+  },
+  "opendata_structures/provider=bologna/data_0.parquet": {
+   "rows": 358
+  },
+  "opendata_structures/provider=bolzano-puc/data_0.parquet": {
+   "rows": 16
+  },
+  "opendata_structures/provider=bundesbank/data_0.parquet": {
+   "rows": 72
+  },
+  "opendata_structures/provider=cruscotto/data_0.parquet": {
+   "rows": 25
+  },
+  "opendata_structures/provider=datagouv/data_0.parquet": {
+   "rows": 51740
+  },
+  "opendata_structures/provider=datigov-sardegna/data_0.parquet": {
+   "rows": 274
+  },
+  "opendata_structures/provider=dvns/data_0.parquet": {
+   "rows": 77
+  },
+  "opendata_structures/provider=ec-empl/data_0.parquet": {
+   "rows": 74
+  },
+  "opendata_structures/provider=ec-grow/data_0.parquet": {
+   "rows": 18
+  },
+  "opendata_structures/provider=ecb/data_0.parquet": {
+   "rows": 104
+  },
+  "opendata_structures/provider=eea-sardegna/data_0.parquet": {
+   "rows": 151
+  },
+  "opendata_structures/provider=eurostat-comext/data_0.parquet": {
+   "rows": 11
+  },
+  "opendata_structures/provider=eurostat/data_0.parquet": {
+   "rows": 8155
+  },
+  "opendata_structures/provider=fao/data_0.parquet": {
+   "rows": 26
+  },
+  "opendata_structures/provider=gbif-sardegna/data_0.parquet": {
+   "rows": 414
+  },
+  "opendata_structures/provider=genova-puc/data_0.parquet": {
+   "rows": 8
+  },
+  "opendata_structures/provider=ilo/data_0.parquet": {
+   "rows": 1214
+  },
+  "opendata_structures/provider=insee/data_0.parquet": {
+   "rows": 225
+  },
+  "opendata_structures/provider=istat/data_0.parquet": {
+   "rows": 4526
+  },
+  "opendata_structures/provider=lombardia-pgt/data_0.parquet": {
+   "rows": 32
+  },
+  "opendata_structures/provider=milano-pgt/data_0.parquet": {
+   "rows": 686
+  },
+  "opendata_structures/provider=milano/data_0.parquet": {
+   "rows": 3295
+  },
+  "opendata_structures/provider=napoli/data_0.parquet": {
+   "rows": 320
+  },
+  "opendata_structures/provider=oecd/data_0.parquet": {
+   "rows": 1506
+  },
+  "opendata_structures/provider=roma/data_0.parquet": {
+   "rows": 3088
+  },
+  "opendata_structures/provider=sardegna-autonomie/data_0.parquet": {
+   "rows": 9
+  },
+  "opendata_structures/provider=sardegna-geoserver/data_0.parquet": {
+   "rows": 289
+  },
+  "opendata_structures/provider=sardegna-puc/data_0.parquet": {
+   "rows": 1
+  },
+  "opendata_structures/provider=sardegna-salute/data_0.parquet": {
+   "rows": 21
+  },
+  "opendata_structures/provider=sicilia-prg/data_0.parquet": {
+   "rows": 9
+  },
+  "opendata_structures/provider=torino-prgc/data_0.parquet": {
+   "rows": 26
+  },
+  "opendata_structures/provider=torino/data_0.parquet": {
+   "rows": 1112
+  },
+  "opendata_structures/provider=veneto-ptrc/data_0.parquet": {
+   "rows": 240
+  },
+  "opendata_terms/provider=bis/data_0.parquet": {
+   "rows": 7316
+  },
+  "opendata_terms/provider=bolzano-puc/data_0.parquet": {
+   "rows": 2124
+  },
+  "opendata_terms/provider=bundesbank/data_0.parquet": {
+   "rows": 12933
+  },
+  "opendata_terms/provider=ec-empl/data_0.parquet": {
+   "rows": 13507
+  },
+  "opendata_terms/provider=ec-grow/data_0.parquet": {
+   "rows": 17011
+  },
+  "opendata_terms/provider=ecb/data_0.parquet": {
+   "rows": 176970
+  },
+  "opendata_terms/provider=eurostat-comext/data_0.parquet": {
+   "rows": 204765
+  },
+  "opendata_terms/provider=eurostat/data_0.parquet": {
+   "rows": 2350745
+  },
+  "opendata_terms/provider=fao/data_0.parquet": {
+   "rows": 3269
+  },
+  "opendata_terms/provider=genova-puc/data_0.parquet": {
+   "rows": 983
+  },
+  "opendata_terms/provider=ilo/data_0.parquet": {
+   "rows": 8381
+  },
+  "opendata_terms/provider=insee/data_0.parquet": {
+   "rows": 38304
+  },
+  "opendata_terms/provider=istat/data_0.parquet": {
+   "rows": 451976
+  },
+  "opendata_terms/provider=lombardia-pgt/data_0.parquet": {
+   "rows": 6099
+  },
+  "opendata_terms/provider=milano-pgt/data_0.parquet": {
+   "rows": 29071
+  },
+  "opendata_terms/provider=oecd/data_0.parquet": {
+   "rows": 553628
+  },
+  "opendata_terms/provider=sardegna-geoserver/data_0.parquet": {
+   "rows": 59553
+  },
+  "opendata_terms/provider=sardegna-puc/data_0.parquet": {
+   "rows": 415
+  },
+  "opendata_terms/provider=sicilia-prg/data_0.parquet": {
+   "rows": 2013
+  },
+  "opendata_terms/provider=torino-prgc/data_0.parquet": {
+   "rows": 4719
+  },
+  "opendata_terms/provider=veneto-ptrc/data_0.parquet": {
+   "rows": 5375
+  }
+ },
+ "passages": {
+  "embedder": {
+   "artifacts": {
+    "dense2": "c327f2acb00149676ade24a75e11eb6ebbd367f9ee050267ba56829d2979f702",
+    "dense3": "ffb6cc5162e11e2ce6bc2367e121ee3bbbc4e82e1ee26826bd7573d4948d81b8",
+    "prompts": "8eadac15526f83d8950aa8d962a7f4f6e3d678bea71689960194561f33a5f64f",
+    "weights": "95a1f284251f78a1409a9c9e52dd4026c2180b13a90a5ede2a878bb8141fba08"
+   },
+   "dimensions": 768
+  }
+ },
+ "schema": 2,
+ "tables": {
+  "opendata_catalog": {
+   "rows": 78150
+  },
+  "opendata_document_codes": {
+   "rows": 85718
+  },
+  "opendata_documents": {
+   "rows": 30069
+  },
+  "opendata_held_codes": {
+   "rows": 117541
+  },
+  "opendata_labels": {
+   "rows": 0
+  },
+  "opendata_meta_reports": {
+   "rows": 1293
+  },
+  "opendata_native_bindings": {
+   "rows": 12643
+  },
+  "opendata_native_exclusions": {
+   "rows": 257520
+  },
+  "opendata_native_objects": {
+   "rows": 21556
+  },
+  "opendata_passages": {
+   "rows": 0
+  },
+  "opendata_structure_dims": {
+   "rows": 93951
+  },
+  "opendata_structures": {
+   "rows": 78150
+  },
+  "opendata_terms": {
+   "rows": 3949157
+  }
+ },
+ "taken_at": "2026-11-11T19:00:06.024185+00:00"
+}
